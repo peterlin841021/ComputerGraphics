@@ -31,8 +31,7 @@ void OpenGLWidget::paintGL()
 		//View 1
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		glViewport(0 , 0 , MazeWidget::w/2 , MazeWidget::h);
-		glOrtho (-0.1, MazeWidget::maze->max_xp +0.1, -0.1 , MazeWidget::maze->max_yp +0.1, 0 , 10);
+		glViewport(0 , 0 , MazeWidget::w/2 , MazeWidget::h);		
 		float maxWH = std::max(MazeWidget::maze->max_xp, MazeWidget::maze->max_yp);
 		glOrtho(-0.1, maxWH + 0.1, -0.1, maxWH + 0.1, 0, 10);
 		glMatrixMode(GL_MODELVIEW);
@@ -75,7 +74,6 @@ void OpenGLWidget::resizeGL(int w,int h)
 void OpenGLWidget::Mini_Map()	
 {					
 	glBegin(GL_LINES);
-
 		float viewerPosX = MazeWidget::maze->viewer_posn[Maze::X];
 		float viewerPosY = MazeWidget::maze->viewer_posn[Maze::Y];
 		float viewerPosZ = MazeWidget::maze->viewer_posn[Maze::Z];
@@ -94,11 +92,10 @@ void OpenGLWidget::Mini_Map()
 				glVertex2f(edgeEndX, edgeEndY);
 			}
 		}
-
-
 		//draw frustum		
 		float maxWH = std::max(MazeWidget::maze->max_xp, MazeWidget::maze->max_yp);
-		float len = 10.f * maxWH/10.f;
+		float len = 10.f * maxWH/10.f;		
+		
 		glColor3f(1, 1, 1);
 		glVertex2f(viewerPosX, viewerPosY);
 		glVertex2f(viewerPosX + maxWH / len * cos(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)),
