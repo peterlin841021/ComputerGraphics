@@ -49,7 +49,8 @@ bool isFly;
 bool isClap;
 bool isBow;
 bool isLift;
-bool scallion_use = true;
+bool isDraw;
+bool scallion_use = false;
 bool isMiku = true;
 
 float cheerangles[20] = {0.0};
@@ -59,7 +60,38 @@ float flyheight = 0.1f;
 float clapangles[40] = {0.0};
 float bowangles[16] = {0};
 float takeoffangles[15] = { 0 };
+float drawangles[16] = { 0 };
 
+void Drawsword(float angle)
+{
+	mat4 identity(1.0);
+	float armangle = 0.8f;
+
+	action[RIGHT_FORE_ARM] = identity;
+	action[RIGHT_HIND_ARM] = identity;
+	action[RIGHT_HAND] = identity;
+	action[SCALLION] = identity;
+	
+	action[RIGHT_FORE_ARM] *= translate(identity, vec3(rightForeArm.x, rightForeArm.y, rightForeArm.z));
+	action[RIGHT_FORE_ARM] *= rotate(identity, armangle, vec3(0, 0, 1));
+	action[RIGHT_FORE_ARM] *= rotate(identity, angle, vec3(1,-1, -1));
+	action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
+	action[RIGHT_HIND_ARM] *= rotate(identity, angle,vec3(0, 1, 0));
+	action[RIGHT_HAND] *= translate(action[RIGHT_HIND_ARM], rightHand - rightHindArm);
+	if (isMiku || scallion_use)
+	{
+		action[RIGHT_HAND] *= rotate(identity, -angle*3, vec3(1, 1, 0));		
+		//action[SCALLION] *= rotate(identity, angle, vec3(0, 1, 0));
+		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
+	}
+	
+	for (size_t i = RIGHT_FORE_ARM; i <= RIGHT_HAND; i++)
+	{
+		action[i] *= scale(identity, scale_ratio);
+	}
+	if (isMiku || scallion_use)
+		action[SCALLION] *= scale(identity, scale_ratio);
+}
 void Stand() 
 {
 	mat4 identity(1.0);
@@ -141,6 +173,7 @@ void Walk(float angle)
 	action[RIGHT_THIGH] = identity;
 	action[RIGHT_CALF] = identity;
 	action[SKIRT] = identity;
+	action[SCALLION] = identity;
 
 	//ARM
 	action[LEFT_FORE_ARM] *= translate(identity, leftForeArm);
@@ -154,7 +187,12 @@ void Walk(float angle)
 	action[RIGHT_FORE_ARM] *= rotate(identity, angle, vec3(1, 0, 0));
 	action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);	
 	action[RIGHT_HAND] *= translate(action[RIGHT_FORE_ARM], rightHand);		
-	
+	if (scallion_use) 
+	{
+		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
+		action[SCALLION] *= scale(identity, scale_ratio);
+	}
+		
 	//LEG
 	float kneeAngle = 0;
 	action[LEFT_THIGH] *= translate(identity, leftThigh);
@@ -578,9 +616,10 @@ void Scene::KeyBoardEvent(unsigned char key)
 		isFly = false;
 		isWalk = false;
 		isCheer = false;
-		isClap = false;	
+		isClap = false;
 		isBow = false;
 		isLift = false;
+		scallion_use = false;
 		break;
 	default:
 		break;
@@ -595,6 +634,7 @@ void Scene::MenuEvent(int item)
 	float clap_v = 0.1f;
 	float bow_v = 0.1f;
 	float take_v = 0.1f;
+	float draw_v = 0.1f;
 	float start = 0.f;
 	mat4 identity(1.0);
 	action = origin;
@@ -720,6 +760,25 @@ void Scene::MenuEvent(int item)
 		isLift = !isLift;
 		break;
 	case 7:
+		index = 0;
+		for (size_t i = 0; i < 12; i++)
+		{
+			drawangles[i] = start;
+			start -= take_v;
+		}		
+		for (size_t i = 10; i < 16; i++)
+		{
+			drawangles[i] = start;
+			start += take_v*2.5f;
+		}
+		/*for (size_t i = 15; i < 20; i++)
+		{
+			drawangles[i] = start;
+			start += take_v * 2;
+		}*/
+		isDraw = !isDraw;
+		break;	
+	case 8:
 		action = origin;
 		isFly = false;
 		isWalk = false;
@@ -727,6 +786,7 @@ void Scene::MenuEvent(int item)
 		isClap = false;
 		isBow = false;
 		isLift = false;
+		//scallion_use = false;		
 		break;
 	}
 }
@@ -817,6 +877,18 @@ void Scene::Update(float dt)
 			mat4 identity(1.0);
 			isLift = false;
 			
+		}
+	}
+	else if (isDraw)
+	{
+		Drawsword(drawangles[index]);
+		index++;
+		if (index == 11)
+			scallion_use = true;
+		if (index == sizeof(drawangles) / sizeof(float))
+		{
+			index = 0;		
+			isDraw = false;
 		}
 	}
 	for (size_t i = 0; i < models.size(); i++)

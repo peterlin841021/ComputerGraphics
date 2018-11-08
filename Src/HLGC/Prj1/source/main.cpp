@@ -10,7 +10,8 @@
 #define MENU_CLAP 4
 #define MENU_BOW 5
 #define MENU_LIFT 6
-#define MENU_STAND 7
+#define MENU_DRAW 7
+#define MENU_STAND 8
 
 using namespace glm;
 using namespace std;
@@ -166,6 +167,7 @@ int main(int argc, char *argv[])
 	glutAddMenuEntry("Clapping", MENU_CLAP);
 	glutAddMenuEntry("Bowing", MENU_BOW);
 	glutAddMenuEntry("Liftting", MENU_LIFT);
+	glutAddMenuEntry("Drawing", MENU_DRAW);
 	glutAddMenuEntry("Standing", MENU_STAND);
 	glutSetMenu(menu_main);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
