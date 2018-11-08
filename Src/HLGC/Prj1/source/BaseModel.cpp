@@ -53,7 +53,7 @@ void BaseModel::LoadModel(){
 	bool ret = tinyobj::LoadObj(shapes, materials, err, objName);
 	if (err.size()>0)
 	{
-		printf("Load Models Fail! Please check the solution path");
+		printf("Load Models Fail! Please check the solution path\n");
 		return;
 	}
 

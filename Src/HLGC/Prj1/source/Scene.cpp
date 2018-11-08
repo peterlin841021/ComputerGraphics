@@ -1,5 +1,6 @@
 #include "../Include/Scene.h"
 #include<vector>
+#include<string>
 
 #define HAIR 0 
 #define FACE 1
@@ -18,10 +19,11 @@
 #define SCALLION 14
 
 using namespace glm;
+using namespace std;
 ViewManager* Scene::camera = new ViewManager();//Camera
 
 std::vector<mat4> origin, action;
-std::vector<vec3> axises;
+
 const vec3 hair(0, 0.f, 0);
 const vec3 face(0, 2.5f, 0);
 const vec3 body(0, 0, 0);
@@ -48,6 +50,7 @@ bool isClap;
 bool isBow;
 bool isLift;
 bool scallion_use = true;
+bool isMiku = false;
 
 float cheerangles[20] = {0.0};
 float walkangles[40] = { 0.0 };
@@ -56,7 +59,6 @@ float flyheight = 0.1f;
 float clapangles[40] = {0.0};
 float bowangles[16] = {0};
 float takeoffangles[15] = { 0 };
-Scene *sceneObj;
 
 void Stand() 
 {
@@ -79,10 +81,11 @@ void Stand()
 	action[LEFT_CALF] *= translate(action[LEFT_THIGH], leftCalf);	
 	action[RIGHT_THIGH] *= translate(action[BODY], rightThigh);
 	action[RIGHT_CALF] *= translate(action[RIGHT_THIGH], rightCalf);
-	
-	action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
-	//action[SCALLION] *= rotate(identity,-90.f, vec3(-1, 0, 0));
-	
+	if (isMiku)
+	{
+		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
+		action[SCALLION] *= rotate(identity, -90.f, vec3(-1, 0, 0));
+	}	
 	for (size_t i = 0; i < action.size(); i++)
 	{		
 		action[i] *= scale(identity, scale_ratio);
@@ -101,7 +104,8 @@ void Cheer(float angle)
 	action[RIGHT_FORE_ARM] = identity;
 	action[RIGHT_HIND_ARM] = identity;
 	action[RIGHT_HAND] = identity;	
-	action[SCALLION] = identity;
+	if(isMiku)
+		action[SCALLION] = identity;
 
 	action[LEFT_FORE_ARM] *= translate(identity, vec3(leftForeArm.x, leftForeArm.y, leftForeArm.z));
 	action[LEFT_FORE_ARM] *= rotate(identity, angle, vec3(-1, 0, 0));
@@ -112,12 +116,15 @@ void Cheer(float angle)
 	action[RIGHT_FORE_ARM] *= rotate(identity, angle, vec3(-1, 0, 0));
 	action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);	
 	action[RIGHT_HAND] *= translate(action[RIGHT_FORE_ARM], rightHand);	
-	action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
+	if (isMiku)
+	{
+		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
+		action[SCALLION] *= scale(identity, scale_ratio);
+	}	
 	for (size_t i = LEFT_FORE_ARM; i <= RIGHT_HAND; i++)
 	{
 		action[i] *= scale(identity, scale_ratio);
-	}
-	action[SCALLION] *= scale(identity, scale_ratio);
+	}	
 }
 void Walk(float angle)
 {	
@@ -201,7 +208,8 @@ void Fly(float angle)
 	action[RIGHT_FORE_ARM] *= rotate(identity, angle, vec3(0, 0, 1));
 	action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
 	action[RIGHT_HAND] *= translate(action[RIGHT_FORE_ARM], rightHand);
-	action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
+	if(isMiku)
+		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
 
 	//LEG
 	float kneeAngle = 0;
@@ -305,8 +313,7 @@ void Bow(float angle, bool prepare)
 	action[RIGHT_HAND] = identity;
 	action[SCALLION] = identity;
 
-	action[BODY] *= translate(identity, body);
-	printf("%f\n", angle);
+	action[BODY] *= translate(identity, body);	
 	if (angle > 0.f)
 	{
 		action[BODY] *= rotate(identity, angle * 0.6f, vec3(1, 0, 0));		
@@ -420,138 +427,100 @@ void Lift(float angle, bool prepare)
 		action[i] *= scale(identity, scale_ratio);
 	}
 }
+char *stringToChar(string str)
+{
+	char *c = new char[str.length() + 1];
+	return strcpy(c, str.c_str());
+}
+void Scene::initMiku()
+{
+	string parts_objs[] =
+	{
+		"mikuhair","mikuface","mikubody","mikuskirt",
+		"mikuleftforearm","mikulefthindarm","mikulefthand","mikurightforearm","mikurighthindarm","mikurighthand",
+		"mikuleftthigh","mikuleftcalf","mikurightthigh","mikurightcalf"
+	};
+	for (size_t i = 0; i < sizeof(parts_objs) / sizeof(string); i++)
+	{
+		parts_objs[i].append(".obj");
+	}
+	string parts_textures[] =
+	{
+		"mikuhair","mikuface","mikubody","scallion"
+	};
+	for (size_t i = 0; i < sizeof(parts_textures) / sizeof(string); i++)
+	{
+		parts_textures[i].append(".png");		
+	}
+	for (size_t i = 0; i < sizeof(parts_objs) / sizeof(string); i++)
+	{
+		if (i == 0 || i == 1)
+		{
+			models.push_back(new BaseModel(stringToChar(parts_objs[i]), stringToChar(parts_textures[i])));
+		}
+		else
+		{
+			models.push_back(new BaseModel(stringToChar(parts_objs[i]), stringToChar(parts_textures[2])));
+		}		
+	}
+	models.push_back(new BaseModel(stringToChar("scallion.obj"), stringToChar(parts_textures[3])));
+	mat4 identity(1.0);
+	for (size_t i = 0; i < models.size(); i++)
+	{
+		action.push_back(identity);
+	}
+	action.push_back(identity);
+}
+void Scene::initOthers()
+{
+	string parts_objs[] =
+	{
+		"none","head","body","none",
+		"leftarm","none","none","rightarm","none","none",
+		"leftleg","none","rightleg","none"
+	};
 
+	for (size_t i = 0; i < sizeof(parts_objs) / sizeof(string); i++)
+	{
+		parts_objs[i].append(".obj");
+	}
+	string  parts_textures[] =
+	{
+		"robot"
+	};
+
+	for (size_t i = 0; i < sizeof(parts_textures) / sizeof(string); i++)
+	{
+		parts_textures[i].append(".png");
+	}
+
+	for (size_t i = 0; i < sizeof(parts_objs) / sizeof(string); i++)
+	{
+		models.push_back(new BaseModel(stringToChar(parts_objs[i]), stringToChar(parts_textures[0])));
+	}
+	//Transformation matrix
+	mat4 identity(1.0);
+	for (size_t i = 0; i < models.size(); i++)
+	{
+		action.push_back(identity);
+	}
+}
 Scene::Scene()
 {
-	//Initialize
+	//Initialize	
 	camera = new ViewManager();
-	char *hair_obj = "mikuhair.obj";
-	char *hair_texture = "hair.png";
-
-	char *face_obj = "mikuface.obj";
-	char *face_texture = "face.png";
-
-	char *leftforearm_obj = "mikuleftforearm.obj";
-	char *leftforearm_texture = "body.png";
-
-	char *lefthindarm_obj = "mikulefthindarm.obj";
-	char *lefthindarm_texture = "body.png";
-
-	char *rightforearm_obj = "mikurightforearm.obj";
-	char *rightforearm_texture = "body.png";
-
-	char *righthand_obj = "mikurighthand.obj";
-	char *righthand_texture = "body.png";
-
-	char *righthindarm_obj = "mikurighthindarm.obj";
-	char *righthindarm_texture = "body.png";
-
-	char *leftthigh_obj = "mikuleftthigh.obj";
-	char *leftthigh_texture = "body.png";
-
-	char *leftcalf_obj = "mikuleftcalf.obj";
-	char *leftcalf_texture = "body.png";
-
-	char *lefthand_obj = "mikulefthand.obj";
-	char *lefthand_texture = "body.png";
-
-	char *rightthigh_obj = "mikurightthigh.obj";
-	char *rightthigh_texture = "body.png";
-
-	char *rightcalf_obj = "mikurightcalf.obj";
-	char *rightcalf_texture = "body.png";
-
-	char *body_obj = "mikubody.obj";
-	char *body_texture = "body.png";
-
-	char *skirt_obj = "mikuskirt.obj";
-	char *skirt_texture = "body.png";
-
-	char *scallion_obj = "scallion.obj";
-	char *scallion_texture = "scallion.jpg";
-
-	mat4 identity(1.0);
-
-	BaseModel* hair = new BaseModel(hair_obj, hair_texture);
-	BaseModel* face = new BaseModel(face_obj, face_texture);
-	BaseModel* body = new BaseModel(body_obj, body_texture);
-	BaseModel* skirt = new BaseModel(skirt_obj, skirt_texture);
-
-	BaseModel* leftforearm = new BaseModel(leftforearm_obj, leftforearm_texture);
-	BaseModel* lefthindarm = new BaseModel(lefthindarm_obj, lefthindarm_texture);
-	BaseModel* lefthand = new BaseModel(lefthand_obj, lefthand_texture);
-
-	BaseModel* rightforearm = new BaseModel(rightforearm_obj, rightforearm_texture);
-	BaseModel* righthindarm = new BaseModel(righthindarm_obj, righthindarm_texture);
-	BaseModel* righthand = new BaseModel(righthand_obj, righthand_texture);
-
-	BaseModel* leftthigh = new BaseModel(leftthigh_obj, leftthigh_texture);
-	BaseModel* leftcalf = new BaseModel(leftcalf_obj, leftcalf_texture);
-
-	BaseModel* rightthigh = new BaseModel(rightthigh_obj, rightthigh_texture);
-	BaseModel* rightcalf = new BaseModel(rightcalf_obj, rightcalf_texture);
-
-	BaseModel* scallion = new BaseModel(scallion_obj, scallion_texture);
-
-	//Transformation matrix
-	mat4 hair_matrix = identity;
-	mat4 face_matrix = identity;
-	mat4 body_matrix = identity;
-	mat4 skirt_matrix = identity;
-
-	mat4 left_forearm_matrix = identity;
-	mat4 left_hindarm_matrix = identity;
-	mat4 left_hand_matrix = identity;
-
-	mat4 right_forearm_matrix = identity;
-	mat4 right_hindarm_matrix = identity;
-	mat4 right_hand_matrix = identity;
-
-	mat4 left_thigh_matrix = identity;
-	mat4 left_calf_matrix = identity;
-
-	mat4 right_thigh_matrix = identity;
-	mat4 right_calf_matrix = identity;
-	mat4 scallion_matrix = identity;
-
-	action.push_back(hair_matrix);
-	action.push_back(face_matrix);
-	action.push_back(body_matrix);
-	action.push_back(skirt_matrix);
-	action.push_back(left_forearm_matrix);
-	action.push_back(left_hindarm_matrix);
-	action.push_back(left_hand_matrix);
-	action.push_back(right_forearm_matrix);
-	action.push_back(right_hindarm_matrix);
-	action.push_back(right_hand_matrix);
-	action.push_back(left_thigh_matrix);
-	action.push_back(left_calf_matrix);
-	action.push_back(right_thigh_matrix);
-	action.push_back(right_calf_matrix);
-	action.push_back(scallion_matrix);
-
-	models.push_back(hair);
-	models.push_back(face);
-	models.push_back(body);
-	models.push_back(skirt);
-	models.push_back(leftforearm);
-	models.push_back(lefthindarm);
-	models.push_back(lefthand);
-	models.push_back(rightforearm);
-	models.push_back(righthindarm);
-	models.push_back(righthand);
-	models.push_back(leftthigh);
-	models.push_back(leftcalf);
-	models.push_back(rightthigh);
-	models.push_back(rightcalf);
-	models.push_back(scallion);
-	Stand();
-	axises.push_back(vec3(1,0,0));
-	axises.push_back(vec3(0, 1, 0));
-	axises.push_back(vec3(0, 0, 1));
-	sceneObj = this;
+	if (isMiku)
+	{
+		initMiku();
+	}
+	else
+	{
+		initOthers();
+	}
+	Stand();	
 }
-void Scene::MouseEvent(int button, int state, int x, int y){
+void Scene::MouseEvent(int button, int state, int x, int y)
+{
 	camera->mouseEvents(button, state, x, y);
 }
 

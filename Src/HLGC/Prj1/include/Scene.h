@@ -18,7 +18,9 @@ public:
 	void Update(float dt);
 
 	static ViewManager* GetCamera(){ return camera; }
-	std::vector<BaseModel*> GetModels();	
+	std::vector<BaseModel*> GetModels();
+	void initMiku();
+	void initOthers();
 private:	
 	static ViewManager* camera;
 	std::vector<BaseModel*> models;
