@@ -173,18 +173,19 @@ void Walk(float angle)
 	action[RIGHT_THIGH] = identity;
 	action[RIGHT_CALF] = identity;
 	action[SKIRT] = identity;
-	action[SCALLION] = identity;
+	if (scallion_use)
+		action[SCALLION] = identity;
 
 	//ARM
 	action[LEFT_FORE_ARM] *= translate(identity, leftForeArm);
 	action[LEFT_FORE_ARM] *= rotate(identity, armin, vec3(0, 0, -1));
-	action[LEFT_FORE_ARM] *= rotate(identity, angle, vec3(-1, 0, 0));
+	action[LEFT_FORE_ARM] *= rotate(identity, angle/2, vec3(-1, 0, 0));
 	action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);	
 	action[LEFT_HAND] *= translate(action[LEFT_FORE_ARM], leftHand);
 			
 	action[RIGHT_FORE_ARM] *= translate(identity, rightForeArm);
 	action[RIGHT_FORE_ARM] *= rotate(identity, armin, vec3(0, 0, 1));
-	action[RIGHT_FORE_ARM] *= rotate(identity, angle, vec3(1, 0, 0));
+	action[RIGHT_FORE_ARM] *= rotate(identity, angle/2, vec3(1, 0, 0));
 	action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);	
 	action[RIGHT_HAND] *= translate(action[RIGHT_FORE_ARM], rightHand);		
 	if (scallion_use) 
@@ -195,24 +196,25 @@ void Walk(float angle)
 		
 	//LEG
 	float kneeAngle = 0;
+	float legAngle = angle / 5.f;
 	action[LEFT_THIGH] *= translate(identity, leftThigh);
-	action[LEFT_THIGH] *= rotate(identity, angle/4, vec3(1, 0, 0));
+	action[LEFT_THIGH] *= rotate(identity, legAngle, vec3(1, 0, 0));
 	action[LEFT_CALF] *= translate(action[LEFT_THIGH], leftCalf);
 	//if (angle <= 2.0  && angle >= 1.8f || angle <= -1.8 && angle >= -2.f)
 	if ((angle <= 2.f && angle >=1.9f) || (angle > -2.f && angle <= -1.9f ))
 		kneeAngle = 0;
 	else
-		kneeAngle = angle / 4 < 0 ? angle / 4 + 0.4f : angle / 4  + 0.4f;
+		kneeAngle = legAngle < 0 ? legAngle + 0.4f : legAngle + 0.4f;
 
 	action[LEFT_CALF] *= rotate(identity, kneeAngle, vec3(1, 0, 0));
 
 	action[RIGHT_THIGH] *= translate(identity, rightThigh);	
-	action[RIGHT_THIGH] *= rotate(identity, -angle/4, vec3(1, 0, 0));
+	action[RIGHT_THIGH] *= rotate(identity, -legAngle, vec3(1, 0, 0));
 	action[RIGHT_CALF] *= translate(action[RIGHT_THIGH], rightCalf);	
 	if ((angle <= 2.f && angle >= 1.9f) || (angle > -2.f && angle <= -1.9f))
 		kneeAngle = 0;
 	else
-		kneeAngle = -angle / 4 < -2.f ? -angle / 4 - 0.4f : -angle / 4 + 0.4f;
+		kneeAngle = -legAngle < -2.f ? -legAngle - 0.4f : -legAngle + 0.4f;
 	action[RIGHT_CALF] *= rotate(identity, kneeAngle, vec3(1, 0, 0));
 
 	action[SKIRT] *= translate(identity, skirt);
