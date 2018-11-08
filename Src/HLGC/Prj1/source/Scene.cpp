@@ -50,7 +50,7 @@ bool isClap;
 bool isBow;
 bool isLift;
 bool scallion_use = true;
-bool isMiku = false;
+bool isMiku = true;
 
 float cheerangles[20] = {0.0};
 float walkangles[40] = { 0.0 };
@@ -80,12 +80,12 @@ void Stand()
 	action[LEFT_THIGH] *= translate(action[BODY], leftThigh);
 	action[LEFT_CALF] *= translate(action[LEFT_THIGH], leftCalf);	
 	action[RIGHT_THIGH] *= translate(action[BODY], rightThigh);
-	action[RIGHT_CALF] *= translate(action[RIGHT_THIGH], rightCalf);
+	action[RIGHT_CALF] *= translate(action[RIGHT_THIGH], rightCalf);	
 	if (isMiku)
 	{
-		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
-		action[SCALLION] *= rotate(identity, -90.f, vec3(-1, 0, 0));
-	}	
+		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);		
+	}
+		
 	for (size_t i = 0; i < action.size(); i++)
 	{		
 		action[i] *= scale(identity, scale_ratio);
@@ -597,7 +597,7 @@ void Scene::MenuEvent(int item)
 	float take_v = 0.1f;
 	float start = 0.f;
 	mat4 identity(1.0);
-
+	action = origin;
 	switch (item)
 	{
 	case 0:
