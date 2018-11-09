@@ -98,7 +98,37 @@ void Drawsword(float angle)
 }
 void Excalibur(float angle)
 {
+	if (scallion_use && isMiku)
+	{
+		float armin = 0.8f;
+		mat4 identity(1.0);
+		action[LEFT_FORE_ARM] = identity;
+		action[LEFT_HIND_ARM] = identity;
+		action[LEFT_HAND] = identity;
+		action[RIGHT_FORE_ARM] = identity;
+		action[RIGHT_HIND_ARM] = identity;
+		action[RIGHT_HAND] = identity;
+		action[SCALLION] = identity;
 
+		action[LEFT_FORE_ARM] *= translate(identity, leftForeArm);
+		action[LEFT_FORE_ARM] *= rotate(identity, armin, vec3(0, 0, -1));
+		//action[LEFT_FORE_ARM] *= rotate(identity, angle, vec3(-1,1, 0));
+		action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);
+		action[LEFT_HAND] *= translate(action[LEFT_FORE_ARM], leftHand);
+
+		action[RIGHT_FORE_ARM] *= translate(identity, rightForeArm);
+		action[RIGHT_FORE_ARM] *= rotate(identity, armin, vec3(0, 0,1 ));
+		action[RIGHT_FORE_ARM] *= rotate(identity, -angle*5, vec3(1,-1, 0));
+		action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
+		action[RIGHT_HAND] *= translate(action[RIGHT_FORE_ARM], rightHand);
+
+		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);		
+		for (size_t i = LEFT_FORE_ARM; i <= RIGHT_HAND; i++)
+		{
+			action[i] *= scale(identity, scale_ratio);
+		}
+		action[SCALLION] *= scale(identity, scale_ratio);
+	}
 }
 void Stand() 
 {
@@ -149,12 +179,12 @@ void Cheer(float angle)
 	if(isMiku)
 		action[SCALLION] = identity;
 
-	action[LEFT_FORE_ARM] *= translate(identity, vec3(leftForeArm.x, leftForeArm.y, leftForeArm.z));
+	action[LEFT_FORE_ARM] *= translate(identity, leftForeArm);
 	action[LEFT_FORE_ARM] *= rotate(identity, angle, vec3(-1, 0, 0));
 	action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);	
 	action[LEFT_HAND] *= translate(action[LEFT_FORE_ARM], leftHand);			
 
-	action[RIGHT_FORE_ARM] *= translate(identity, vec3(rightForeArm.x, rightForeArm.y, rightForeArm.z));
+	action[RIGHT_FORE_ARM] *= translate(identity, rightForeArm);
 	action[RIGHT_FORE_ARM] *= rotate(identity, angle, vec3(-1, 0, 0));
 	action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);	
 	action[RIGHT_HAND] *= translate(action[RIGHT_FORE_ARM], rightHand);	
@@ -572,7 +602,7 @@ Scene::Scene()
 	{
 		initOthers();
 	}
-	initScenery();
+	//initScenery();
 	Stand();	
 }
 void Scene::MouseEvent(int button, int state, int x, int y)
@@ -653,6 +683,7 @@ void Scene::MenuEvent(int item)
 	float bow_v = 0.1f;
 	float take_v = 0.1f;
 	float draw_v = 0.1f;
+	float ex_v = 0.1f;
 	float start = 0.f;
 	mat4 identity(1.0);
 	action = origin;
@@ -793,6 +824,17 @@ void Scene::MenuEvent(int item)
 		break;	
 	case 8:
 		index = 0;
+		for (size_t i = 0; i < 10; i++)
+		{
+			excaliburangle[i] = start;
+			start += ex_v;
+		}
+		for (size_t i = 10; i < 20; i++)
+		{
+			excaliburangle[i] = start;
+			start -= ex_v;
+		}
+		
 		isExcalibur = !isExcalibur;
 		break;
 	case 9:
@@ -906,6 +948,15 @@ void Scene::Update(float dt)
 		{
 			index = 0;		
 			isDraw = false;
+		}
+	}
+	else if (isExcalibur)
+	{
+		Excalibur(excaliburangle[index]);
+		index++;		
+		if (index == sizeof(excaliburangle) / sizeof(float))
+		{
+			index = 0;		
 		}
 	}
 	for (size_t i = 0; i < models.size(); i++)
