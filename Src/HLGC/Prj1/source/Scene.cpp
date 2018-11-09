@@ -17,6 +17,7 @@
 #define RIGHT_THIGH 12
 #define RIGHT_CALF 13
 #define SCALLION 14
+#define SCENERY 15
 
 using namespace glm;
 using namespace std;
@@ -40,6 +41,7 @@ const vec3 leftCalf(-0.05f, -2.2f, 0);
 const vec3 rightThigh(-0.5f, -0.3f, 0);
 const vec3 rightCalf(0.05f, -2.2f, 0);
 const vec3 scale_ratio(0.05f, 0.05f, 0.05f);
+const vec3 scenery(0,0,0);
 
 int index = 0;//Motion present
 
@@ -50,6 +52,7 @@ bool isClap;
 bool isBow;
 bool isLift;
 bool isDraw;
+bool isExcalibur;
 bool scallion_use = false;
 bool isMiku = true;
 
@@ -61,6 +64,7 @@ float clapangles[40] = {0.0};
 float bowangles[16] = {0};
 float takeoffangles[15] = { 0 };
 float drawangles[16] = { 0 };
+float excaliburangle[20] = {0};
 
 void Drawsword(float angle)
 {
@@ -92,6 +96,10 @@ void Drawsword(float angle)
 	if (isMiku || scallion_use)
 		action[SCALLION] *= scale(identity, scale_ratio);
 }
+void Excalibur(float angle)
+{
+
+}
 void Stand() 
 {
 	mat4 identity(1.0);
@@ -118,10 +126,12 @@ void Stand()
 		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);		
 	}
 		
-	for (size_t i = 0; i < action.size(); i++)
+	for (size_t i = 0; i < SCALLION; i++)
 	{		
 		action[i] *= scale(identity, scale_ratio);
 	}
+	action[SCENERY] *= translate(identity, vec3(0.f, -11.f, -5.f));
+	action[SCENERY] *= scale(identity, vec3(0.2f, 0.2f, 0.2f));	
 	for (size_t i = 0; i < action.size(); i++)
 	{
 		origin.push_back(action[i]);
@@ -229,7 +239,7 @@ void Walk(float angle)
 void Fly(float angle) 
 {
 	mat4 identity(1.0);
-	for (size_t i = 0; i < action.size(); i++)
+	for (size_t i = 0; i < SCALLION; i++)
 	{
 		action[i] = identity;
 	}
@@ -265,14 +275,14 @@ void Fly(float angle)
 	action[SKIRT] *= translate(identity, skirt);
 	action[SKIRT] *= rotate(identity, leg*2, vec3(1, 0, 0));
 
-	for (size_t i = 0; i < action.size(); i++)
-	{
+	for (size_t i = 0; i < SCALLION; i++)
+	{		
 		action[i] *= translate(identity, vec3(0, flyheight, 0));
 	}
 	flyheight += 0.01f;
 	if (flyheight >= 0.5f)
 		flyheight = 0;
-	for (size_t i = 0; i < action.size(); i++)
+	for (size_t i = 0; i < SCALLION; i++)
 	{
 		action[i] *= scale(identity, scale_ratio);
 	}
@@ -545,6 +555,11 @@ void Scene::initOthers()
 		action.push_back(identity);
 	}
 }
+void Scene::initScenery()
+{
+	action[SCENERY] = mat4(1.0);
+	models.push_back(new BaseModel("SFMC_main.obj","SFMC_main.png"));
+}
 Scene::Scene()
 {
 	//Initialize	
@@ -557,6 +572,7 @@ Scene::Scene()
 	{
 		initOthers();
 	}
+	initScenery();
 	Stand();	
 }
 void Scene::MouseEvent(int button, int state, int x, int y)
@@ -772,15 +788,14 @@ void Scene::MenuEvent(int item)
 		{
 			drawangles[i] = start;
 			start += take_v*2.5f;
-		}
-		/*for (size_t i = 15; i < 20; i++)
-		{
-			drawangles[i] = start;
-			start += take_v * 2;
-		}*/
+		}	
 		isDraw = !isDraw;
 		break;	
 	case 8:
+		index = 0;
+		isExcalibur = !isExcalibur;
+		break;
+	case 9:
 		action = origin;
 		isFly = false;
 		isWalk = false;

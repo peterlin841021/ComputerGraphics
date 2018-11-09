@@ -21,6 +21,7 @@ public:
 	std::vector<BaseModel*> GetModels();
 	void initMiku();
 	void initOthers();
+	void initScenery();
 private:	
 	static ViewManager* camera;
 	std::vector<BaseModel*> models;
