@@ -30,10 +30,10 @@ const vec3 face(0, 2.5f, 0);
 const vec3 body(0, 0, 0);
 const vec3 skirt(0, -0.1f, 0);
 const vec3 leftForeArm(0.5f, 1.8f, 0);
-const vec3 leftHindArm(1.6f, -0.8f, 0);
+const vec3 leftHindArm(1.4f, -0.7f, 0);
 const vec3 leftHand(2.8f, -1.3f, 0);
 const vec3 rightForeArm(-0.5f, 1.8f, 0);
-const vec3 rightHindArm(-1.6f, -0.8f, 0);
+const vec3 rightHindArm(-1.4f, -0.7f, 0);
 const vec3 rightHand(-2.8f, -1.3f, 0);
 const vec3 scallion(0, 0, 0);
 const vec3 leftThigh(0.5f, -0.3f, 0);
@@ -53,6 +53,7 @@ bool isBow;
 bool isLift;
 bool isDraw;
 bool isExcalibur;
+bool actionfixed;
 bool scallion_use = false;
 bool isMiku = true;
 
@@ -60,11 +61,12 @@ float cheerangles[20] = {0.0};
 float walkangles[40] = { 0.0 };
 float flyangles[10] = {0};
 float flyheight = 0.1f;
+int flydir = 1;
 float clapangles[40] = {0.0};
 float bowangles[16] = {0};
 float takeoffangles[15] = { 0 };
 float drawangles[16] = { 0 };
-float excaliburangle[20] = {0};
+float excaliburangle[35] = {0};
 
 void Drawsword(float angle)
 {
@@ -96,7 +98,7 @@ void Drawsword(float angle)
 	if (isMiku || scallion_use)
 		action[SCALLION] *= scale(identity, scale_ratio);
 }
-void Excalibur(float angle)
+void Excalibur(float angle,bool prepare,bool slash)
 {
 	if (scallion_use && isMiku)
 	{
@@ -105,25 +107,94 @@ void Excalibur(float angle)
 		action[LEFT_FORE_ARM] = identity;
 		action[LEFT_HIND_ARM] = identity;
 		action[LEFT_HAND] = identity;
+
+		action[LEFT_FORE_ARM] = identity;
+		action[LEFT_HIND_ARM] = identity;
+		action[LEFT_HAND] = identity;
+
 		action[RIGHT_FORE_ARM] = identity;
 		action[RIGHT_HIND_ARM] = identity;
 		action[RIGHT_HAND] = identity;
+
+		action[LEFT_THIGH] = identity;
+		action[LEFT_CALF] = identity;
+		action[RIGHT_THIGH] = identity;
+		action[RIGHT_CALF] = identity;
+
 		action[SCALLION] = identity;
+		//Cross
+		action[LEFT_THIGH]*= translate(identity, leftThigh);		
+		action[RIGHT_THIGH] *= translate(identity, rightThigh);
+		
 
 		action[LEFT_FORE_ARM] *= translate(identity, leftForeArm);
 		action[LEFT_FORE_ARM] *= rotate(identity, armin, vec3(0, 0, -1));
-		//action[LEFT_FORE_ARM] *= rotate(identity, angle, vec3(-1,1, 0));
+		//
+		if(slash)
+			action[LEFT_FORE_ARM] *= rotate(identity,angle*5.f, vec3(1, 1, 0));
+		float a = 0.37f;
+		if (prepare)
+		{			
+			action[LEFT_FORE_ARM] *= rotate(identity, -a, vec3(1, 0, 0));
+			action[LEFT_FORE_ARM] *= rotate(identity, a * 3.f, vec3(0, -1, 0));
+		}
 		action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);
-		action[LEFT_HAND] *= translate(action[LEFT_FORE_ARM], leftHand);
+		
+		if (prepare && !slash)
+		{
+			action[LEFT_HIND_ARM] *= rotate(identity, -angle * 2.f, vec3(0, 0, 1));			
+		}			
+		else if (slash)
+		{
+			action[LEFT_HIND_ARM] *= rotate(identity, -a * 2.f, vec3(0, 0, 1));
+			if (!actionfixed)
+				action[LEFT_THIGH] *= rotate(identity, angle/2.f, vec3(1, 1, 1));
+			else
+				action[LEFT_THIGH] *= rotate(identity, -0.28f / 2.f, vec3(1, 1, 1));
+		}	
+		action[LEFT_CALF] *= translate(action[LEFT_THIGH], leftCalf);
+		action[LEFT_HAND] *= translate(action[LEFT_HIND_ARM], leftHand - leftHindArm);
 
 		action[RIGHT_FORE_ARM] *= translate(identity, rightForeArm);
-		action[RIGHT_FORE_ARM] *= rotate(identity, armin, vec3(0, 0,1 ));
-		action[RIGHT_FORE_ARM] *= rotate(identity, -angle*5, vec3(1,-1, 0));
-		action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
-		action[RIGHT_HAND] *= translate(action[RIGHT_FORE_ARM], rightHand);
+		action[RIGHT_FORE_ARM] *= rotate(identity, armin, vec3(0, 0, 1));
+		//
+		if (slash)
+		{
+			action[RIGHT_FORE_ARM] *= rotate(identity, angle*5.f, vec3(1, -1, 0));
+			if (angle < -0.28f)
+				actionfixed = true;
+			if(!actionfixed)
+				action[RIGHT_THIGH] *= rotate(identity, -angle / 2.f, vec3(1, 1, 1));
+			else
+				action[RIGHT_THIGH] *= rotate(identity, 0.28f / 2.f, vec3(1, 1, 1));			
+		}
+		action[RIGHT_CALF] *= translate(action[RIGHT_THIGH], rightCalf);
+		if (!prepare)
+		{			
+			action[RIGHT_FORE_ARM] *= rotate(identity, -angle, vec3(1, 0, 0));
+			action[RIGHT_FORE_ARM] *= rotate(identity, -angle * 3.f, vec3(0, -1, 0));
+			action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);			
+			action[RIGHT_HAND] *= translate(action[RIGHT_HIND_ARM], rightHand - rightHindArm);
+			action[RIGHT_HAND] *= rotate(identity, -angle * 0.5f, vec3(0, 1, 0));			
+		}
+		else
+		{
+			float a = 0.4f;
+			
+			action[RIGHT_FORE_ARM] *= rotate(identity, -a, vec3(1, 0, 0));
+			action[RIGHT_FORE_ARM] *= rotate(identity, -a * 3.f, vec3(0, -1, 0));
+			action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
+						
+			if(!slash)
+				action[RIGHT_HIND_ARM] *= rotate(identity, angle*1.5f, vec3(0, 0, 1));
+			else
+				action[RIGHT_HIND_ARM] *= rotate(identity, a *1.5f, vec3(0, 0, 1));
+			action[RIGHT_HAND] *= translate(action[RIGHT_HIND_ARM], rightHand - rightHindArm);
 
+			action[RIGHT_HAND] *= rotate(identity, a * 0.5f, vec3(0, 1, 0));
+		}
 		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);		
-		for (size_t i = LEFT_FORE_ARM; i <= RIGHT_HAND; i++)
+		for (size_t i = LEFT_FORE_ARM; i <= RIGHT_CALF; i++)
 		{
 			action[i] *= scale(identity, scale_ratio);
 		}
@@ -309,9 +380,11 @@ void Fly(float angle)
 	{		
 		action[i] *= translate(identity, vec3(0, flyheight, 0));
 	}
-	flyheight += 0.01f;
+	flyheight += flydir * 0.01f;
 	if (flyheight >= 0.5f)
-		flyheight = 0;
+		flydir = -1;
+	else if(flyheight < 0)
+		flydir = 1;
 	for (size_t i = 0; i < SCALLION; i++)
 	{
 		action[i] *= scale(identity, scale_ratio);
@@ -667,6 +740,7 @@ void Scene::KeyBoardEvent(unsigned char key)
 		isClap = false;
 		isBow = false;
 		isLift = false;
+		isExcalibur = false;
 		scallion_use = false;
 		break;
 	default:
@@ -823,16 +897,39 @@ void Scene::MenuEvent(int item)
 		isDraw = !isDraw;
 		break;	
 	case 8:
-		index = 0;
-		for (size_t i = 0; i < 10; i++)
+		index = 0;		
+		for (size_t i = 0; i < 5; i++)
 		{
 			excaliburangle[i] = start;
 			start += ex_v;
 		}
-		for (size_t i = 10; i < 20; i++)
+		for (size_t i = 5; i < 10; i++)
 		{
 			excaliburangle[i] = start;
 			start -= ex_v;
+		}
+		for (size_t i = 10; i < 15; i++)
+		{
+			excaliburangle[i] = start;
+			start += ex_v;
+		}
+		start = 0;
+		for (size_t i = 15; i < 20; i++)
+		{
+			excaliburangle[i] = start;
+			start += ex_v;
+		}
+		//Hold scallion
+		start = 0;
+		for (size_t i = 20; i < 30; i++)
+		{
+			excaliburangle[i] = start;
+			start -= ex_v * 0.4f;
+		}
+		for (size_t i = 30; i < 35; i++)
+		{
+			excaliburangle[i] = start;
+			start += ex_v* 1.2f;
 		}
 		
 		isExcalibur = !isExcalibur;
@@ -845,6 +942,7 @@ void Scene::MenuEvent(int item)
 		isClap = false;
 		isBow = false;
 		isLift = false;
+		isExcalibur = false;
 		//scallion_use = false;		
 		break;
 	}
@@ -943,7 +1041,7 @@ void Scene::Update(float dt)
 		Drawsword(drawangles[index]);
 		index++;
 		if (index == 11)
-			scallion_use = true;
+			scallion_use = !scallion_use;
 		if (index == sizeof(drawangles) / sizeof(float))
 		{
 			index = 0;		
@@ -951,12 +1049,19 @@ void Scene::Update(float dt)
 		}
 	}
 	else if (isExcalibur)
-	{
-		Excalibur(excaliburangle[index]);
+	{		
+		if(index < 15)
+			Excalibur(excaliburangle[index],false,false);
+		else if(index < 20 && index > 15)
+			Excalibur(excaliburangle[index],true, false);
+		else if(index < 40 && index > 20)
+			Excalibur(excaliburangle[index], true, true);
+
 		index++;		
 		if (index == sizeof(excaliburangle) / sizeof(float))
 		{
-			index = 0;		
+			index = 0;
+			isExcalibur = false;
 		}
 	}
 	for (size_t i = 0; i < models.size(); i++)
