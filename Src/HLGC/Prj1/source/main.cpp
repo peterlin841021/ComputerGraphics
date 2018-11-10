@@ -12,7 +12,8 @@
 #define MENU_LIFT 6
 #define MENU_DRAW 7
 #define MENU_EXCALIBUR 8 
-#define MENU_STAND 9
+#define MENU_LOITUMA 9
+#define MENU_STAND 10
 
 using namespace glm;
 using namespace std;
@@ -20,7 +21,7 @@ using namespace std;
 int	width = 800;
 int   height = 800;
 float	aspect;	
-int	interval = 100;
+int	interval = 10;
 
 Scene *scene;
 
@@ -170,6 +171,7 @@ int main(int argc, char *argv[])
 	glutAddMenuEntry("Liftting", MENU_LIFT);
 	glutAddMenuEntry("Drawing", MENU_DRAW);
 	glutAddMenuEntry("Excalibur",MENU_EXCALIBUR );
+	glutAddMenuEntry("Loituma", MENU_LOITUMA);
 	glutAddMenuEntry("Standing", MENU_STAND);
 	glutSetMenu(menu_main);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
