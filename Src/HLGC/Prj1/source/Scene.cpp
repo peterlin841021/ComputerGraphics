@@ -45,6 +45,8 @@ const vec3 scenery(0,0,0);
 
 int index = 0;//Motion present
 int effect = 0;
+int flydir = 1;
+
 bool isCheer;
 bool isWalk;
 bool isFly;
@@ -62,13 +64,13 @@ float cheerangles[20] = {0.0};
 float walkangles[40] = { 0.0 };
 float flyangles[10] = {0};
 float flyheight = 0.1f;
-int flydir = 1;
 float clapangles[40] = {0.0};
 float bowangles[16] = {0};
 float takeoffangles[15] = { 0 };
 float drawangles[16] = { 0 };
 float excaliburangle[35] = {0};
-float loitumaangle[90] = {0};
+float loitumaangle[300] = {0};
+float all_rotate = 0.f;
 
 void Drawsword(float angle)
 {
@@ -582,6 +584,7 @@ void Lift(float angle, bool prepare)
 		action[i] *= scale(identity, scale_ratio);
 	}
 }
+//預備動作
 void act1(float angle, vector<mat4> act,bool fixed)
 {
 	mat4 identity(1.0);
@@ -601,7 +604,7 @@ void act1(float angle, vector<mat4> act,bool fixed)
 		action[BODY] *= rotate(identity, -angle / 3.f, vec3(0, 1, 0));
 	action[FACE] *= translate(action[BODY], face);
 	if (fixed)
-		action[FACE] *= rotate(identity, start_fix /3.f, vec3(0, 0, 1));
+		action[FACE] *= rotate(identity, start_fix / 3.f + angle /4.f, vec3(0, 0, 1));
 	else
 		action[FACE] *= rotate(identity, angle / 3.f, vec3(0, 0, 1));
 	//printf("angle:%f\n", angle);
@@ -662,6 +665,7 @@ void act1(float angle, vector<mat4> act,bool fixed)
 		action[i] *= scale(identity, scale_ratio);
 	}
 }
+//雙交叉
 void act2(float angle, vector<mat4> act, bool fixed)
 {
 	mat4 identity(1.0);
@@ -670,10 +674,8 @@ void act2(float angle, vector<mat4> act, bool fixed)
 	{
 		action[i] = identity;
 	}
-	action[BODY] *= translate(identity, body);
-	//action[BODY] *= rotate(identity, angle / 3.f, vec3(0, 1, 0));
-	action[FACE] *= translate(action[BODY], face);
-	//action[FACE] *= rotate(identity, -angle / 2.f, vec3(0, 0, 1));
+	action[BODY] *= translate(identity, body);		
+	action[FACE] *= translate(action[BODY], face);	
 	action[HAIR] *= translate(action[FACE], hair);
 	action[SKIRT] *= translate(action[BODY], skirt);
 	//Cross X
@@ -706,6 +708,7 @@ void act2(float angle, vector<mat4> act, bool fixed)
 		action[i] *= scale(identity, scale_ratio);
 	}
 }
+//右交叉
 void act3(float angle, vector<mat4> act, bool fixed)
 {
 	mat4 identity(1.0);
@@ -727,7 +730,7 @@ void act3(float angle, vector<mat4> act, bool fixed)
 	if (fixed)
 	{
 		float a = 1.0f;
-		action[LEFT_FORE_ARM] *= rotate(identity,a + angle/1.5f, vec3(0, 0, 1));
+		action[LEFT_FORE_ARM] *= rotate(identity,a + angle/2.f, vec3(0, 0, 1));
 		action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);
 		action[LEFT_HIND_ARM] *= rotate(identity, -a * 2.f, vec3(1, 1, 0));
 		action[LEFT_HIND_ARM] *= rotate(identity, -a * 1.5f, vec3(0, 0, 1));
@@ -752,7 +755,7 @@ void act3(float angle, vector<mat4> act, bool fixed)
 	if (fixed)
 	{
 		float a = 1.0;
-		action[RIGHT_FORE_ARM] *= rotate(identity, a - angle/1.5f, vec3(0, 0, -1));
+		action[RIGHT_FORE_ARM] *= rotate(identity, a - angle/2.f, vec3(0, 0, -1));
 		action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
 		action[RIGHT_HIND_ARM] *= rotate(identity, -a * 2.f, vec3(1, -1, 0));
 		action[RIGHT_HIND_ARM] *= rotate(identity, -a * 1.5f, vec3(0, 0, -1));
@@ -780,6 +783,7 @@ void act3(float angle, vector<mat4> act, bool fixed)
 		action[i] *= scale(identity, scale_ratio);
 	}
 }
+//左交叉
 void act4(float angle, vector<mat4> act, bool fixed)
 {
 	mat4 identity(1.0);
@@ -795,13 +799,12 @@ void act4(float angle, vector<mat4> act, bool fixed)
 	action[SKIRT] *= translate(action[BODY], skirt);
 	action[LEFT_FORE_ARM] *= translate(action[BODY], leftForeArm);
 	action[LEFT_FORE_ARM] *= rotate(identity, armin, vec3(0, 0, -1));
-	//
-
+	
 	//Cross
 	if (fixed)
 	{
 		float a = 1.0f;
-		action[LEFT_FORE_ARM] *= rotate(identity, a + angle / 1.5f, vec3(0, 0, 1));
+		action[LEFT_FORE_ARM] *= rotate(identity, a + angle / 2.f, vec3(0, 0, 1));
 		action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);
 		action[LEFT_HIND_ARM] *= rotate(identity, -a * 2.f, vec3(1, 1, 0));
 		action[LEFT_HIND_ARM] *= rotate(identity, -a * 1.5f, vec3(0, 0, 1));
@@ -815,18 +818,15 @@ void act4(float angle, vector<mat4> act, bool fixed)
 		action[LEFT_HIND_ARM] *= rotate(identity, -angle * 1.5f, vec3(0, 0, 1));
 		action[LEFT_HAND] *= translate(action[LEFT_HIND_ARM], leftHand - leftHindArm);
 	}
-
 	//printf("angle:%f\n", angle);
 	action[RIGHT_FORE_ARM] *= translate(action[BODY], rightForeArm);
 	action[RIGHT_FORE_ARM] *= rotate(identity, armin, vec3(0, 0, 1));
-	//
-
-
+	
 	//Cross
 	if (fixed)
 	{
 		float a = 1.0;
-		action[RIGHT_FORE_ARM] *= rotate(identity, a - angle / 1.5f, vec3(0, 0, -1));
+		action[RIGHT_FORE_ARM] *= rotate(identity, a - angle / 2.f, vec3(0, 0, -1));
 		action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
 		action[RIGHT_HIND_ARM] *= rotate(identity, -a * 2.f, vec3(1, -1, 0));
 		action[RIGHT_HIND_ARM] *= rotate(identity, -a * 1.5f, vec3(0, 0, -1));
@@ -854,35 +854,255 @@ void act4(float angle, vector<mat4> act, bool fixed)
 		action[i] *= scale(identity, scale_ratio);
 	}
 }
-void Loituma(float angle,int index)
-{	
-	if (isMiku)
+//手上下轉
+void act5(float angle, vector<mat4> act, bool fixed)
+{
+	mat4 identity(1.0);
+	float armin = 0.8f;
+	for (size_t i = 0; i < SCALLION; i++)
 	{
-		/*
-		mat4 identity(1.0);
+		action[i] = identity;
+	}
+	action[BODY] *= translate(identity, body);	
+	action[FACE] *= translate(action[BODY], face);
+	action[HAIR] *= translate(action[FACE], hair);
+	action[SKIRT] *= translate(action[BODY], skirt);
+	action[LEFT_FORE_ARM] *= translate(action[BODY], leftForeArm);
+	
+
+	if (fixed)
+	{
+		float a = 0.9f;
+		action[LEFT_FORE_ARM] *= rotate(identity, a - angle / 8.f, vec3(0, 0, -1));
+		action[LEFT_FORE_ARM] *= rotate(identity, -a, vec3(1, 1, 0));
+		action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);
+		action[LEFT_HIND_ARM] *= rotate(identity, -a * 2.f, vec3(1, 1, 0));
+		//
+		action[LEFT_HIND_ARM] *= rotate(identity, -angle*1.3f, vec3(0, 0, 1));
+	}
+	else
+	{
+		action[LEFT_FORE_ARM] *= rotate(identity, armin - angle/8.f, vec3(0, 0, -1));
+		action[LEFT_FORE_ARM] *= rotate(identity, -angle, vec3(1, 1, 0));
+		action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);
+		action[LEFT_HIND_ARM] *= rotate(identity, -angle * 2.f, vec3(1, 1, 0));
+	}		
+	action[LEFT_HAND] *= translate(action[LEFT_HIND_ARM], leftHand - leftHindArm);
+
+	
+	action[RIGHT_FORE_ARM] *= translate(action[BODY], rightForeArm);
+	
+
+	if (fixed)
+	{
+		float a = 0.9f;
+		action[RIGHT_FORE_ARM] *= rotate(identity, a + angle / 8.f, vec3(0, 0, 1));
+		action[RIGHT_FORE_ARM] *= rotate(identity, -a, vec3(1, -1, 0));
+		action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
+		action[RIGHT_HIND_ARM] *= rotate(identity, -a * 2.f, vec3(1, -1, 0));
+		//
+		action[RIGHT_HIND_ARM] *= rotate(identity, -angle, vec3(0, 0, 1));
+	}
+	else
+	{
+		action[RIGHT_FORE_ARM] *= rotate(identity, armin + angle / 8.f, vec3(0, 0, 1));
+		action[RIGHT_FORE_ARM] *= rotate(identity, -angle, vec3(1, -1, 0));
+		action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
+		action[RIGHT_HIND_ARM] *= rotate(identity, -angle * 2.f, vec3(1, -1, 0));
+	}		
+	action[RIGHT_HAND] *= translate(action[RIGHT_HIND_ARM], rightHand - rightHindArm);
+	
+	action[LEFT_THIGH] *= translate(action[BODY], leftThigh);	
+	action[LEFT_CALF] *= translate(action[LEFT_THIGH], leftCalf);
+	action[RIGHT_THIGH] *= translate(action[BODY], rightThigh);
+	action[RIGHT_CALF] *= translate(action[RIGHT_THIGH], rightCalf);	
+	action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
+	for (size_t i = 0; i < SCALLION; i++)
+	{
+		action[i] *= scale(identity, scale_ratio);
+	}
+}
+//手左右繞
+void act6(float angle, vector<mat4> act, bool fixed)
+{
+	mat4 identity(1.0);
+	float armin = 0.8f;
+	for (size_t i = 0; i < SCALLION; i++)
+	{
+		action[i] = identity;
+	}
+
+	action[BODY] *= translate(identity, body);
+	action[FACE] *= translate(action[BODY], face);
+	action[HAIR] *= translate(action[FACE], hair);
+	action[SKIRT] *= translate(action[BODY], skirt);
+	action[LEFT_FORE_ARM] *= translate(action[BODY], leftForeArm);
+	float armraise = -0.8f;
+	action[LEFT_FORE_ARM] *= rotate(identity, armraise, vec3(1, 0, 0));
+	
+	if (fixed)
+	{
+		action[LEFT_FORE_ARM] *= rotate(identity, armin + angle / 1.5f, vec3(0, 0, -1));
+		action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);
+		action[LEFT_HIND_ARM] *= rotate(identity, -angle, vec3(0, 0, 1));
+	}
+	else
+	{
+		action[LEFT_FORE_ARM] *= rotate(identity, armin - angle, vec3(0, 0, -1));		
+		action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);
+		action[LEFT_HIND_ARM] *= rotate(identity, angle, vec3(0, 0, 1));
+	}
+	action[LEFT_HAND] *= translate(action[LEFT_HIND_ARM], leftHand - leftHindArm);
+	action[RIGHT_FORE_ARM] *= translate(action[BODY], rightForeArm);
+
+	action[RIGHT_FORE_ARM] *= rotate(identity, armraise, vec3(1, -1, 0));
+	if (fixed)
+	{
+		action[RIGHT_FORE_ARM] *= rotate(identity, armin - angle/1.5f, vec3(0, 0, 1));		
+		action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
+		action[RIGHT_HIND_ARM] *= rotate(identity, -angle, vec3(0, 0, 1));
+	}
+	else
+	{
+		action[RIGHT_FORE_ARM] *= rotate(identity, armin + angle, vec3(0, 0, 1));		
+		action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
+		action[RIGHT_HIND_ARM] *= rotate(identity, angle, vec3(0, 0, 1));
+	}
+	action[RIGHT_HAND] *= translate(action[RIGHT_HIND_ARM], rightHand - rightHindArm);
+
+	action[LEFT_THIGH] *= translate(action[BODY], leftThigh);	
+	if (fixed)
+		action[LEFT_THIGH] *= rotate(identity, angle / 2.5f, vec3(0, 0, 1));
+	action[LEFT_CALF] *= translate(action[LEFT_THIGH], leftCalf);
+	action[RIGHT_THIGH] *= translate(action[BODY], rightThigh);
+	if(!fixed)
+		action[RIGHT_THIGH] *= rotate(identity, -angle / 2.5f, vec3(0, 0, 1));
+	action[RIGHT_CALF] *= translate(action[RIGHT_THIGH], rightCalf);
+	action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
+	for (size_t i = 0; i < SCALLION; i++)
+	{
+		action[i] *= scale(identity, scale_ratio);
+	}
+}
+//手上下擺
+void act7(float angle, vector<mat4> act, bool fixed,float body_rotate)
+{
+	mat4 identity(1.0);
+	float arm = -0.7f;
+	for (size_t i = 0; i < SCALLION; i++)
+	{
+		action[i] = identity;
+	}
+
+	action[BODY] *= translate(identity, body);
+	action[BODY] *= translate(identity, vec3(0,-angle/8.f,0));
+	action[BODY] *= rotate(identity, body_rotate, vec3(0, 1, 0));
+	action[FACE] *= translate(action[BODY], face);
+	action[HAIR] *= translate(action[FACE], hair);
+	action[SKIRT] *= translate(action[BODY], skirt);
+	action[LEFT_FORE_ARM] *= translate(action[BODY], leftForeArm);	
+	
+	if (fixed)
+	{
+		action[LEFT_FORE_ARM] *= rotate(identity, angle * 2.f, vec3(1, 0, 0));
+		action[LEFT_FORE_ARM] *= rotate(identity, arm, vec3(0, 0, -1));
+		action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);
+		action[LEFT_HIND_ARM] *= rotate(identity, arm*1.5f, vec3(0, 0, -1));
+	}
+	else
+	{
+		action[LEFT_FORE_ARM] *= rotate(identity, arm, vec3(0, 0, -1));		
+		action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);
+		action[LEFT_HIND_ARM] *= rotate(identity, arm*1.5f, vec3(0, 0, -1));
+	}
+	action[LEFT_HAND] *= translate(action[LEFT_HIND_ARM], leftHand - leftHindArm);
+	action[RIGHT_FORE_ARM] *= translate(action[BODY], rightForeArm);
+	
+	if (fixed)
+	{
+		action[RIGHT_FORE_ARM] *= rotate(identity, arm, vec3(0, 0, 1));
+		action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
+		action[RIGHT_HIND_ARM] *= rotate(identity, arm * 1.5f, vec3(0, 0, 1));
+	}
+	else
+	{
+		action[RIGHT_FORE_ARM] *= rotate(identity, angle * 2.f, vec3(1, 0, 0));
+		action[RIGHT_FORE_ARM] *= rotate(identity, arm, vec3(0, 0, 1));		
+		action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
+		action[RIGHT_HIND_ARM] *= rotate(identity, arm * 1.5f, vec3(0, 0, 1));
+	}
+	action[RIGHT_HAND] *= translate(action[RIGHT_HIND_ARM], rightHand - rightHindArm);
+
+	action[SKIRT] *= rotate(identity, -angle / 4.f, vec3(1, 0, 0));
+	action[LEFT_THIGH] *= translate(action[BODY], leftThigh);
+	action[LEFT_THIGH] *= rotate(identity, -angle /4.f, vec3(1, 0, 0));
+	action[LEFT_CALF] *= translate(action[LEFT_THIGH], leftCalf);
+	action[LEFT_CALF] *= rotate(identity, angle / 2.f, vec3(1, 0, 0));
+
+	action[RIGHT_THIGH] *= translate(action[BODY], rightThigh);
+	action[RIGHT_THIGH] *= rotate(identity, -angle / 4.f, vec3(1, 0, 0));
+	action[RIGHT_CALF] *= translate(action[RIGHT_THIGH], rightCalf);
+	action[RIGHT_CALF] *= rotate(identity, angle / 2.f, vec3(1, 0, 0));
+	action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
+	for (size_t i = 0; i < SCALLION; i++)
+	{
+		action[i] *= scale(identity, scale_ratio);
+	}
+}
+int c = 0;
+void act8(float angle, vector<mat4> act, bool fixed)
+{
+	mat4 identity(1.0);
+	if (index < 290 && index > 230)
+		all_rotate -= 0.107f;	
+	if (index < 270 && index > 230)
+		act7(loitumaangle[(int)loitumaangle[index]], action, false,all_rotate);
+	else if (index < 290 && index >= 270)
+		act7(loitumaangle[(int)loitumaangle[index]], action, true, all_rotate);	
+	else if (index < 299 && index >= 290)
+	{
+		float a = 1.0f;
 		float armin = 0.8f;
 		for (size_t i = 0; i < SCALLION; i++)
 		{
 			action[i] = identity;
 		}
-		action[BODY] *= translate(identity, body);
+		action[BODY] *= translate(identity, body);		
 		action[FACE] *= translate(action[BODY], face);
 		action[HAIR] *= translate(action[FACE], hair);
 		action[SKIRT] *= translate(action[BODY], skirt);
+
 		action[LEFT_FORE_ARM] *= translate(action[BODY], leftForeArm);
 		action[LEFT_FORE_ARM] *= rotate(identity, armin, vec3(0, 0, -1));
-		action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);
-		action[LEFT_HAND] *= translate(action[LEFT_FORE_ARM], leftHand);
+		action[LEFT_FORE_ARM] *= rotate(identity, angle/1.5f, vec3(0, 0, 1));
+		action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);		
+		action[LEFT_HIND_ARM] *= rotate(identity, -angle * 1.5f, vec3(0, 0, 1));
+		action[LEFT_HAND] *= translate(action[LEFT_HIND_ARM], leftHand - leftHindArm);
 
 		action[RIGHT_FORE_ARM] *= translate(action[BODY], rightForeArm);
 		action[RIGHT_FORE_ARM] *= rotate(identity, armin, vec3(0, 0, 1));
+		action[RIGHT_FORE_ARM] *= rotate(identity, -angle / 1.5f, vec3(0, 0, 1));
 		action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
-		action[RIGHT_HAND] *= translate(action[RIGHT_FORE_ARM], rightHand);
+		action[RIGHT_HIND_ARM] *= rotate(identity, angle *1.5f, vec3(0, 0, 1));
+		action[RIGHT_HAND] *= translate(action[RIGHT_HIND_ARM], rightHand - rightHindArm);
+		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
+
 		action[LEFT_THIGH] *= translate(action[BODY], leftThigh);
 		action[LEFT_CALF] *= translate(action[LEFT_THIGH], leftCalf);
-		action[RIGHT_THIGH] *= translate(action[BODY], rightThigh);
+		action[RIGHT_THIGH] *= translate(action[BODY], rightThigh);		
 		action[RIGHT_CALF] *= translate(action[RIGHT_THIGH], rightCalf);
-		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);*/
+
+		for (size_t i = 0; i < SCALLION; i++)
+		{
+			action[i] *= scale(identity, scale_ratio);
+		}
+	}	
+}
+
+void Loituma(float angle,int index)
+{	
+	if (isMiku)
+	{
 		if (index < 10 && index > -1)
 			act1(angle, action, false);
 		else if (index < 40 && index > 10)
@@ -897,6 +1117,22 @@ void Loituma(float angle,int index)
 			act4(angle, action, false);
 		else if (index < 90 && index > 80)
 			act4(angle, action, true);
+		else if (index < 100 && index > 90)
+			act5(angle, action, false);
+		else if (index < 120 && index > 100)
+			act5(angle, action,true);
+		else if (index < 150 && index > 120)
+			act5(angle, action, true);
+		else if (index < 170 && index > 150)
+			act6(angle, action, false);
+		else if (index < 190 && index > 170)
+			act6(angle, action, true);
+		else if (index < 210 && index > 190)
+			act7(angle, action, false,0);
+		else if (index < 230 && index > 210)
+			act7(angle, action, true,0);
+		else if (index < 300 && index > 230)
+			act8(angle, action, false);
 	}	
 }
 
@@ -1053,7 +1289,7 @@ void Scene::KeyBoardEvent(unsigned char key)
 	case 'T':	
 		break;
 	case 32:
-		action = origin;
+		//action = origin;
 		isFly = false;
 		isWalk = false;
 		isCheer = false;
@@ -1081,6 +1317,8 @@ void Scene::MenuEvent(int item)
 	float ex_v = 0.1f;
 	float loituma_v = 0.1f;
 	float start = 0.f;
+
+	int act7_index = 190;
 	mat4 identity(1.0);
 	action = origin;
 	switch (item)
@@ -1331,6 +1569,128 @@ void Scene::MenuEvent(int item)
 		{
 			loitumaangle[i] = start;
 			start -= loituma_v;
+		}
+		start = 0;
+		//Arm shaking1 *2
+		for (size_t i = 90; i < 100; i++)
+		{
+			loitumaangle[i] = start;
+			start += loituma_v;
+		}
+		start = 0;
+		for (size_t i = 100; i < 105; i++)
+		{
+			loitumaangle[i] = start;
+			start += loituma_v;
+		}
+		for (size_t i = 105; i < 110; i++)
+		{
+			loitumaangle[i] = start;
+			start -= loituma_v;
+		}
+		for (size_t i = 110; i < 115; i++)
+		{
+			loitumaangle[i] = start;
+			start += loituma_v;
+		}
+		for (size_t i = 115; i < 120; i++)
+		{
+			loitumaangle[i] = start;
+			start -= loituma_v;
+		}
+		//Arm shaking2 *2
+		//start = 0;
+		for (size_t i = 120; i < 125; i++)
+		{
+			loitumaangle[i] = start;
+			start += loituma_v * 3;
+		}
+		for (size_t i = 125; i < 130; i++)
+		{
+			loitumaangle[i] = start;
+			start += loituma_v * 3;
+		}
+		for (size_t i = 130; i < 135; i++)
+		{
+			loitumaangle[i] = start;
+			start += loituma_v;
+		}
+		for (size_t i = 135; i < 140; i++)
+		{
+			loitumaangle[i] = start;
+			start -= loituma_v;
+		}
+		for (size_t i = 140; i < 145; i++)
+		{
+			loitumaangle[i] = start;
+			start += loituma_v;
+		}
+		for (size_t i = 145; i < 150; i++)
+		{
+			loitumaangle[i] = start;
+			start -= loituma_v;
+		}
+		//Right
+		start = 0;
+		for (size_t i = 150; i < 160; i++)
+		{
+			loitumaangle[i] = start;
+			start += loituma_v;
+		}
+		for (size_t i = 160; i < 170; i++)
+		{
+			loitumaangle[i] = start;
+			start -= loituma_v;
+		}
+		//Left
+		start = 0;
+		for (size_t i = 170; i < 180; i++)
+		{
+			loitumaangle[i] = start;
+			start += loituma_v;
+		}
+		for (size_t i = 180; i < 190; i++)
+		{
+			loitumaangle[i] = start;
+			start -= loituma_v;
+		}
+		//Right arm
+		start = 0;
+		for (size_t i = 190; i < 200; i++)
+		{
+			loitumaangle[i] = start;
+			start += loituma_v*2.f;
+		}
+		for (size_t i = 200; i < 210; i++)
+		{
+			loitumaangle[i] = start;
+			start -= loituma_v* 2.f;
+		}
+		//Left arm
+		start = 0;
+		for (size_t i = 210; i < 220; i++)
+		{
+			loitumaangle[i] = start;
+			start += loituma_v * 2.f;
+		}
+		for (size_t i = 220; i < 230; i++)
+		{
+			loitumaangle[i] = start;
+			start -= loituma_v * 2.f;
+		}
+		//Rotate	
+		start = 0;
+		for (size_t i = 230; i < 290; i++)
+		{
+			loitumaangle[i] = act7_index;
+			act7_index++;
+			if (act7_index > 229)
+				act7_index = 0;			
+		}
+		for (size_t i = 290; i < 300; i++)
+		{
+			loitumaangle[i] = start;
+			start += loituma_v;
 		}
 		isLoituma = !isLoituma;
 		break;

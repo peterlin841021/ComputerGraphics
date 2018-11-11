@@ -2,6 +2,8 @@
 #include "../include/ViewManager.h"
 #include "../include/Scene.h"
 #include<string>
+#include<iostream>
+using namespace std;
 
 #define MENU_EXIT  0
 #define MENU_CHEER 1
@@ -85,19 +87,27 @@ void My_Mouse(int button, int state, int x, int y)
 		//printf("Mouse %d is pressed\n", button);
 	}
 }
-
+float speed = 1.f;
 //Keyboard event
 void My_Keyboard(unsigned char key, int x, int y)
 {
 	if (key == '-')
 	{
-		if(interval < 200)
+		if (interval <= 200) 
+		{
 			interval += 10;
+			speed -= 0.5f;
+			printf("SPEED:%f\n", speed);
+		}			
 	}
 	if (key == '+')
 	{
-		if(interval > 10)
+		if (interval > 10)
+		{
 			interval -= 10;
+			speed += 0.5f;
+			printf("SPEED:%f\n", speed);
+		}			
 	}
 		
 	scene->KeyBoardEvent(key);
