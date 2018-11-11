@@ -44,7 +44,7 @@ const vec3 scale_ratio(0.05f, 0.05f, 0.05f);
 const vec3 scenery(0,0,0);
 
 int index = 0;//Motion present
-
+int effect = 0;
 bool isCheer;
 bool isWalk;
 bool isFly;
@@ -995,7 +995,7 @@ Scene::Scene()
 	{
 		initOthers();
 	}
-	initScenery();
+	//initScenery();
 	Stand();	
 }
 void Scene::MouseEvent(int button, int state, int x, int y)
@@ -1344,7 +1344,22 @@ void Scene::MenuEvent(int item)
 		isLift = false;
 		isExcalibur = false;
 		isLoituma = false;
-		//scallion_use = false;		
+		//scallion_use = false;	
+		break;
+	case 15:
+		effect = 0;
+		break;
+	case 16:
+		effect = 1;
+		break;
+	case 17:
+		effect = 2;
+		break;
+	case 18:
+		effect = 3;
+		break;
+	case 19:
+		effect = 4;
 		break;
 	}
 }
@@ -1356,10 +1371,10 @@ void Scene::Render()
 	for (size_t i = 0; i < models.size(); i++)
 	{		
 		if(i == SCALLION && scallion_use)
-			models[i]->Render(action[SCALLION],1);
+			models[i]->Render(action[SCALLION], effect);
 		else if (i == SCALLION) continue;
 		else
-			models[i]->Render(action[i],0);
+			models[i]->Render(action[i], effect);
 	}
 	glDisable(GL_DEPTH_TEST);
 }
@@ -1478,10 +1493,10 @@ void Scene::Update(float dt)
 	for (size_t i = 0; i < models.size(); i++)
 	{		
 		if (i == SCALLION && scallion_use)
-			models[i]->Render(action[SCALLION],0);
+			models[i]->Render(action[SCALLION], effect);
 		else if (i == SCALLION) continue;
 		else
-			models[i]->Render(action[i],1);
+			models[i]->Render(action[i], effect);
 	}
 	glDisable(GL_DEPTH_TEST);
 }

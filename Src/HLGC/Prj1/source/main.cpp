@@ -1,9 +1,9 @@
 ﻿#include "../include/Common.h"
 #include "../include/ViewManager.h"
 #include "../include/Scene.h"
+#include<string>
 
-
-#define MENU_EXIT   0
+#define MENU_EXIT  0
 #define MENU_CHEER 1
 #define MENU_WALK 2
 #define MENU_FLY 3
@@ -14,6 +14,12 @@
 #define MENU_EXCALIBUR 8 
 #define MENU_LOITUMA 9
 #define MENU_STAND 10
+
+#define MENU_NORMAL 15
+#define MENU_GRAY 16
+#define MENU_QUANTIZATION 17
+#define MENU_DOG 18
+#define MENU_ABSTRACTION 19
 
 using namespace glm;
 using namespace std;
@@ -123,7 +129,11 @@ void My_Menu(int id)
 void My_Mouse_Moving(int x, int y) {
 	scene->GetCamera()->mouseMoveEvent(x, y);
 }
-
+char *strToChar(string str)
+{
+	char *c = new char[str.length() + 1];
+	return strcpy(c, str.c_str());
+}
 int main(int argc, char *argv[])
 {
 #ifdef __APPLE__
@@ -155,24 +165,28 @@ int main(int argc, char *argv[])
 	//定義選單
 	////////////////////
 	int menu_main = glutCreateMenu(My_Menu);
-	int menu_entry = glutCreateMenu(My_Menu);
-
+	int menu_act = glutCreateMenu(My_Menu);
+	int menu_eff = glutCreateMenu(My_Menu);
 	glutSetMenu(menu_main);
 	//glutAddSubMenu("Scale", menu_entry);
-	glutAddSubMenu("Action", menu_entry);
-	glutAddMenuEntry("Exit", MENU_EXIT);
+	string menus[3] = { "Action","Effect","Exit" };
+	glutAddSubMenu(strToChar(menus[0]), menu_act);
+	glutAddSubMenu(strToChar(menus[1]), menu_eff);
+	glutAddMenuEntry(strToChar(menus[2]), MENU_EXIT);
 
-	glutSetMenu(menu_entry);
-	glutAddMenuEntry("Cheering", MENU_CHEER);
-	glutAddMenuEntry("Walking", MENU_WALK);
-	glutAddMenuEntry("Flying", MENU_FLY);
-	glutAddMenuEntry("Clapping", MENU_CLAP);
-	glutAddMenuEntry("Bowing", MENU_BOW);
-	glutAddMenuEntry("Liftting", MENU_LIFT);
-	glutAddMenuEntry("Drawing", MENU_DRAW);
-	glutAddMenuEntry("Excalibur",MENU_EXCALIBUR );
-	glutAddMenuEntry("Loituma", MENU_LOITUMA);
-	glutAddMenuEntry("Standing", MENU_STAND);
+	string menus_actionItems[10] = {"Cheering","Walking","Flying","Clapping" ,"Bowing" ,"Liftting" ,"Drawing" ,"Excalibur" ,"Loituma","Standing" };
+	glutSetMenu(menu_act);
+	for (size_t i = 0; i < 10; i++)
+	{
+		glutAddMenuEntry(strToChar(menus_actionItems[i]),i+1);
+	}
+	
+	string menus_effectItems[5] = {"Normal","Gray","Quantization","DoG","Abstraction"};
+	glutSetMenu(menu_eff);
+	for (size_t i = 0; i < 5; i++)
+	{
+		glutAddMenuEntry(strToChar(menus_effectItems[i]),15+i);
+	}
 	glutSetMenu(menu_main);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 	////////////////////
