@@ -1231,7 +1231,7 @@ Scene::Scene()
 	{
 		initOthers();
 	}
-	//initScenery();
+	initScenery();
 	Stand();	
 }
 void Scene::MouseEvent(int button, int state, int x, int y)
