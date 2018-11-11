@@ -18,5 +18,5 @@ out VertexData
 void main()
 {
 	gl_Position = um4p * um4mv * vec4(iv3vertex, 1.0);
-    vertexData.texcoord = iv2tex_coord;
+    vertexData.texcoord = iv2tex_coord;   
 }

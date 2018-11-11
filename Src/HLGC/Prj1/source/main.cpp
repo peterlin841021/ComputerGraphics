@@ -21,7 +21,7 @@ using namespace std;
 int	width = 800;
 int   height = 800;
 float	aspect;	
-int	interval = 10;
+int	interval = 100;
 
 Scene *scene;
 

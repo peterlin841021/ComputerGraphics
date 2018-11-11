@@ -36,7 +36,8 @@ void BaseModel::Init(){
 	//Cache uniform variable id
 	uniforms.proj_matrix = glGetUniformLocation(program->GetID(), "um4p");
 	uniforms.mv_matrix = glGetUniformLocation(program->GetID(), "um4mv");
-
+	uniforms.mode = glGetUniformLocation(program->GetID(),"shaderNumber");
+	
 	program->UseProgram();
 	///////////////////////////	
 
@@ -117,7 +118,8 @@ void BaseModel::LoadModel(){
 void BaseModel::Update(float dt){
 
 }
-void BaseModel::Render(glm::mat4 modelmatrix){
+void BaseModel::Render(glm::mat4 modelmatrix,GLint shaderMode)
+{
 	//Update shaders' input variable
 	///////////////////////////	
 	glBindVertexArray(m_shape.vao);
@@ -128,6 +130,7 @@ void BaseModel::Render(glm::mat4 modelmatrix){
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, value_ptr(Scene::GetCamera()->GetViewMatrix() * Scene::GetCamera()->GetModelMatrix() * modelmatrix));
 	//glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, value_ptr(Scene::GetCamera()->GetViewMatrix() * Scene::GetCamera()->GetModelMatrix() * m_shape.model));
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, value_ptr(Scene::GetCamera()->GetProjectionMatrix()));
+	glUniform1i(uniforms.mode,shaderMode);
 	glDrawElements(GL_TRIANGLES, m_shape.indexCount, GL_UNSIGNED_INT, 0);
 	///////////////////////////	
 }

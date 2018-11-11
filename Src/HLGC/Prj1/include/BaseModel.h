@@ -11,6 +11,7 @@ class BaseModel{
 	{
 		GLint  mv_matrix;
 		GLint  proj_matrix;
+		GLint  mode;
 	} uniforms;
 
 	//model info
@@ -37,7 +38,7 @@ public:
 	~BaseModel();
 	virtual void Init();
 	virtual void Update(float dt);
-	virtual void Render(glm::mat4 modelmatrix);
+	virtual void Render(glm::mat4 modelmatrix, GLint shaderMode);
 
 	//void Translate(glm::mat4 translateMatrix);
 	void Translate(glm::vec3 vec);
