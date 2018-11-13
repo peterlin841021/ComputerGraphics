@@ -3,25 +3,92 @@
 #include "MazeWidget.h"
 #include <gl\gl.h>
 #include <gl\GLU.h>
+#include <QtGui/QOpenGLFunctions_4_3_Core>
+#include <QtGui/QOpenGLVertexArrayObject>
+#include <QtGui/QOpenGLBuffer>
+#include <QtGui/QOpenGLShader>
+#include <QtGui/QOpenGLShaderProgram>
+#include <QtGui/qopengltexture.h>
 
-OpenGLWidget::OpenGLWidget(QWidget *parent) : QGLWidget(parent)
+QOpenGLShaderProgram* shaderProgram;
+QOpenGLShader* vertexShader;
+QOpenGLShader* fragmentShader;
+QOpenGLVertexArrayObject vao;
+QOpenGLBuffer vvbo;
+QOpenGLBuffer uvbo;
+//QVector<QVector3D> vts;
+//QVector<QVector2D> uvs;
+QVector<QOpenGLTexture*> textures;
+void shader_init()
 {
-	
+	shaderProgram = new QOpenGLShaderProgram();
+	vertexShader = new QOpenGLShader(QOpenGLShader::Vertex);
+	fragmentShader = new QOpenGLShader(QOpenGLShader::Fragment);
+
+	vertexShader->compileSourceFile("./src/bsgc/prj2/assets/background.vs.glsl");
+	fragmentShader->compileSourceFile("./src/bsgc/prj2/assets/background.fs.glsl");
+	shaderProgram->addShader(vertexShader);
+	shaderProgram->addShader(fragmentShader);
+
+	vao.create();
+	vao.bind();
+
+	vvbo.create();
+	vvbo.bind();
+	vvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+	uvbo.create();
+	uvbo.bind();
+	uvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+	shaderProgram->link();
+}
+void drawTextures(GLint textureid, QVector<QVector2D> vts)
+{	
+	shaderProgram->setUniformValue("Texture", textureid);
+	float w = 1, h = 1;
+	shaderProgram->bind();
+	vao.bind();
+	QVector<QVector2D> uvs;
+	vvbo.bind();	
+
+	vvbo.allocate(vts.constData(), vts.size() * sizeof(QVector2D));
+	shaderProgram->setAttributeArray(0, GL_FLOAT, 0, 2, NULL);
+	vvbo.release();
+	shaderProgram->enableAttributeArray(0);
+
+	uvbo.bind();
+	uvs
+		<< QVector2D(0.0f, 0.0f)
+		<< QVector2D(1.0f, 0.f)
+		<< QVector2D(1.0f, 1.0f)
+		<< QVector2D(0.0f, 1.0f);
+	uvbo.allocate(uvs.constData(), uvs.size() * sizeof(QVector2D));
+	shaderProgram->setAttributeArray(1, GL_FLOAT, 0, 2, NULL);
+	uvbo.release();
+	shaderProgram->enableAttributeArray(1);
+
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, vts.size());
+	glDrawArrays(GL_QUADS, 0, vts.size());
+}
+OpenGLWidget::OpenGLWidget(QWidget *parent) : QGLWidget(parent)
+{	
 	top_z = 1.5f;
 	but_z = -1;
-
+	
 	QDir dir("Pic");
 	if(dir.exists())
 		pic_path = "Pic/";
 	else
-		pic_path = "../x64/Release/Pic/";
+		pic_path = "../x64/Release/Pic/";	
 }
 void OpenGLWidget::initializeGL()
 {
 	glClearColor(0,0,0,1);
 	glEnable(GL_TEXTURE_2D);
-	loadTexture2D(pic_path + "grass.png",grass_ID);
-	loadTexture2D(pic_path + "sky.png",sky_ID);
+	//loadTexture2D(pic_path + "grass.png",grass_ID);
+	//loadTexture2D(pic_path + "sky.png",sky_ID);
+	shader_init();
+	textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj2/assets/miku.png")));
+	textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj2/assets/brick.png")));
 }
 void OpenGLWidget::paintGL()
 {
@@ -36,7 +103,7 @@ void OpenGLWidget::paintGL()
 		glOrtho(-0.1, maxWH + 0.1, -0.1, maxWH + 0.1, 0, 10);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		Mini_Map();
+		//Mini_Map();
 
 		//View 2
 		glMatrixMode(GL_PROJECTION);
@@ -61,9 +128,12 @@ void OpenGLWidget::paintGL()
 		/*gluLookAt(viewerPosX, viewerPosZ, viewerPosY,
 			viewerPosX + cos(degree_change(MazeWidget::maze->viewer_dir)), viewerPosZ, viewerPosY + sin(degree_change(MazeWidget::maze->viewer_dir)),
 			0.0, -1.0, 0.0);*/
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
+		
+		/*glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();*/
 		Map_3D();
+		
+		
 	}
 }
 void OpenGLWidget::resizeGL(int w,int h)
@@ -119,17 +189,19 @@ void OpenGLWidget::Mini_Map()
 //======================================================================
 void OpenGLWidget::Map_3D()
 {
-	glLoadIdentity();
-	// 畫右邊區塊的所有東西
+	//glLoadIdentity();
+	// 畫右邊區塊的所有東西	
+	QVector<QVector2D> vts;
+	vts << QVector2D(-1, 0) << QVector2D(-1, 1) << QVector2D(1, 1) << QVector2D(1, 0);
+	textures[0]->bind(1);//Draw miku
+	drawTextures(1, vts);
+	vts.clear();
+	textures[1]->bind(2);//Draw bricks
+	vts << QVector2D(-1, 0) << QVector2D(1, 0) << QVector2D(1, -1) << QVector2D(-1, -1);
+	drawTextures(2, vts);
 	
-
-
-	/*若有興趣的話, 可以為地板或迷宮上貼圖, 此項目不影響評分*/
-	glBindTexture(GL_TEXTURE_2D, sky_ID);
-	
-	// 畫貼圖 & 算 UV
-	
-	glDisable(GL_TEXTURE_2D);
+	//drawTextures(1, vts);
+	//glDisable(GL_TEXTURE_2D);
 }
 void OpenGLWidget::loadTexture2D(QString str,GLuint &textureID)
 {
