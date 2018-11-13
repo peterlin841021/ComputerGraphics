@@ -16,13 +16,40 @@ using namespace std;
 #define MENU_EXCALIBUR 8 
 #define MENU_LOITUMA 9
 #define MENU_STAND 10
-
-#define MENU_NORMAL 15
-#define MENU_GRAY 16
-#define MENU_QUANTIZATION 17
-#define MENU_DOG 18
-#define MENU_ABSTRACTION 19
-
+//All
+#define MENU_NORMAL 12
+#define MENU_GRAY 13
+#define MENU_QUANTIZATION 14
+#define MENU_DOG 15
+#define MENU_ABSTRACTION 16
+#define MENU_MEANFILTER 17
+#define MENU_THRESHOLDDITHER 18
+//Miku
+#define MENU_MIKU_NORMAL 22
+#define MENU_MIKU_GRAY 23
+#define MENU_MIKU_QUANTIZATION 24
+#define MENU_MIKU_DOG 25
+#define MENU_MIKU_ABSTRACTION 26
+#define MENU_MIKU_MEANFILTER 27
+#define MENU_MIKU_THRESHOLDDITHER 28
+//Scenery
+#define MENU_SCENERY_NORMAL 32
+#define MENU_SCENERY_GRAY 33
+#define MENU_SCENERY_QUANTIZATION 34
+#define MENU_SCENERY_DOG 35
+#define MENU_SCENERY_ABSTRACTION 36
+#define MENU_SCENERY_MEANFILTER 37
+#define MENU_SCENERY_THRESHOLDDITHER 38
+//Scallion
+#define MENU_SCALLION_NORMAL 42
+#define MENU_SCALLION_GRAY 43
+#define MENU_SCALLION_QUANTIZATION 44
+#define MENU_SCALLION_DOG 45
+#define MENU_SCALLION_ABSTRACTION 46
+#define MENU_SCALLION_MEANFILTER 47
+#define MENU_SCALLION_THRESHOLDDITHER 48
+//Hair
+//Body
 using namespace glm;
 using namespace std;
 
@@ -134,8 +161,6 @@ void My_Menu(int id)
 	}
 }
 
-
-
 void My_Mouse_Moving(int x, int y) {
 	scene->GetCamera()->mouseMoveEvent(x, y);
 }
@@ -177,12 +202,20 @@ int main(int argc, char *argv[])
 	int menu_main = glutCreateMenu(My_Menu);
 	int menu_act = glutCreateMenu(My_Menu);
 	int menu_eff = glutCreateMenu(My_Menu);
+	int menu_miku_eff = glutCreateMenu(My_Menu);
+	int menu_scenery_eff = glutCreateMenu(My_Menu);
+	int menu_scallion_eff = glutCreateMenu(My_Menu);
+
 	glutSetMenu(menu_main);
 	//glutAddSubMenu("Scale", menu_entry);
-	string menus[3] = { "Action","Effect","Exit" };
-	glutAddSubMenu(strToChar(menus[0]), menu_act);
-	glutAddSubMenu(strToChar(menus[1]), menu_eff);
-	glutAddMenuEntry(strToChar(menus[2]), MENU_EXIT);
+	string menus[6] = { "Exit","Action","Effect","Miku effect","Scenery effect","Scallion effect" };
+	glutAddSubMenu(strToChar(menus[1]), menu_act);
+	glutAddSubMenu(strToChar(menus[2]), menu_eff);
+	glutAddSubMenu(strToChar(menus[3]), menu_miku_eff);
+	glutAddSubMenu(strToChar(menus[4]), menu_scenery_eff);
+	glutAddSubMenu(strToChar(menus[5]), menu_scallion_eff);
+	//glutAddSubMenu(strToChar(menus[1]), menu_eff);
+	glutAddMenuEntry(strToChar(menus[0]), MENU_EXIT);
 
 	string menus_actionItems[10] = {"Cheering","Walking","Flying","Clapping" ,"Bowing" ,"Liftting" ,"Drawing" ,"Excalibur" ,"Loituma","Standing" };
 	glutSetMenu(menu_act);
@@ -191,11 +224,26 @@ int main(int argc, char *argv[])
 		glutAddMenuEntry(strToChar(menus_actionItems[i]),i+1);
 	}
 	
-	string menus_effectItems[5] = {"Normal","Gray","Quantization","DoG","Abstraction"};
+	string menus_effectItems[7] = {"Normal","Gray","Quantization","DoG","Abstraction","Meanfilter","Thresholddither"};
 	glutSetMenu(menu_eff);
-	for (size_t i = 0; i < 5; i++)
+	for (size_t i = 0; i < 7; i++)
 	{
-		glutAddMenuEntry(strToChar(menus_effectItems[i]),15+i);
+		glutAddMenuEntry(strToChar(menus_effectItems[i]),12 + i);
+	}
+	glutSetMenu(menu_miku_eff);
+	for (size_t i = 0; i < 7; i++)
+	{
+		glutAddMenuEntry(strToChar(menus_effectItems[i]), 22 + i);
+	}
+	glutSetMenu(menu_scenery_eff);
+	for (size_t i = 0; i < 7; i++)
+	{
+		glutAddMenuEntry(strToChar(menus_effectItems[i]), 32 + i);
+	}
+	glutSetMenu(menu_scallion_eff);
+	for (size_t i = 0; i < 7; i++)
+	{
+		glutAddMenuEntry(strToChar(menus_effectItems[i]), 42 + i);
 	}
 	glutSetMenu(menu_main);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);

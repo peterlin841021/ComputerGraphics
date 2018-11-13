@@ -45,6 +45,11 @@ const vec3 scenery(0,0,0);
 
 int index = 0;//Motion present
 int effect = 0;
+int scenery_effect = 0;
+int miku_effect = 0;
+int miku_hair_effect = 0;
+int miku_body_effect = 0;
+int scallion_effect = 0;
 int flydir = 1;
 
 bool isCheer;
@@ -1231,7 +1236,7 @@ Scene::Scene()
 	{
 		initOthers();
 	}
-	initScenery();
+	//initScenery();
 	Stand();	
 }
 void Scene::MouseEvent(int button, int state, int x, int y)
@@ -1706,20 +1711,26 @@ void Scene::MenuEvent(int item)
 		isLoituma = false;
 		//scallion_use = false;	
 		break;
-	case 15:
+	case 12:
 		effect = 0;
 		break;
-	case 16:
+	case 13:
 		effect = 1;
 		break;
-	case 17:
+	case 14:
 		effect = 2;
 		break;
-	case 18:
+	case 15:
 		effect = 3;
 		break;
-	case 19:
+	case 16:
 		effect = 4;
+		break;
+	case 17:
+		effect = 5;
+		break;
+	case 18:
+		effect = 6;
 		break;
 	}
 }
