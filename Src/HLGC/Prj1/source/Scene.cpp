@@ -51,18 +51,11 @@ int miku_body_effect = 0;
 int scallion_effect = 0;
 int flydir = 1;
 
-bool isCheer;
-bool isWalk;
-bool isFly;
-bool isClap;
-bool isBow;
-bool isLift;
-bool isDraw;
-bool isExcalibur;
-bool isLoituma;
+
 bool actionfixed;
 bool scallion_use = false;
 bool isMiku = true;
+bool action_list[9] = { false };
 
 float cheerangles[20] = {0.0};
 float walkangles[40] = { 0.0 };
@@ -1050,7 +1043,7 @@ void act7(float angle, vector<mat4> act, bool fixed,float body_rotate)
 		action[i] *= scale(identity, scale_ratio);
 	}
 }
-int c = 0;
+
 void act8(float angle, vector<mat4> act, bool fixed)
 {
 	mat4 identity(1.0);
@@ -1291,14 +1284,10 @@ void Scene::KeyBoardEvent(unsigned char key)
 		break;
 	case 32:
 		//action = origin;
-		isFly = false;
-		isWalk = false;
-		isCheer = false;
-		isClap = false;
-		isBow = false;
-		isLift = false;
-		isExcalibur = false;
-		isLoituma = false;
+		for (size_t i = 0; i < 9; i++)
+		{
+			action_list[i] = false;
+		}
 		scallion_use = false;
 		break;
 	default:
@@ -1308,195 +1297,146 @@ void Scene::KeyBoardEvent(unsigned char key)
 
 void Scene::MenuEvent(int item)
 {	
-	float cheer_v = 0.3f;
-	float walk_v = 0.2f;
-	float fly_v = 0.2f;
-	float clap_v = 0.1f;
-	float bow_v = 0.1f;
-	float take_v = 0.1f;
-	float draw_v = 0.1f;
-	float ex_v = 0.1f;
-	float loituma_v = 0.1f;
 	float start = 0.f;
-
+	float v = 0.1f;
 	int act7_index = 190;
 	mat4 identity(1.0);
+	float signal = 1;
 	action = origin;
 	int effect = -1;
-	//Effect	
+
+	for (size_t i = 0; i < 9; i++)
+	{
+		action_list[i] = false;
+	}	
 	switch (item)
 	{
 	case 0:
 		break;
 	case 1:
 		index = 0;
-		for (size_t i = 0; i < 10; i++)
+		for (size_t i = 0; i < 20; i++)
 		{
 			cheerangles[i] = start;
-			start += cheer_v;
-		}
-		for (size_t i = 10; i < 20; i++)
-		{
-			cheerangles[i] = start;
-			start -= cheer_v;
-		}
-		isCheer = !isCheer;
+			if (i == 10)
+				signal = -1;
+			start += v * 3 * signal;
+		}		
+		action_list[0] = !action_list[0];
 		break;
 	case 2:
 		index = 0;
-		for (size_t i = 0; i < 10; i++)
+		for (size_t i = 0; i < 40; i++)
 		{
 			walkangles[i] = start;
-			start += walk_v;
-		}
-		for (size_t i = 10; i < 30; i++)
-		{
-			walkangles[i] = start;
-			start -= walk_v;
-		}
-		for (size_t i = 30; i < 40; i++)
-		{
-			walkangles[i] = start;
-			start += walk_v;
-		}
-		isWalk = !isWalk;
+			if (i == 10)
+				signal = -1;
+			if(i == 30)
+				signal = 1;
+			start += v * 2 * signal;
+		}		
+		action_list[1] = !action_list[1];
 		break;
 	case 3:
 		flyheight = 0.f;
 		action = origin;
 		index = 0;
-		start = 0.5f;
-		for (size_t i = 0; i < 5; i++)
+		start = 0.5f;		
+		for (size_t i = 0; i < 10; i++)
 		{
 			flyangles[i] = start;
-			start -= fly_v;
-		}
-		for (size_t i = 5; i < 10; i++)
-		{
-			flyangles[i] = start;
-			start += fly_v;
-		}
-		isFly = !isFly;
+			if (i == 5)
+				signal = -1;
+			start -= v * 2 * signal;
+		}		
+		action_list[2] = !action_list[2];
 		break;
 	case 4:
 		index = 0;
-		for (size_t i = 0; i < 8; i++)
+		for (size_t i = 0; i < 40; i++)
 		{
 			clapangles[i] = start;
-			start += clap_v;
+			if (i == 8 || i == 28)
+			{
+				if (i == 8)
+					start = 0;
+				signal = -1;
+			}				
+			if(i == 24 || i == 32)
+				signal = 1;
+			if (i == 36)
+				signal = -1.3f;
+			start += v * signal;
 		}
-		start = 0.f;
-		//up
-		for (size_t i = 8; i < 24; i++)
-		{
-			clapangles[i] = start;
-			start -= clap_v;
-		}
-		for (size_t i = 24; i < 28; i++)
-		{
-			clapangles[i] = start;
-			start += clap_v;
-		}
-		for (size_t i = 28; i < 32; i++)
-		{
-			clapangles[i] = start;
-			start -= clap_v;
-		}
-		for (size_t i = 32; i < 36; i++)
-		{
-			clapangles[i] = start;
-			start += clap_v;
-		}
-		for (size_t i = 36; i < 40; i++)
-		{
-			clapangles[i] = start;
-			start -= clap_v * 1.3f;
-		}
-		isClap = !isClap;
+		action_list[3] = !action_list[3];
 		break;
 	case 5:
 		index = 0;
-		for (size_t i = 0; i < 6; i++)
+		for (size_t i = 0; i < 16; i++)
 		{
 			bowangles[i] = start;
-			start -= bow_v;
-		}
-		
-		start = 0.f;
-		for (size_t i = 6; i < 16; i++)
-		{
-			bowangles[i] = start;
-			start += bow_v;
-		}
-		isBow = !isBow;
+			if (i == 6)
+			{
+				start = 0;
+				signal = -1;
+			}			
+			start -= v * signal;
+		}			
+		action_list[4] = !action_list[4];
 		break;
 	case 6:
 		index = 0;
-		for (size_t i = 0; i < 5; i++)
+		signal = 0.5f;
+		for (size_t i = 0; i < 15; i++)
 		{
 			takeoffangles[i] = start;
-			start -= take_v / 2;
-		}
-		start = 0;
-		for (size_t i = 5; i < 15; i++)
-		{
-			takeoffangles[i] = start;
-			start += take_v * 0.5f;
-		}
-		isLift = !isLift;
+			if (i == 4)
+			{
+				start = 0;
+				signal = -0.4f;
+			}
+			start -= v * signal;			
+		}				
+		action_list[5] = !action_list[5];
 		break;
 	case 7:
 		index = 0;
-		for (size_t i = 0; i < 12; i++)
+		for (size_t i = 0; i < 16; i++)
 		{
 			drawangles[i] = start;
-			start -= take_v;
-		}		
-		for (size_t i = 10; i < 16; i++)
-		{
-			drawangles[i] = start;
-			start += take_v*2.5f;
-		}	
-		isDraw = !isDraw;
+			if (i == 10)
+				signal = -2.f;
+			start -= v * signal;
+		}
+		action_list[6] = !action_list[6];
 		break;	
 	case 8:
 		if (scallion_use)
 		{
 			index = 0;
-			for (size_t i = 0; i < 5; i++)
+			for (size_t i = 0; i < 35; i++)
 			{
 				excaliburangle[i] = start;
-				start += ex_v;
-			}
-			for (size_t i = 5; i < 10; i++)
-			{
-				excaliburangle[i] = start;
-				start -= ex_v;
-			}
-			for (size_t i = 10; i < 15; i++)
-			{
-				excaliburangle[i] = start;
-				start += ex_v;
-			}
-			start = 0;
-			for (size_t i = 15; i < 20; i++)
-			{
-				excaliburangle[i] = start;
-				start += ex_v;
-			}
-			//Hold scallion
-			start = 0;
-			for (size_t i = 20; i < 30; i++)
-			{
-				excaliburangle[i] = start;
-				start -= ex_v * 0.4f;
-			}
-			for (size_t i = 30; i < 35; i++)
-			{
-				excaliburangle[i] = start;
-				start += ex_v * 1.2f;
-			}
-			isExcalibur = !isExcalibur;
+				if (i == 5)
+				{
+					signal = -1;
+				}
+				if (i == 10 || i == 15)
+				{
+					if (i == 15)//Hold
+						start = 0;
+					signal = 1;
+				}
+				if (i == 20)
+				{
+					start = 0;
+					signal = -0.4f;
+				}					
+				if (i == 30)
+					signal = 1.2f;
+				start += v * signal;
+			}					
+			action_list[7] = !action_list[7];
 		}		
 		break;
 	case 9:
@@ -1504,185 +1444,185 @@ void Scene::MenuEvent(int item)
 		for (size_t i = 0; i < 10; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v;
+			start += v;
 		}
 		start = 0;
 		//Shaking
 		for (size_t i = 10; i < 14; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v/2.f;
+			start += v/2.f;
 		}
 		for (size_t i = 14; i < 18; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v / 2.f;
+			start -= v / 2.f;
 		}
 		for (size_t i = 18; i < 22; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v / 2.f;
+			start += v / 2.f;
 		}
 		for (size_t i = 22; i < 26; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v / 2.f;
+			start -= v / 2.f;
 		}
 		for (size_t i = 26; i < 30; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v / 2.f;
+			start += v / 2.f;
 		}
 		for (size_t i = 30; i < 34; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v / 2.f;
+			start -= v / 2.f;
 		}
 		for (size_t i = 34; i < 40; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v / 2.f;
+			start += v / 2.f;
 		}
 		start = 0;
 		//Arm cross
 		for (size_t i = 40; i < 50; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v;
+			start -= v;
 		}
 		start = 0;
 		//Left kick
 		for (size_t i = 50; i < 60; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v;
+			start += v;
 		}
 		//Kick back
 		for (size_t i = 60; i < 70; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v;
+			start -= v;
 		}
 		start = 0;
 		//Right kick
 		for (size_t i = 70; i < 80; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v;
+			start += v;
 		}
 		//Kick back
 		for (size_t i = 80; i < 90; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v;
+			start -= v;
 		}
 		start = 0;
 		//Arm shaking1 *2
 		for (size_t i = 90; i < 100; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v;
+			start += v;
 		}
 		start = 0;
 		for (size_t i = 100; i < 105; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v;
+			start += v;
 		}
 		for (size_t i = 105; i < 110; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v;
+			start -= v;
 		}
 		for (size_t i = 110; i < 115; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v;
+			start += v;
 		}
 		for (size_t i = 115; i < 120; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v;
+			start -= v;
 		}
 		//Arm shaking2 *2
 		//start = 0;
 		for (size_t i = 120; i < 125; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v * 3;
+			start += v * 3;
 		}
 		for (size_t i = 125; i < 130; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v * 3;
+			start += v * 3;
 		}
 		for (size_t i = 130; i < 135; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v;
+			start += v;
 		}
 		for (size_t i = 135; i < 140; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v;
+			start -= v;
 		}
 		for (size_t i = 140; i < 145; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v;
+			start += v;
 		}
 		for (size_t i = 145; i < 150; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v;
+			start -= v;
 		}
 		//Right
 		start = 0;
 		for (size_t i = 150; i < 160; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v;
+			start += v;
 		}
 		for (size_t i = 160; i < 170; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v;
+			start -= v;
 		}
 		//Left
 		start = 0;
 		for (size_t i = 170; i < 180; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v;
+			start += v;
 		}
 		for (size_t i = 180; i < 190; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v;
+			start -= v;
 		}
 		//Right arm
 		start = 0;
 		for (size_t i = 190; i < 200; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v*2.f;
+			start += v*2.f;
 		}
 		for (size_t i = 200; i < 210; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v* 2.f;
+			start -= v* 2.f;
 		}
 		//Left arm
 		start = 0;
 		for (size_t i = 210; i < 220; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v * 2.f;
+			start += v * 2.f;
 		}
 		for (size_t i = 220; i < 230; i++)
 		{
 			loitumaangle[i] = start;
-			start -= loituma_v * 2.f;
+			start -= v * 2.f;
 		}
 		//Rotate	
 		start = 0;
@@ -1696,21 +1636,16 @@ void Scene::MenuEvent(int item)
 		for (size_t i = 290; i < 300; i++)
 		{
 			loitumaangle[i] = start;
-			start += loituma_v;
+			start += v;
 		}
-		isLoituma = !isLoituma;
+		action_list[8] = !action_list[8];
 		break;
 	case 10:
 		action = origin;
-		isFly = false;
-		isWalk = false;
-		isCheer = false;
-		isClap = false;
-		isBow = false;
-		isLift = false;
-		isExcalibur = false;
-		isLoituma = false;
-		//scallion_use = false;	
+		for (size_t i = 0; i < 9; i++)
+		{
+			action_list[i] = false;
+		}	
 		break;
 	case 12:		
 		effect = 0;
@@ -1754,7 +1689,7 @@ void Scene::MenuEvent(int item)
 		scenery_effect = effect;
 		scallion_effect = effect;
 		break;
-
+		//Miku effect
 	case 22:		
 		miku_effect = 0;
 		break;
@@ -1776,7 +1711,7 @@ void Scene::MenuEvent(int item)
 	case 28:		
 		miku_effect = 6;
 		break;
-
+		//Scenery effect
 	case 32:		
 		scenery_effect = 0;
 		break;
@@ -1798,7 +1733,7 @@ void Scene::MenuEvent(int item)
 	case 38:		
 		scenery_effect = 6;		
 		break;
-
+		//Scallion effect
 	case 42:		
 		scallion_effect = 0;
 		break;		
@@ -1852,115 +1787,117 @@ void Scene::Render()
 void Scene::Update(float dt)
 {
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);		
-	if (isCheer)
+	glDepthFunc(GL_LEQUAL);	
+	int actioncode = -1;
+	for (size_t i = 0; i < 9; i++)
 	{
-		Cheer(cheerangles[index]);
-		index++;
-		if (index == sizeof(cheerangles) / sizeof(float))
-			index = 0;
+		if (action_list[i])
+			actioncode = i;
 	}
-	else if (isWalk)
+	if (actioncode != -1)
 	{
-		Walk(walkangles[index]);		
-		index++;
-		if (index == sizeof(walkangles) / sizeof(float))
-			index = 0;
-	}
-	else if (isFly) 
-	{
-		Fly(flyangles[index]);
-		index++;
-		if (index == sizeof(flyangles) / sizeof(float))
-			index = 0;		
-	}
-	else if (isClap) 
-	{		
-		if(index < 10)
-			Clap(clapangles[index],false);
-		else if(index < 28)
-			Clap(clapangles[index], true);
-		else if(index > 28)
-			Clap(clapangles[index], true);		
-		index++;
-		if (index == sizeof(clapangles) / sizeof(float))
+		switch (actioncode)
 		{
-			isClap = false;
-			mat4 identity(1.0);
-			action[LEFT_HAND] *= rotate(identity, -0.3f, vec3(1, 0, 0));
-			action[LEFT_HAND] *= rotate(identity,0.65f,vec3(0,1,0));
-			action[RIGHT_HAND] *= rotate(identity, -0.3f, vec3(1, 0, 0));
-			action[RIGHT_HAND] *= rotate(identity,-0.65f, vec3(0, 1, 0));
-			index = 0;
-		}
-	}
-	else if(isBow)
-	{
-		if(index < 6)
-			Bow(bowangles[index],false);
-		else if(index >= 6)
-			Bow(bowangles[index], true);
-		index++;
-		if (index == sizeof(bowangles) / sizeof(float)) 
-		{
-			index = 0;
-			isBow = false;				
-		}		
-	}
-	else if(isLift)
-	{
-		if (index < 5)
-			Lift(takeoffangles[index],false);
-		else if(index >= 5)
-			Lift(takeoffangles[index], true);
-		index++;
-		if (index == sizeof(takeoffangles) / sizeof(float))
-		{
-			index = 0;
-			mat4 identity(1.0);
-			isLift = false;
-			
-		}
-	}
-	else if (isDraw)
-	{
-		Drawsword(drawangles[index]);
-		index++;
-		if (index == 11)
-			scallion_use = !scallion_use;
-		if (index == sizeof(drawangles) / sizeof(float))
-		{
-			index = 0;		
-			isDraw = false;
-		}
-	}
-	else if (isExcalibur)
-	{		
-		if(index < 15)
-			Excalibur(excaliburangle[index],false,false);
-		else if(index < 20 && index > 15)
-			Excalibur(excaliburangle[index],true, false);
-		else if(index < 40 && index > 20)
-			Excalibur(excaliburangle[index], true, true);
+		case 0:
+			Cheer(cheerangles[index]);
+			index++;
+			if (index == sizeof(cheerangles) / sizeof(float))
+				index = 0;
+			break;
+		case 1:
+			Walk(walkangles[index]);
+			index++;
+			if (index == sizeof(walkangles) / sizeof(float))
+				index = 0;
+			break;
+		case 2:
+			Fly(flyangles[index]);
+			index++;
+			if (index == sizeof(flyangles) / sizeof(float))
+				index = 0;
+			break;
+		case 3:
+			if (index < 10)
+				Clap(clapangles[index], false);
+			else if (index < 28)
+				Clap(clapangles[index], true);
+			else if (index > 28)
+				Clap(clapangles[index], true);
+			index++;
+			if (index == sizeof(clapangles) / sizeof(float))
+			{
+				action_list[3] = false;
+				mat4 identity(1.0);
+				action[LEFT_HAND] *= rotate(identity, -0.3f, vec3(1, 0, 0));
+				action[LEFT_HAND] *= rotate(identity, 0.65f, vec3(0, 1, 0));
+				action[RIGHT_HAND] *= rotate(identity, -0.3f, vec3(1, 0, 0));
+				action[RIGHT_HAND] *= rotate(identity, -0.65f, vec3(0, 1, 0));
+				index = 0;
+			}
+			break;
+		case 4:
+			if (index < 6)
+				Bow(bowangles[index], false);
+			else if (index >= 6)
+				Bow(bowangles[index], true);
+			index++;
+			if (index == sizeof(bowangles) / sizeof(float))
+			{
+				index = 0;
+				action_list[4] = false;
+			}
+			break;
+		case 5:
+			if (index < 5)
+				Lift(takeoffangles[index], false);
+			else if (index >= 5)
+				Lift(takeoffangles[index], true);
+			index++;
+			if (index == sizeof(takeoffangles) / sizeof(float))
+			{
+				index = 0;
+				mat4 identity(1.0);
+				action_list[5] = false;
 
-		index++;		
-		if (index == sizeof(excaliburangle) / sizeof(float))
-		{
-			index = 0;
-			isExcalibur = false;
+			}
+			break;
+		case 6:
+			Drawsword(drawangles[index]);
+			index++;
+			if (index == 11)
+				scallion_use = !scallion_use;
+			if (index == sizeof(drawangles) / sizeof(float))
+			{
+				index = 0;
+				action_list[6] = false;
+			}
+			break;
+		case 7:
+			if (index < 15)
+				Excalibur(excaliburangle[index], false, false);
+			else if (index < 20 && index > 15)
+				Excalibur(excaliburangle[index], true, false);
+			else if (index < 40 && index > 20)
+				Excalibur(excaliburangle[index], true, true);
+
+			index++;
+			if (index == sizeof(excaliburangle) / sizeof(float))
+			{
+				index = 0;
+				action_list[7] = false;
+			}
+			break;
+		case 8:
+			Loituma(loitumaangle[index], index);
+			index++;
+			if (index == sizeof(loitumaangle) / sizeof(float))
+			{
+				index = 0;
+				action_list[8] = false;
+			}
+			break;
 		}
 	}
-	else if (isLoituma)
-	{
-		Loituma(loitumaangle[index], index);
-		index++;
-		if (index == sizeof(loitumaangle) / sizeof(float))
-		{
-			index = 0;
-			isLoituma = false;
-		}			
-	}
-	
 	glDisable(GL_DEPTH_TEST);
 }
 
