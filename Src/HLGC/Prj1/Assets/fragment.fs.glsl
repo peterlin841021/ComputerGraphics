@@ -11,11 +11,11 @@ in VertexData
 } vertexData;
 
 uniform sampler2D tex;
-vec2 img_size = vec2(800, 800); 
+vec2 img_size = vec2(500, 500); 
 
 void Shader_Normal(){		
-	vec3 texColor = texture(tex,vertexData.texcoord).rgb;
-	fragColor = vec4(texColor, 1.0);	
+	vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
+	fragColor = vec4(texColor, 1.0);		
 }
 
 void Shader_Gray(){	

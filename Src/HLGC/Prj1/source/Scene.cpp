@@ -44,7 +44,6 @@ const vec3 scale_ratio(0.05f, 0.05f, 0.05f);
 const vec3 scenery(0,0,0);
 
 int index = 0;//Motion present
-int effect = 0;
 int scenery_effect = 0;
 int miku_effect = 0;
 int miku_hair_effect = 0;
@@ -231,17 +230,14 @@ void Stand()
 	action[LEFT_CALF] *= translate(action[LEFT_THIGH], leftCalf);	
 	action[RIGHT_THIGH] *= translate(action[BODY], rightThigh);
 	action[RIGHT_CALF] *= translate(action[RIGHT_THIGH], rightCalf);	
-	if (isMiku)
-	{
-		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);		
-	}
+	action[SCALLION] *= translate(action[RIGHT_HAND], scallion);	
 		
-	for (size_t i = 0; i < SCALLION; i++)
+	for (size_t i = 0; i < SCENERY; i++)
 	{		
 		action[i] *= scale(identity, scale_ratio);
-	}
+	}	
 	action[SCENERY] *= translate(identity, vec3(0.f, -11.f, -5.f));
-	action[SCENERY] *= scale(identity, vec3(0.2f, 0.2f, 0.2f));	
+	action[SCENERY] *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
 	for (size_t i = 0; i < action.size(); i++)
 	{
 		origin.push_back(action[i]);
@@ -1177,7 +1173,7 @@ void Scene::initMiku()
 			models.push_back(new BaseModel(stringToChar(parts_objs[i]), stringToChar(parts_textures[2])));
 		}		
 	}
-	models.push_back(new BaseModel(stringToChar("scallion.obj"), stringToChar(parts_textures[3])));
+	models.push_back(new BaseModel(stringToChar("scallion.obj"), stringToChar(parts_textures[3])));	
 	mat4 identity(1.0);
 	for (size_t i = 0; i < models.size(); i++)
 	{
@@ -1326,6 +1322,7 @@ void Scene::MenuEvent(int item)
 	int act7_index = 190;
 	mat4 identity(1.0);
 	action = origin;
+	int effect = -1;
 	//Effect	
 	switch (item)
 	{
@@ -1463,41 +1460,44 @@ void Scene::MenuEvent(int item)
 		isDraw = !isDraw;
 		break;	
 	case 8:
-		index = 0;		
-		for (size_t i = 0; i < 5; i++)
+		if (scallion_use)
 		{
-			excaliburangle[i] = start;
-			start += ex_v;
-		}
-		for (size_t i = 5; i < 10; i++)
-		{
-			excaliburangle[i] = start;
-			start -= ex_v;
-		}
-		for (size_t i = 10; i < 15; i++)
-		{
-			excaliburangle[i] = start;
-			start += ex_v;
-		}
-		start = 0;
-		for (size_t i = 15; i < 20; i++)
-		{
-			excaliburangle[i] = start;
-			start += ex_v;
-		}
-		//Hold scallion
-		start = 0;
-		for (size_t i = 20; i < 30; i++)
-		{
-			excaliburangle[i] = start;
-			start -= ex_v * 0.4f;
-		}
-		for (size_t i = 30; i < 35; i++)
-		{
-			excaliburangle[i] = start;
-			start += ex_v* 1.2f;
+			index = 0;
+			for (size_t i = 0; i < 5; i++)
+			{
+				excaliburangle[i] = start;
+				start += ex_v;
+			}
+			for (size_t i = 5; i < 10; i++)
+			{
+				excaliburangle[i] = start;
+				start -= ex_v;
+			}
+			for (size_t i = 10; i < 15; i++)
+			{
+				excaliburangle[i] = start;
+				start += ex_v;
+			}
+			start = 0;
+			for (size_t i = 15; i < 20; i++)
+			{
+				excaliburangle[i] = start;
+				start += ex_v;
+			}
+			//Hold scallion
+			start = 0;
+			for (size_t i = 20; i < 30; i++)
+			{
+				excaliburangle[i] = start;
+				start -= ex_v * 0.4f;
+			}
+			for (size_t i = 30; i < 35; i++)
+			{
+				excaliburangle[i] = start;
+				start += ex_v * 1.2f;
+			}
+			isExcalibur = !isExcalibur;
 		}		
-		isExcalibur = !isExcalibur;
 		break;
 	case 9:
 		index = 0;
@@ -1713,132 +1713,111 @@ void Scene::MenuEvent(int item)
 		//scallion_use = false;	
 		break;
 	case 12:		
-		miku_effect = 0;
-		scenery_effect = 0;
-		scallion_effect = 0;
 		effect = 0;
+		miku_effect = effect;
+		scenery_effect= effect;
+		scallion_effect = effect;
 		break;
 	case 13:
-		miku_effect = 0;
-		scenery_effect = 0;
-		scallion_effect = 0;
 		effect = 1;
+		miku_effect = effect;
+		scenery_effect = effect;
+		scallion_effect = effect;
 		break;
 	case 14:
-		miku_effect = 0;
-		scenery_effect = 0;
-		scallion_effect = 0;
 		effect = 2;
+		miku_effect = effect;
+		scenery_effect = effect;
+		scallion_effect = effect;
 		break;
 	case 15:
-		miku_effect = 0;
-		scenery_effect = 0;
-		scallion_effect = 0;
 		effect = 3;
+		miku_effect = effect;
+		scenery_effect = effect;
+		scallion_effect = effect;
 		break;
-	case 16:
-		miku_effect = 0;
-		scenery_effect = 0;
-		scallion_effect = 0;
+	case 16:		
 		effect = 4;
+		miku_effect = effect;
+		scenery_effect = effect;
+		scallion_effect = effect;
 		break;
-	case 17:
-		miku_effect = 0;
-		scenery_effect = 0;
-		scallion_effect = 0;
+	case 17:		
 		effect = 5;
+		miku_effect = effect;
+		scenery_effect = effect;
+		scallion_effect = effect;
 		break;
-	case 18:
-		miku_effect = 0;
-		scenery_effect = 0;
-		scallion_effect = 0;
+	case 18:		
 		effect = 6;
+		miku_effect = effect;
+		scenery_effect = effect;
+		scallion_effect = effect;
 		break;
 
-	case 22:
-		effect = 0;
+	case 22:		
 		miku_effect = 0;
 		break;
-	case 23:
-		effect = 0;
+	case 23:		
 		miku_effect = 1;
 		break;
-	case 24:
-		effect = 0;
+	case 24:	
 		miku_effect = 2;
 		break;
-	case 25:
-		effect = 0;
+	case 25:		
 		miku_effect = 3;
 		break;
-	case 26:
-		effect = 0;
+	case 26:		
 		miku_effect = 4;
 		break;
-	case 27:
-		effect = 0;
+	case 27:		
 		miku_effect = 5;
 		break;
-	case 28:
-		effect = 0;
+	case 28:		
 		miku_effect = 6;
 		break;
 
-	case 32:
-		effect = 0;
+	case 32:		
 		scenery_effect = 0;
 		break;
-	case 33:
-		effect = 0;
+	case 33:		
 		scenery_effect = 1;
 		break;
-	case 34:
-		effect = 0;
+	case 34:		
 		scenery_effect = 2;
 		break;
-	case 35:
-		effect = 0;
+	case 35:		
 		scenery_effect = 3;
 		break;
-	case 36:
-		effect = 0;
+	case 36:		
 		scenery_effect = 4;
 		break;
-	case 37:
-		effect = 0;
+	case 37:		
 		scenery_effect = 5;
 		break;
-	case 38:
-		effect = 0;
+	case 38:		
 		scenery_effect = 6;		
 		break;
 
-	case 42:
-		effect = 0;
+	case 42:		
 		scallion_effect = 0;
 		break;		
-	case 43:
-		effect = 0;
+	case 43:		
 		scallion_effect = 1;
 		break;
-	case 44:
-		effect = 0;
+	case 44:		
 		scallion_effect = 2;
 		break;
-	case 45:
-		effect = 0;
+	case 45:		
 		scallion_effect = 3;
 		break;
-	case 46:
-		effect = 0;
+	case 46:		
 		scallion_effect = 4;
 		break;
-	case 47:
-		effect = 0;
+	case 47:		
 		scallion_effect = 5;
 		break;
-	case 48:
-		effect = 0;
+	case 48:		
 		scallion_effect = 6;
 		break;
 	}
@@ -1847,17 +1826,26 @@ void Scene::MenuEvent(int item)
 void Scene::Render()
 {
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthFunc(GL_LEQUAL);
 	for (size_t i = 0; i < models.size(); i++)
 	{		
-		if(i == SCALLION && scallion_use)
-			models[i]->Render(action[SCALLION], effect + scallion_effect);
-		else if (i == SCALLION) continue;
-		else if (i != SCENERY)
-			models[i]->Render(action[i], effect + miku_effect);
+		if (i == SCALLION && scallion_use)
+		{
+			models[i]->Render(action[SCALLION], scallion_effect);
+		}			
+		else if (i != SCENERY && i != SCALLION)
+		{
+			models[i]->Render(action[i], miku_effect);
+		}			
 		else if (i == SCENERY)
-			models[i]->Render(action[i], effect + scenery_effect);
+		{
+			models[i]->Render(action[i], scenery_effect);
+		}			
 	}
+	glDisable(GL_ALPHA_TEST);
+	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 }
 
@@ -1972,14 +1960,7 @@ void Scene::Update(float dt)
 			isLoituma = false;
 		}			
 	}
-	for (size_t i = 0; i < models.size(); i++)
-	{		
-		if (i == SCALLION && scallion_use)
-			models[i]->Render(action[SCALLION], effect);
-		else if (i == SCALLION) continue;
-		else
-			models[i]->Render(action[i], effect);
-	}
+	
 	glDisable(GL_DEPTH_TEST);
 }
 
