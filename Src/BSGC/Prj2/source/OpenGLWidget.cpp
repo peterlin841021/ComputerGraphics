@@ -15,6 +15,7 @@ QOpenGLShader* vertexShader;
 QOpenGLShader* fragmentShader;
 QOpenGLVertexArrayObject vao;
 QOpenGLBuffer vvbo;
+QOpenGLBuffer cvbo;
 QOpenGLBuffer uvbo;
 //QVector<QVector3D> vts;
 //QVector<QVector2D> uvs;
@@ -25,8 +26,8 @@ void shader_init()
 	vertexShader = new QOpenGLShader(QOpenGLShader::Vertex);
 	fragmentShader = new QOpenGLShader(QOpenGLShader::Fragment);
 
-	vertexShader->compileSourceFile("./src/bsgc/prj2/assets/background.vs.glsl");
-	fragmentShader->compileSourceFile("./src/bsgc/prj2/assets/background.fs.glsl");
+	vertexShader->compileSourceFile("./src/bsgc/prj2/assets/vertex.glsl");
+	fragmentShader->compileSourceFile("./src/bsgc/prj2/assets/fragment.glsl");
 	shaderProgram->addShader(vertexShader);
 	shaderProgram->addShader(fragmentShader);
 
@@ -36,22 +37,26 @@ void shader_init()
 	vvbo.create();
 	vvbo.bind();
 	vvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+	cvbo.create();
+	cvbo.bind();
+	cvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
 	uvbo.create();
 	uvbo.bind();
 	uvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
 	shaderProgram->link();
 }
-void drawTextures(GLint textureid, QVector<QVector2D> vts)
+void drawTextures(GLint textureid, QVector<QVector3D> vts)
 {	
 	shaderProgram->setUniformValue("Texture", textureid);
+	shaderProgram->setUniformValue("mode",1);
 	float w = 1, h = 1;
 	shaderProgram->bind();
 	vao.bind();
 	QVector<QVector2D> uvs;
 	vvbo.bind();	
 
-	vvbo.allocate(vts.constData(), vts.size() * sizeof(QVector2D));
-	shaderProgram->setAttributeArray(0, GL_FLOAT, 0, 2, NULL);
+	vvbo.allocate(vts.constData(), vts.size() * sizeof(QVector3D));
+	shaderProgram->setAttributeArray(0, GL_FLOAT, 0, 3, NULL);
 	vvbo.release();
 	shaderProgram->enableAttributeArray(0);
 
@@ -60,14 +65,35 @@ void drawTextures(GLint textureid, QVector<QVector2D> vts)
 		<< QVector2D(0.0f, 0.0f)
 		<< QVector2D(1.0f, 0.f)
 		<< QVector2D(1.0f, 1.0f)
-		<< QVector2D(0.0f, 1.0f);
+		<< QVector2D(1.0f, 1.0f)
+		<< QVector2D(0.0f, 1.0f)
+		<< QVector2D(0.0f, 0.0f);
 	uvbo.allocate(uvs.constData(), uvs.size() * sizeof(QVector2D));
-	shaderProgram->setAttributeArray(1, GL_FLOAT, 0, 2, NULL);
+	shaderProgram->setAttributeArray(2, GL_FLOAT, 0, 2, NULL);
 	uvbo.release();
-	shaderProgram->enableAttributeArray(1);
+	shaderProgram->enableAttributeArray(2);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, vts.size());	
+	glDrawArrays(GL_TRIANGLES, 0, vts.size());
+}
+void drawMap(QVector<QVector3D> vts, QVector<QVector3D> colors)
+{
+	shaderProgram->setUniformValue("mode", 1);	
+	shaderProgram->bind();
+	vao.bind();
+	vvbo.bind();
 
-	//glDrawArrays(GL_TRIANGLE_STRIP, 0, vts.size());
-	glDrawArrays(GL_QUADS, 0, vts.size());
+	vvbo.allocate(vts.constData(), vts.size() * sizeof(QVector3D));
+	shaderProgram->setAttributeArray(0, GL_FLOAT, 0, 3, NULL);
+	vvbo.release();
+	shaderProgram->enableAttributeArray(0);
+
+	cvbo.bind();	
+	cvbo.allocate(colors.constData(), colors.size() * sizeof(QVector3D));
+	shaderProgram->setAttributeArray(1, GL_FLOAT, 0, 3, NULL);
+	cvbo.release();
+	shaderProgram->enableAttributeArray(1);
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, vts.size());	
+	glDrawArrays(GL_LINES, 0, vts.size());
 }
 OpenGLWidget::OpenGLWidget(QWidget *parent) : QGLWidget(parent)
 {	
@@ -84,10 +110,8 @@ void OpenGLWidget::initializeGL()
 {
 	glClearColor(0,0,0,1);
 	glEnable(GL_TEXTURE_2D);
-	//loadTexture2D(pic_path + "grass.png",grass_ID);
-	//loadTexture2D(pic_path + "sky.png",sky_ID);
 	shader_init();
-	textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj2/assets/miku.png")));
+	textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj2/assets/sky.png")));
 	textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj2/assets/brick.png")));
 }
 void OpenGLWidget::paintGL()
@@ -103,12 +127,12 @@ void OpenGLWidget::paintGL()
 		glOrtho(-0.1, maxWH + 0.1, -0.1, maxWH + 0.1, 0, 10);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		//Mini_Map();
+		Mini_Map();
 
 		//View 2
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		glViewport(MazeWidget::w/2,0, MazeWidget::w/2, MazeWidget::h);
+		//glViewport(MazeWidget::w/2,0, MazeWidget::w/2, MazeWidget::h);
 		/*gluPerspective 定義透視
 		//視野大小, nearplane, farplane, distance
 		//Note: You shouldn't use this function to get view matrix, otherwise you will get 0.
@@ -131,9 +155,8 @@ void OpenGLWidget::paintGL()
 		
 		/*glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();*/
-		Map_3D();
-		
-		
+		glViewport(600, 0, MazeWidget::w / 2, MazeWidget::h);
+		Map_3D();				
 	}
 }
 void OpenGLWidget::resizeGL(int w,int h)
@@ -191,13 +214,17 @@ void OpenGLWidget::Map_3D()
 {
 	//glLoadIdentity();
 	// 畫右邊區塊的所有東西	
-	QVector<QVector2D> vts;
-	vts << QVector2D(-1, 0) << QVector2D(-1, 1) << QVector2D(1, 1) << QVector2D(1, 0);
+	QVector<QVector3D> vts;
+	vts 
+		<< QVector3D(-1, 1, 0) << QVector3D(1, 1, 0) << QVector3D(1, 0, 0) 
+		<< QVector3D(1, 0, 0) << QVector3D(-1, 0, 0) << QVector3D(-1, 1, 0);
 	textures[0]->bind(1);//Draw miku
 	drawTextures(1, vts);
 	vts.clear();
 	textures[1]->bind(2);//Draw bricks
-	vts << QVector2D(-1, 0) << QVector2D(1, 0) << QVector2D(1, -1) << QVector2D(-1, -1);
+	vts 
+		<< QVector3D(-1, 0,0) << QVector3D(1, 0,0) << QVector3D(1, -1,0) 
+		<< QVector3D(1, -1, 0) << QVector3D(-1, -1, 0)<< QVector3D(-1, 0, 0);
 	drawTextures(2, vts);
 	
 	//drawTextures(1, vts);
@@ -205,7 +232,7 @@ void OpenGLWidget::Map_3D()
 }
 void OpenGLWidget::loadTexture2D(QString str,GLuint &textureID)
 {
-	glGenTextures(1, &textureID);
+	/*glGenTextures(1, &textureID);
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 	
@@ -215,7 +242,7 @@ void OpenGLWidget::loadTexture2D(QString str,GLuint &textureID)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, opengl_grass.width(), opengl_grass.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, opengl_grass.bits());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_TEXTURE_2D);*/
 }
 float OpenGLWidget::degree_change(float num)
 {
