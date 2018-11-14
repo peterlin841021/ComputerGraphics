@@ -87,8 +87,7 @@ bool Cell::Point_In_Cell(const float x, const float y, const float z,Cell* &neig
 //   This is used in tracking the viewer, but much of it is also useful
 //   for clipping edges, so you should try to understand how it works.
 //=======================================================================
-Cell* Cell::
-Clip_To_Cell(float &xs, float &ys,
+Cell* Cell::Clip_To_Cell(float &xs, float &ys,
              float &xe, float &ye, const float buffer)
 //=======================================================================
 {
@@ -132,7 +131,6 @@ Clip_To_Cell(float &xs, float &ys,
 			return edges[min_cross_edge]->Neighbor(this);
 		}
 	}
-
 	return NULL;
 }
 

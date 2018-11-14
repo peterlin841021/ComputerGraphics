@@ -87,7 +87,7 @@ class Maze {
 		// Functions to convert between degrees and radians.
 		static double   To_Radians(double deg) { return deg / 180.0 * M_PI; };
 		static double   To_Degrees(double rad) { return rad * 180.0 / M_PI; };
-	private:
+	public:
 		// Functions used when creating or loading a maze.
 
 		// Randomly generate the edge's opaque and transparency for an empty maze
@@ -99,8 +99,8 @@ class Maze {
 		void    Set_Extents(void);
 		void    Find_View_Cell(Cell*);
 
-	private:
-		Cell				*view_cell;// The cell that currently contains the view
+	
+		Cell			*view_cell;// The cell that currently contains the view
 										  // point. You will need to use this.
 		unsigned int    frame_num;	// The frame number we are currently drawing.
 											// It isn't necessary, but you might find it
