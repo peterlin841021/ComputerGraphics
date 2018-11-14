@@ -12,7 +12,7 @@ void main()
 		fColor = colors;
 		break;
 		case 1:
-		fColor =texture(Texture,vUV);
+		fColor = texture(Texture,vUV);
 		break;
 		case 2:
 		fColor = colors;
