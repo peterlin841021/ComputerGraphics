@@ -64,7 +64,7 @@ using namespace std;
 int	width = 800;
 int height = 800;
 float aspect;	
-float	interval = 100;
+float	interval = 70;
 
 Scene *scene;
 

@@ -136,7 +136,7 @@ void shader_ThresholdDither(){
 	fragColor = vec4(grayColor,grayColor,grayColor, 1.0);
 }
 void gold(){
-	fragColor = vec4(255.0 / 255.0 , 215.0 / 255.0, 0 / 255.0, 0.5);
+	fragColor = vec4(1.0 , 215.0 / 255.0, 0, 0.5);
 }
 void bluemove(){
 	vec2 p = gl_FragCoord.xy;
@@ -257,7 +257,9 @@ void main()
 			fragColor = vec4(texColor.r - 120.0/255.0,texColor.g - 236.0/255.0,texColor.b - 221.0/255.0, 1.0);	
 			break;
 		}
-			
+		case(12):{
+			gold();
+		}
 	}
 
 }
