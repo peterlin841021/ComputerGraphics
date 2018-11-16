@@ -46,9 +46,9 @@ mat4 ViewManager::GetProjectionMatrix(float aspect)
     float nearVal;
     float farVal;
     nearVal = 0.1f;
-    farVal = 30.0f;
+    farVal = 100.0f;
     if(ortho) {
-        float size = 1.5f * zoom;
+        float size = 1.f * zoom;
         projMatrix = glm::ortho(-aspect * size, aspect * size, -size, size, nearVal, farVal);
     } 
 	else {
@@ -263,7 +263,7 @@ void ViewManager::mouseMoveEvent(int x,int y)
 void ViewManager::wheelEvent(int direction)
 {
 	wheel_val = direction * 15.0f;
-    Zoom(wheel_val / 120.0f);
+    Zoom(wheel_val / 60.0f);
 }
 
 /**
