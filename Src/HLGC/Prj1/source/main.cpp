@@ -48,15 +48,23 @@ using namespace std;
 #define MENU_SCALLION_ABSTRACTION 46
 #define MENU_SCALLION_MEANFILTER 47
 #define MENU_SCALLION_THRESHOLDDITHER 48
+
+//Hair
+#define MENU_HAIRCOLOR_WHITE 52
+#define MENU_HAIRCOLOR_PINK 53
+#define MENU_HAIRCOLOR_GREEN 54
+#define MENU_HAIRCOLOR_PURPLE 55
+#define MENU_HAIRCOLOR_BLACK 56
+
 //Hair
 //Body
 using namespace glm;
 using namespace std;
 
 int	width = 800;
-int   height = 800;
-float	aspect;	
-int	interval = 100;
+int height = 800;
+float aspect;	
+float	interval = 100;
 
 Scene *scene;
 
@@ -89,7 +97,7 @@ void My_Timer(int val)
 {
 	scene->Update(interval);
 	glutPostRedisplay();
-	glutTimerFunc(interval, My_Timer, val);
+	glutTimerFunc((unsigned int)interval, My_Timer, val);
 	My_Display();
 }
 
@@ -205,18 +213,20 @@ int main(int argc, char *argv[])
 	int menu_miku_eff = glutCreateMenu(My_Menu);
 	int menu_scenery_eff = glutCreateMenu(My_Menu);
 	int menu_scallion_eff = glutCreateMenu(My_Menu);
+	int menu_hair_eff = glutCreateMenu(My_Menu);
 
 	glutSetMenu(menu_main);
 	//glutAddSubMenu("Scale", menu_entry);
-	string menus[6] = { "Exit","Action","Effect","Miku effect","Scenery effect","Scallion effect" };
+	string menus[7] = { "Exit","Action","Effect","Miku effect","Scenery effect","Scallion effect","Miku_HairColor effect"};
+
 	glutAddSubMenu(strToChar(menus[1]), menu_act);
 	glutAddSubMenu(strToChar(menus[2]), menu_eff);
 	glutAddSubMenu(strToChar(menus[3]), menu_miku_eff);
 	glutAddSubMenu(strToChar(menus[4]), menu_scenery_eff);
 	glutAddSubMenu(strToChar(menus[5]), menu_scallion_eff);
-	//glutAddSubMenu(strToChar(menus[1]), menu_eff);
+	glutAddSubMenu(strToChar(menus[6]), menu_hair_eff);
+	
 	glutAddMenuEntry(strToChar(menus[0]), MENU_EXIT);
-
 	string menus_actionItems[10] = {"Cheering","Walking","Flying","Clapping" ,"Bowing" ,"Liftting" ,"Drawing" ,"Excalibur" ,"Loituma","Standing" };
 	glutSetMenu(menu_act);
 	for (size_t i = 0; i < 10; i++)
@@ -225,6 +235,8 @@ int main(int argc, char *argv[])
 	}
 	
 	string menus_effectItems[7] = {"Normal","Gray","Quantization","DoG","Abstraction","Meanfilter","Thresholddither"};
+	string menus_colorItems[5] = { "White","Pink","Green","Purple","Black" };
+
 	glutSetMenu(menu_eff);
 	for (size_t i = 0; i < 7; i++)
 	{
@@ -244,6 +256,11 @@ int main(int argc, char *argv[])
 	for (size_t i = 0; i < 7; i++)
 	{
 		glutAddMenuEntry(strToChar(menus_effectItems[i]), 42 + i);
+	}
+	glutSetMenu(menu_hair_eff);
+	for (size_t i = 0; i < 5; i++)
+	{
+		glutAddMenuEntry(strToChar(menus_colorItems[i]), 52 + i);
 	}
 	glutSetMenu(menu_main);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);

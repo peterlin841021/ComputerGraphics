@@ -1,6 +1,7 @@
 #include "../Include/Scene.h"
 #include<vector>
 #include<string>
+#include<time.h>
 
 #define HAIR 0 
 #define FACE 1
@@ -540,23 +541,28 @@ void Lift(float angle, bool prepare)
 	if (prepare)
 	{
 		float a = -0.2f;
-		action[LEFT_FORE_ARM] *= rotate(identity, a + angle, vec3(0, 0, 1));
-		action[RIGHT_FORE_ARM] *= rotate(identity, -a - angle, vec3(0, 0, 1));
+		action[LEFT_FORE_ARM] *= rotate(identity, a + angle*1.5f, vec3(0, 0, 1));
+		action[RIGHT_FORE_ARM] *= rotate(identity,-a - angle*1.5f, vec3(0, 0, 1));
 		action[LEFT_HIND_ARM] *= translate(action[LEFT_FORE_ARM], leftHindArm);
 		action[RIGHT_HIND_ARM] *= translate(action[RIGHT_FORE_ARM], rightHindArm);
 
-		
-		action[RIGHT_HIND_ARM] *= rotate(identity, angle*4 , vec3(-1, 0, 1));
-		action[LEFT_HIND_ARM] *= rotate(identity, angle*4, vec3(-1, 0, -1));
+		action[LEFT_HIND_ARM] *= rotate(identity, -angle * 2.5f, vec3(1, 0,0));
+		action[LEFT_HIND_ARM] *= rotate(identity, -angle * 3.f, vec3(0, 0, 1));
+
+		action[RIGHT_HIND_ARM] *= rotate(identity, -angle* 2.5f, vec3(1, 0, 0));
+		action[RIGHT_HIND_ARM] *= rotate(identity, angle * 3.f, vec3(0, 0, 1));
 
 		action[LEFT_HAND] *= translate(action[LEFT_HIND_ARM], leftHand - leftHindArm);
 		action[RIGHT_HAND] *= translate(action[RIGHT_HIND_ARM], rightHand - rightHindArm);
-		action[LEFT_HAND] *= rotate(identity, 0.8f, vec3(1, 0, 0));
-		action[RIGHT_HAND] *= rotate(identity, 0.8f, vec3(1, 0, 0));
+		action[LEFT_HAND] *= rotate(identity, 1.f, vec3(1, 0, 0));
+		action[RIGHT_HAND] *= rotate(identity, 1.f, vec3(1, 0, 0));
 
-		action[LEFT_HAND] *= rotate(identity, -0.8f, vec3(0, 0, 1));
-		action[RIGHT_HAND] *= rotate(identity, 0.8f, vec3(0, 0, 1));
-		action[SKIRT] *= rotate(identity, -angle*1.6f, vec3(1, 0, 0));
+		action[LEFT_HAND] *= rotate(identity, -1.05f, vec3(0, 0, 1));
+		action[RIGHT_HAND] *= rotate(identity, 1.05f, vec3(0, 0, 1));
+
+		action[LEFT_HAND] *= rotate(identity, 0.2f, vec3(0, 1, 0));
+		action[RIGHT_HAND] *= rotate(identity,-0.2f, vec3(0, 1, 0));
+		action[SKIRT] *= rotate(identity, -angle*1.7f, vec3(1, 0, 0));
 	}
 	else
 	{
@@ -1304,7 +1310,7 @@ void Scene::MenuEvent(int item)
 	float signal = 1;
 	action = origin;
 	int effect = -1;
-
+	//Action manager
 	for (size_t i = 0; i < 9; i++)
 	{
 		action_list[i] = false;
@@ -1640,6 +1646,7 @@ void Scene::MenuEvent(int item)
 		}
 		action_list[8] = !action_list[8];
 		break;
+	//Reset
 	case 10:
 		action = origin;
 		for (size_t i = 0; i < 9; i++)
@@ -1647,6 +1654,7 @@ void Scene::MenuEvent(int item)
 			action_list[i] = false;
 		}	
 		break;
+	//Global effect
 	case 12:		
 		effect = 0;
 		miku_effect = effect;
@@ -1689,7 +1697,7 @@ void Scene::MenuEvent(int item)
 		scenery_effect = effect;
 		scallion_effect = effect;
 		break;
-		//Miku effect
+	//Miku effect
 	case 22:		
 		miku_effect = 0;
 		break;
@@ -1711,7 +1719,7 @@ void Scene::MenuEvent(int item)
 	case 28:		
 		miku_effect = 6;
 		break;
-		//Scenery effect
+	//Scenery effect
 	case 32:		
 		scenery_effect = 0;
 		break;
@@ -1733,7 +1741,7 @@ void Scene::MenuEvent(int item)
 	case 38:		
 		scenery_effect = 6;		
 		break;
-		//Scallion effect
+	//Scallion effect
 	case 42:		
 		scallion_effect = 0;
 		break;		
@@ -1755,6 +1763,22 @@ void Scene::MenuEvent(int item)
 	case 48:		
 		scallion_effect = 6;
 		break;
+	//Hair cut effect
+	case 52:
+		miku_hair_effect = 7;
+		break;
+	case 53:
+		miku_hair_effect = 8;
+		break;
+	case 54:
+		miku_hair_effect = 9;
+		break;
+	case 55:
+		miku_hair_effect = 10;
+		break;
+	case 56:
+		miku_hair_effect = 11;
+		break;
 	}
 }
 
@@ -1768,16 +1792,20 @@ void Scene::Render()
 	{		
 		if (i == SCALLION && scallion_use)
 		{
-			models[i]->Render(action[SCALLION], scallion_effect);
-		}			
+			models[i]->Render(action[SCALLION], scallion_effect, clock());
+		}
 		else if (i != SCENERY && i != SCALLION)
 		{
-			models[i]->Render(action[i], miku_effect);
-		}			
+			models[i]->Render(action[i], miku_effect, clock());
+		}
 		else if (i == SCENERY)
 		{
-			models[i]->Render(action[i], scenery_effect);
-		}			
+			models[i]->Render(action[i], scenery_effect, clock());
+		}
+		if (i == HAIR && miku_effect == 0) 
+		{
+			models[i]->Render(action[i], miku_hair_effect, clock());
+		}
 	}
 	glDisable(GL_ALPHA_TEST);
 	glDisable(GL_BLEND);

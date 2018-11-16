@@ -3,20 +3,24 @@
 
 using namespace glm;
 
-BaseModel::BaseModel(){
+BaseModel::BaseModel()
+{
 }
 
-BaseModel::BaseModel(char* modelFile,char* textFile){
+BaseModel::BaseModel(char* modelFile,char* textFile)
+{
 	objName = modelFile;
 	textName = textFile;
 	Init();
 }
 
-BaseModel::~BaseModel(){
+BaseModel::~BaseModel()
+{
 
 }
 
-void BaseModel::Init(){
+void BaseModel::Init()
+{
 	program = new ShaderProgram();
 	program->CreateProgram();
 	Shader* vs = new Shader();
@@ -37,7 +41,8 @@ void BaseModel::Init(){
 	uniforms.proj_matrix = glGetUniformLocation(program->GetID(), "um4p");
 	uniforms.mv_matrix = glGetUniformLocation(program->GetID(), "um4mv");
 	uniforms.mode = glGetUniformLocation(program->GetID(),"shaderNumber");
-	
+	uniforms.time = glGetUniformLocation(program->GetID(), "time");
+
 	program->UseProgram();
 	///////////////////////////	
 
@@ -45,7 +50,8 @@ void BaseModel::Init(){
 	LoadModel();
 }
 
-void BaseModel::LoadModel(){
+void BaseModel::LoadModel()
+{
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 
@@ -115,10 +121,11 @@ void BaseModel::LoadModel(){
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-void BaseModel::Update(float dt){
+void BaseModel::Update(float dt)
+{
 
 }
-void BaseModel::Render(glm::mat4 modelmatrix,GLint shaderMode)
+void BaseModel::Render(glm::mat4 modelmatrix,GLint shaderMode, GLfloat time)
 {
 	//Update shaders' input variable
 	///////////////////////////	
@@ -131,11 +138,13 @@ void BaseModel::Render(glm::mat4 modelmatrix,GLint shaderMode)
 	//glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, value_ptr(Scene::GetCamera()->GetViewMatrix() * Scene::GetCamera()->GetModelMatrix() * m_shape.model));
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, value_ptr(Scene::GetCamera()->GetProjectionMatrix()));
 	glUniform1i(uniforms.mode,shaderMode);
+	glUniform1f(uniforms.time, time);
 	glDrawElements(GL_TRIANGLES, m_shape.indexCount, GL_UNSIGNED_INT, 0);
 	///////////////////////////	
 }
 
-void BaseModel::Translate(glm::vec3 vec){
+void BaseModel::Translate(glm::vec3 vec)
+{
 	//m_shape.model *= translateMatrix;
 	translateMatrix = translate(translateMatrix, vec);
 }

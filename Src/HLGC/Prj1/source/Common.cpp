@@ -88,11 +88,11 @@ TextureData Common::Load_png(const char* path)
 		texture.data = new unsigned char[texture.width * texture.height * 4 * sizeof(unsigned char)];
 		memcpy(texture.data, data, texture.width * texture.height * 4 * sizeof(unsigned char));
 		// vertical-mirror image data
-		for (size_t i = 0; i < texture.width; i++)
+		for (int i = 0; i < texture.width; i++)
 		{
-			for (size_t j = 0; j < texture.height / 2; j++)
+			for (int j = 0; j < texture.height / 2; j++)
 			{
-				for (size_t k = 0; k < 4; k++) {
+				for (int k = 0; k < 4; k++) {
 					std::swap(texture.data[(j * texture.width + i) * 4 + k], texture.data[((texture.height - j - 1) * texture.width + i) * 4 + k]);
 				}
 			}
