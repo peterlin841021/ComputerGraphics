@@ -330,7 +330,7 @@ float fworley(vec2 p) {
 		sqrt(worley(p * 64. + 5.3 + time*0.001 * .0625)) *
 		sqrt(sqrt(worley(p * 128. + 7.3))))));
 }
-void L() {
+void Glorious_light() {
 vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
 	fragColor = vec4(texColor, 1.0);
 	vec2 uv = gl_FragCoord.xy / iResolution.xy;
@@ -351,8 +351,7 @@ void main()
 		}
 		case(1):
 		{					
-			//Shader_Gray();			
-			L();
+			Shader_Gray();
 			break;
 		}
 		case(2):
@@ -402,36 +401,41 @@ void main()
 		}
 		break;
 		case(11):{
+		//Glorious light
+			Glorious_light();
+		}
+		break;
+		case(21):{
 			//white		
 			vec3 texColor = texture(tex,vertexData.texcoord).rgb;				
 			fragColor = vec4(texColor.r + 135.0/255.0,texColor.g + 19.0/255.0,texColor.b + 34.0/255.0, 1.0);	
 			break;
 		}
-		case(12):{			
+		case(22):{			
 			//pink
 			vec3 texColor = texture(tex,vertexData.texcoord).rgb;						
 			fragColor = vec4(texColor.g,texColor.r,texColor.b, 1.0);	
 			break;
 		}
-		case(13):{
+		case(23):{
 			//green			
 			vec3 texColor = texture(tex,vertexData.texcoord).rgb;						
 			fragColor = vec4(texColor.r,texColor.g,texColor.r, 1.0);	
 			break;
 		}
-		case(14):{
+		case(24):{
 			//purple
 			vec3 texColor = texture(tex,vertexData.texcoord).rgb;						
 			fragColor = vec4(texColor.r,texColor.g/7,texColor.b, 1.0);	
 			break;
 		}
-		case(15):{			
+		case(25):{			
 			//black			
 			vec3 texColor = texture(tex,vertexData.texcoord).rgb;
 			fragColor = vec4(texColor.r - 120.0/255.0,texColor.g - 236.0/255.0,texColor.b - 221.0/255.0, 1.0);	
 			break;
 		}
-		case(16):{
+		case(26):{
 			//blond
 			vec3 texColor = texture(tex,vertexData.texcoord).rgb;
 			fragColor = vec4(texColor.r + 135.0/255.0,texColor.g + 19.0/255.0,texColor.b - 221.0/255.0, 1.0);				

@@ -1354,7 +1354,7 @@ void Scene::MenuEvent(int item)
 	float signal = 1;
 	action = origin;
 	int effect = -1;
-	int menu_offset[7] = { 0,11,22,33,44,55,60};
+	int menu_offset[7] = { 0,10,22,34,46,58,65};
 	//Action manager
 	for (size_t i = 0; i < 9; i++)
 	{
@@ -1574,10 +1574,10 @@ void Scene::MenuEvent(int item)
 	{
 		scallion_effect = item - menu_offset[4];
 	}
-	else if (item >= menu_offset[5] && item <= menu_offset[6])//Miku haircut effect
+	else if (item >= menu_offset[5] && item < menu_offset[6])//Miku haircut effect
 	{
-		miku_hair_effect = item - menu_offset[5] + 11;
-	}
+		miku_hair_effect = item - menu_offset[5] + 21;
+	}	
 }
 
 void Scene::Render()

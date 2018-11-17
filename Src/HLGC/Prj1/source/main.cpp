@@ -172,17 +172,17 @@ int main(int argc, char *argv[])
 	glutAddSubMenu(strToChar(menus[6]), menu_hair_eff);
 	
 	glutAddMenuEntry(strToChar(menus[0]), 0);//EXIT
-	int menu_offset[7] = {0,11,22,33,44,55,60};
-	string menus_actionItems[10] = {"Cheering","Walking","Flying","Clapping" ,"Bowing" ,"Swing skirt" ,"Sword Drawing" ,"Final attack: excalibur" ,"Loituma dance","Standing" };
+	int menu_offset[7] = { 0,10,22,34,46,58,65};
+	string menus_actionItems[10] = {"Cheering","Walking","Flying","Clapping" ,"Bowing" ,"Swing skirt" ,"Drawing sword " ,"Final attack: excalibur" ,"Loituma dance","Standing" };
 	glutSetMenu(menu_act);
 	for (size_t i = 0; i < 10; i++)
 	{
 		glutAddMenuEntry(strToChar(menus_actionItems[i]), menu_offset[0] + i + 1);
 	}
 	
-	int effect_items = 11;
+	int effect_items = 12;
 	int haircuts = 6;
-	string menus_effectItems[11] = {"Normal","Gray","Quantization","DoG","Abstraction","Meanfilter","Thresholddither","Mosaic","Emboss","Voronoi","Nebula"};
+	string menus_effectItems[12] = {"Normal","Gray","Quantization","DoG","Abstraction","Meanfilter","Thresholddither","Mosaic","Emboss","Voronoi","Nebula","Glory"};
 	string menus_colorItems[6] = { "White","Pink","Green","Purple","Black","Blond"};
 
 	glutSetMenu(menu_eff);
