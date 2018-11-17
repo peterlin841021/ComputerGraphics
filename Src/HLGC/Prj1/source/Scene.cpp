@@ -19,7 +19,7 @@
 #define RIGHT_CALF 13
 #define SCALLION 14
 #define INVISIBLE_SCALLION 15
-#define SCENERY 16
+#define GROUND 16
 #define MILKYWAY 17
 
 using namespace glm;
@@ -253,12 +253,12 @@ void Stand()
 	action[RIGHT_CALF] *= translate(action[RIGHT_THIGH], rightCalf);	
 	action[SCALLION] *= translate(action[RIGHT_HAND], scallion);
 		
-	for (size_t i = 0; i < SCENERY; i++)
+	for (size_t i = 0; i < GROUND; i++)
 	{		
 		action[i] *= scale(identity, scale_ratio);
 	}	
-	action[SCENERY] *= translate(identity, vec3(0.f, -8.2f, -8.f));
-	action[SCENERY] *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
+	action[GROUND] *= translate(identity, vec3(0.f, -8.2f, -8.f));
+	action[GROUND] *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
 
 	action[MILKYWAY] = translate(identity, milkyway);
 	action[MILKYWAY] *= rotate(identity,180.f, vec3(0, 0, 1));
@@ -1601,11 +1601,11 @@ void Scene::Render()
 				models[INVISIBLE_SCALLION]->Render(action[INVISIBLE_SCALLION], 12, clock());				
 			}				
 		}
-		else if (i != SCENERY && i != SCALLION && i != MILKYWAY && i != INVISIBLE_SCALLION)
+		else if (i != GROUND && i != SCALLION && i != MILKYWAY && i != INVISIBLE_SCALLION)
 		{
 			models[i]->Render(action[i], miku_effect, clock());
 		}
-		else if (i == SCENERY)
+		else if (i == GROUND)
 		{
 			models[i]->Render(action[i], ground_effect, clock());
 		}
