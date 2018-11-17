@@ -69,7 +69,7 @@ float clapangles[40] = {0.0};
 float bowangles[16] = {0};
 float takeoffangles[15] = { 0 };
 float drawangles[16] = { 0 };
-float excaliburangle[50] = {0};
+float excaliburangle[70] = {0};
 float loitumaangle[300] = {0};
 float all_rotate = 0.f;
 float power = 0.f;
@@ -135,10 +135,9 @@ void Excalibur(float angle,bool prepare,bool slash)
 
 		if (slash)
 		{
-			action[BODY] *= rotate(identity, angle / 4.f, vec3(1, 0, 0));
+			action[BODY] *= rotate(identity, angle*0.7f, vec3(1, 0, 0));
 			invisible_scallion_use = true;
-			action[INVISIBLE_SCALLION] = identity;
-			action[INVISIBLE_SCALLION] *= scale(identity, vec3(scale_ratio.x, scale_ratio.y*power*2, scale_ratio.z*power*4.f));
+			action[INVISIBLE_SCALLION] = identity;			
 			power += 0.2f;
 		}
 					
@@ -155,7 +154,7 @@ void Excalibur(float angle,bool prepare,bool slash)
 		action[LEFT_FORE_ARM] *= rotate(identity, armin, vec3(0, 0, -1));
 		//
 		if(slash)
-			action[LEFT_FORE_ARM] *= rotate(identity,angle*5.f, vec3(1, 1, 0));
+			action[LEFT_FORE_ARM] *= rotate(identity,angle*5.f, vec3(1, 1, 1));
 		float a = 0.38f;
 		if (prepare)
 		{			
@@ -184,7 +183,7 @@ void Excalibur(float angle,bool prepare,bool slash)
 		//
 		if (slash)
 		{
-			action[RIGHT_FORE_ARM] *= rotate(identity, angle*5.f, vec3(1, -1, 0));
+			action[RIGHT_FORE_ARM] *= rotate(identity, angle*5.f, vec3(1, -1, 1));
 			if (angle < -0.28f)
 				actionfixed = true;
 			if(!actionfixed)
@@ -218,10 +217,10 @@ void Excalibur(float angle,bool prepare,bool slash)
 			action[RIGHT_HAND] *= rotate(identity, a * 0.5f, vec3(0, 1, 0));
 		}		
 		
-		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);				
-		//action[INVISIBLE_SCALLION] *= rotate(action[RIGHT_HAND],-0.2f,vec3(0, 1, 0));				
-		action[INVISIBLE_SCALLION] *= translate(action[SCALLION], vec3(0,14,-8));
-		action[INVISIBLE_SCALLION] *= translate(identity, vec3(0, 0, power*3.5f));
+		action[SCALLION] *= translate(action[RIGHT_HAND], scallion);						
+		action[INVISIBLE_SCALLION] *= translate(action[SCALLION], vec3(0,0,0));
+		action[INVISIBLE_SCALLION] *= rotate(identity,-5.f, vec3(1, 1, 1));
+		action[INVISIBLE_SCALLION] *= scale(identity, vec3(scale_ratio.x*power * 2, scale_ratio.y*power * 2, scale_ratio.z*power*4.f));
 		for (size_t i = HAIR; i <= RIGHT_CALF; i++)
 		{
 			action[i] *= scale(identity, scale_ratio);
@@ -1216,7 +1215,7 @@ void Scene::initMiku()
 	}
 	models.push_back(new BaseModel(stringToChar("scallion.obj"), stringToChar(parts_textures[3])));	
 	//Invisible
-	models.push_back(new BaseModel(stringToChar("scallion.obj"), stringToChar(parts_textures[3])));
+	models.push_back(new BaseModel(stringToChar("Invisiblescallion.obj"), stringToChar(parts_textures[3])));
 	mat4 identity(1.0);
 	for (size_t i = 0; i < models.size(); i++)
 	{
@@ -1465,7 +1464,7 @@ void Scene::MenuEvent(int item)
 				invisible_scallion_use = false;			
 				index = 0;
 				power = 0;
-				for (size_t i = 0; i < 50; i++)
+				for (size_t i = 0; i < 70; i++)
 				{
 					excaliburangle[i] = start;
 					if (i == 5)
@@ -1485,8 +1484,8 @@ void Scene::MenuEvent(int item)
 					}					
 					if (i == 30)
 						signal = 0.f;
-					if (i == 45)
-						signal = 0.9f;
+					if (i == 50)
+						signal = 0.21f;
 					start += v * signal;
 				}					
 				action_list[7] = !action_list[7];
@@ -1598,16 +1597,22 @@ void Scene::Render()
 			models[i]->Render(action[SCALLION], scallion_effect, clock());
 			if (invisible_scallion_use)
 			{
-				models[INVISIBLE_SCALLION]->Render(action[INVISIBLE_SCALLION], 12, clock());				
+				models[INVISIBLE_SCALLION]->Render(action[INVISIBLE_SCALLION], 11, clock());				
 			}				
 		}
 		else if (i != GROUND && i != SCALLION && i != MILKYWAY && i != INVISIBLE_SCALLION)
 		{
-			models[i]->Render(action[i], miku_effect, clock());
+			if(invisible_scallion_use)
+				models[i]->Render(action[i], 11, clock());
+			else
+				models[i]->Render(action[i], miku_effect, clock());
 		}
 		else if (i == GROUND)
 		{
-			models[i]->Render(action[i], ground_effect, clock());
+			if (invisible_scallion_use)
+				models[i]->Render(action[i], 27, clock());
+			else
+				models[i]->Render(action[i], ground_effect, clock());
 		}
 		else if (i == MILKYWAY)
 		{
@@ -1697,7 +1702,6 @@ void Scene::Update(float dt)
 				index = 0;
 				mat4 identity(1.0);
 				action_list[5] = false;
-
 			}
 			break;
 		case 6:
@@ -1716,15 +1720,15 @@ void Scene::Update(float dt)
 				Excalibur(excaliburangle[index], false, false);
 			else if (index < 20 && index > 15)
 				Excalibur(excaliburangle[index], true, false);
-			else if (index < 50 && index > 20)
+			else if (index < 70 && index > 20)
 				Excalibur(excaliburangle[index], true, true);
 
-			index++;
+			index++;			
 			if (index == sizeof(excaliburangle) / sizeof(float))
 			{
 				index = 0;
 				action_list[7] = false;
-				invisible_scallion_use = false;
+				invisible_scallion_use = false;				
 			}
 			break;
 		case 8:
@@ -1737,7 +1741,7 @@ void Scene::Update(float dt)
 			}
 			break;
 		}
-	}
+	}	
 	action[MILKYWAY] *= rotate(mat4(1.0),0.001f,vec3(0,1,0));
 	glDisable(GL_DEPTH_TEST);
 }

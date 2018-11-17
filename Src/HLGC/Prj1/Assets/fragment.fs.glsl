@@ -40,7 +40,7 @@ float rnd(float x)
 
 float drawCircle(vec2 uv, vec2 center, float radius)
 {
-   return 1.0 - smoothstep(0.0, radius, length(uv - center));
+  return 1.0 - smoothstep(0.0, radius, length(uv - center));
 }
 
 
@@ -136,7 +136,7 @@ void shader_ThresholdDither(){
 	fragColor = vec4(grayColor,grayColor,grayColor, 1.0);
 }
 void gold(){
-	fragColor = vec4(255.0 / 255.0 , 215.0 / 255.0, 0 / 255.0, 0.5);
+	fragColor = vec4(255.0 / 255.0 , 215.0 / 255.0, 0 / 255.0, 1.0);
 }
 void bluemove(){
 	vec2 p = gl_FragCoord.xy;
@@ -163,7 +163,7 @@ void bluemove(){
 
 }
 void snow(){
-   vec2 uv =  gl_FragCoord.xy  /iResolution.x;
+   vec2 uv =  gl_FragCoord.xy  /iResolution.y;
    vec3 color = texture(tex,vertexData.texcoord).rgb;  
    fragColor = vec4(color, 1.0);   
    float j;   
@@ -173,6 +173,31 @@ void snow(){
       float speed = 0.3 + rnd(cos(j)) * (0.7 + 0.5 * cos(j / (float(_SnowflakeAmount) * 0.25)));           
       vec2 center = vec2((-0.25 + uv.y) * _BlizardFactor + rnd(j) + 0.1 * cos(time*0.001 + sin(j)),mod(rnd(j) - speed * (time * 0.001 * (0.1 + _BlizardFactor)),0.95));
       fragColor += vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008)); 
+   }
+}
+
+vec2 rotateUV(vec2 uv, float rotation)
+{
+    float mid = 0.5;
+    return vec2(
+        cos(rotation) * (uv.x - mid) + sin(rotation) * (uv.y - mid) + mid,
+        cos(rotation) * (uv.y - mid) - sin(rotation) * (uv.x - mid) + mid
+    );
+}
+void gold_particle(){
+   vec2 uv =  gl_FragCoord.xy  /iResolution.y;
+   uv = rotateUV(uv,180);
+   vec3 color = texture(tex,vertexData.texcoord).rgb;
+   
+   fragColor = vec4(color, 1.0);
+   float j;   
+   for (int i = 0; i < _SnowflakeAmount; i++)
+   {
+      j = float(i);      
+      float speed = 0.3 + rnd(cos(j)) * (0.7 + 0.5 * cos(j / (float(_SnowflakeAmount) * 0.25)));
+      vec2 center = vec2((-0.25 + uv.y) * _BlizardFactor + rnd(j) + 0.1 * cos(time*0.001 + sin(j)),mod(rnd(j) - speed * (time * 0.001 * (0.1 + _BlizardFactor)),0.95));
+      //fragColor += mix(vec4(255.0 / 255.0 , 215.0 / 255.0, 0 / 255.0,0.2),vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008)),0.9);	  
+	  fragColor +=(vec4(255.0 / 255.0 , 215.0 / 255.0, 0 / 255.0,1.0) * vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008)));
    }
 }
 void mosaic(){
@@ -346,7 +371,7 @@ void main()
 	{
 		case(0):
 		{
-			Shader_Normal();
+			Shader_Normal();			
 			break;
 		}
 		case(1):
@@ -438,9 +463,13 @@ void main()
 		case(26):{
 			//blond
 			vec3 texColor = texture(tex,vertexData.texcoord).rgb;
-			fragColor = vec4(texColor.r + 135.0/255.0,texColor.g + 19.0/255.0,texColor.b - 221.0/255.0, 1.0);				
+			fragColor = vec4(texColor.r + 135.0/255.0,texColor.g + 19.0/255.0,texColor.b - 221.0/255.0, 1.0);
 			break;
-		}		
+		}
+		case(27):{
+			gold_particle();
+			break;
+		}
 	}
 }
 
