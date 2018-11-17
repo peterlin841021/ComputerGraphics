@@ -47,10 +47,10 @@ const vec3 milkyway(-10.f,2.f, 0);
 const vec3 scale_ratio(0.025f, 0.025f, 0.025f);
 
 int index = 0;//Motion present
-int scenery_effect = 0;
 int miku_effect = 0;
 int miku_hair_effect = 0;
-int miku_body_effect = 0;
+int ground_effect = 0;
+int sky_effect = 0;
 int scallion_effect = 0;
 int flydir = 1;
 
@@ -1354,7 +1354,7 @@ void Scene::MenuEvent(int item)
 	float signal = 1;
 	action = origin;
 	int effect = -1;
-	int menu_offset[7] = { 0,10,22,34,46,58,65};
+	int menu_offset[8] = { 0,10,22,34,46,58,70,78 };
 	//Action manager
 	for (size_t i = 0; i < 9; i++)
 	{
@@ -1559,24 +1559,29 @@ void Scene::MenuEvent(int item)
 	if (item >= menu_offset[1] && item < menu_offset[2])//Global
 	{
 		miku_effect = item - menu_offset[1];
-		scenery_effect= miku_effect;
 		scallion_effect = miku_effect;
+		ground_effect= miku_effect;
+		sky_effect = miku_effect;
 	}
 	else if(item >= menu_offset[2] && item < menu_offset[3])//Miku effect
 	{
 		miku_effect = item - menu_offset[2];
 	}
-	else if (item >= menu_offset[3] && item < menu_offset[4])//Scenery effect
+	else if (item >= menu_offset[3] && item < menu_offset[4])//Ground effect
 	{
-		scenery_effect = item - menu_offset[3];
+		ground_effect = item - menu_offset[3];
 	}
-	else if (item >= menu_offset[4] && item < menu_offset[5])//Scallion effect
+	else if (item >= menu_offset[4] && item < menu_offset[5])//Ground effect
 	{
-		scallion_effect = item - menu_offset[4];
+		sky_effect = item - menu_offset[4];
 	}
-	else if (item >= menu_offset[5] && item < menu_offset[6])//Miku haircut effect
+	else if (item >= menu_offset[5] && item < menu_offset[6])//Scallion effect
 	{
-		miku_hair_effect = item - menu_offset[5] + 21;
+		scallion_effect = item - menu_offset[5];
+	}
+	else if (item >= menu_offset[6] && item < menu_offset[7])//Miku haircut effect
+	{
+		miku_hair_effect = item - menu_offset[6] + 21;
 	}	
 }
 
@@ -1593,18 +1598,20 @@ void Scene::Render()
 			models[i]->Render(action[SCALLION], scallion_effect, clock());
 			if (invisible_scallion_use)
 			{
-				models[INVISIBLE_SCALLION]->Render(action[INVISIBLE_SCALLION], 12, clock());
-				//action[INVISIBLE_SCALLION] *= rotate(mat4(1.0),1.f,vec3(1,1,1));
-				//action[INVISIBLE_SCALLION] *= translate(mat4(1.0),vec3(0, 0, 1.f));
+				models[INVISIBLE_SCALLION]->Render(action[INVISIBLE_SCALLION], 12, clock());				
 			}				
 		}
 		else if (i != SCENERY && i != SCALLION && i != MILKYWAY && i != INVISIBLE_SCALLION)
 		{
 			models[i]->Render(action[i], miku_effect, clock());
 		}
-		else if (i == SCENERY || i == MILKYWAY)
+		else if (i == SCENERY)
 		{
-			models[i]->Render(action[i], scenery_effect, clock());
+			models[i]->Render(action[i], ground_effect, clock());
+		}
+		else if (i == MILKYWAY)
+		{
+			models[i]->Render(action[i], sky_effect, clock());
 		}
 		if (i == HAIR && miku_effect == 0) 
 		{

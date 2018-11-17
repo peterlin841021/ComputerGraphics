@@ -157,22 +157,24 @@ int main(int argc, char *argv[])
 	int menu_act = glutCreateMenu(My_Menu);
 	int menu_eff = glutCreateMenu(My_Menu);
 	int menu_miku_eff = glutCreateMenu(My_Menu);
-	int menu_scenery_eff = glutCreateMenu(My_Menu);
+	int menu_ground_eff = glutCreateMenu(My_Menu);
+	int menu_sky_eff = glutCreateMenu(My_Menu);
 	int menu_scallion_eff = glutCreateMenu(My_Menu);
 	int menu_hair_eff = glutCreateMenu(My_Menu);
 
 	glutSetMenu(menu_main);	
-	string menus[7] = { "Exit","Action","Effect","Miku effect","Scenery effect","Scallion effect","Miku_HairColor effect"};
+	string menus[8] = { "Exit","Action","Effect","Miku effect","Ground effect","Sky effect","Scallion effect","Miku_HairColor effect"};
 
 	glutAddSubMenu(strToChar(menus[1]), menu_act);
 	glutAddSubMenu(strToChar(menus[2]), menu_eff);
 	glutAddSubMenu(strToChar(menus[3]), menu_miku_eff);
-	glutAddSubMenu(strToChar(menus[4]), menu_scenery_eff);
-	glutAddSubMenu(strToChar(menus[5]), menu_scallion_eff);
-	glutAddSubMenu(strToChar(menus[6]), menu_hair_eff);
+	glutAddSubMenu(strToChar(menus[4]), menu_ground_eff);
+	glutAddSubMenu(strToChar(menus[5]), menu_sky_eff);
+	glutAddSubMenu(strToChar(menus[6]), menu_scallion_eff);
+	glutAddSubMenu(strToChar(menus[7]), menu_hair_eff);
 	
 	glutAddMenuEntry(strToChar(menus[0]), 0);//EXIT
-	int menu_offset[7] = { 0,10,22,34,46,58,65};
+	int menu_offset[8] = { 0,10,22,34,46,58,70,78};
 	string menus_actionItems[10] = {"Cheering","Walking","Flying","Clapping" ,"Bowing" ,"Swing skirt" ,"Drawing sword " ,"Final attack: excalibur" ,"Loituma dance","Standing" };
 	glutSetMenu(menu_act);
 	for (size_t i = 0; i < 10; i++)
@@ -195,20 +197,25 @@ int main(int argc, char *argv[])
 	{
 		glutAddMenuEntry(strToChar(menus_effectItems[i]), menu_offset[2] + i);
 	}
-	glutSetMenu(menu_scenery_eff);
+	glutSetMenu(menu_ground_eff);
 	for (size_t i = 0; i < effect_items; i++)
 	{
 		glutAddMenuEntry(strToChar(menus_effectItems[i]), menu_offset[3] + i);
 	}
-	glutSetMenu(menu_scallion_eff);
+	glutSetMenu(menu_sky_eff);
 	for (size_t i = 0; i < effect_items; i++)
 	{
 		glutAddMenuEntry(strToChar(menus_effectItems[i]), menu_offset[4] + i);
 	}
+	glutSetMenu(menu_scallion_eff);
+	for (size_t i = 0; i < effect_items; i++)
+	{
+		glutAddMenuEntry(strToChar(menus_effectItems[i]), menu_offset[5] + i);
+	}
 	glutSetMenu(menu_hair_eff);
 	for (size_t i = 0; i < haircuts; i++)
 	{
-		glutAddMenuEntry(strToChar(menus_colorItems[i]), menu_offset[5] + i);
+		glutAddMenuEntry(strToChar(menus_colorItems[i]), menu_offset[6] + i);
 	}
 	glutSetMenu(menu_main);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
