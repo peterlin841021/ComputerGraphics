@@ -1178,7 +1178,6 @@ void Loituma(float angle,int index)
 			act8(angle, action, false);
 	}	
 }
-
 char *stringToChar(string str)
 {
 	char *c = new char[str.length() + 1];
@@ -1355,346 +1354,199 @@ void Scene::MenuEvent(int item)
 	float signal = 1;
 	action = origin;
 	int effect = -1;
+	int menu_offset[7] = { 0,11,22,33,44,55,60};
 	//Action manager
 	for (size_t i = 0; i < 9; i++)
 	{
 		action_list[i] = false;
 	}	
 	switch (item)
-	{
-	case 0:
-		break;
-	case 1:
-		index = 0;
-		for (size_t i = 0; i < 20; i++)
-		{
-			cheerangles[i] = start;
-			if (i == 10)
-				signal = -1;
-			start += v * 3 * signal;
-		}		
-		action_list[0] = !action_list[0];
-		break;
-	case 2:
-		index = 0;
-		for (size_t i = 0; i < 40; i++)
-		{
-			walkangles[i] = start;
-			if (i == 10)
-				signal = -1;
-			if(i == 30)
-				signal = 1;
-			start += v * 2 * signal;
-		}		
-		action_list[1] = !action_list[1];
-		break;
-	case 3:
-		flyheight = 0.f;
-		action = origin;
-		index = 0;
-		start = 0.5f;		
-		for (size_t i = 0; i < 10; i++)
-		{
-			flyangles[i] = start;
-			if (i == 5)
-				signal = -1;
-			start -= v * 2 * signal;
-		}		
-		action_list[2] = !action_list[2];
-		break;
-	case 4:
-		index = 0;
-		for (size_t i = 0; i < 40; i++)
-		{
-			clapangles[i] = start;
-			if (i == 8 || i == 28)
-			{
-				if (i == 8)
-					start = 0;
-				signal = -1;
-			}				
-			if(i == 24 || i == 32)
-				signal = 1;
-			if (i == 36)
-				signal = -1.3f;
-			start += v * signal;
-		}
-		action_list[3] = !action_list[3];
-		break;
-	case 5:
-		index = 0;
-		for (size_t i = 0; i < 16; i++)
-		{
-			bowangles[i] = start;
-			if (i == 6)
-			{
-				start = 0;
-				signal = -1;
-			}			
-			start -= v * signal;
-		}			
-		action_list[4] = !action_list[4];
-		break;
-	case 6:
-		index = 0;
-		signal = 0.5f;
-		for (size_t i = 0; i < 15; i++)
-		{
-			takeoffangles[i] = start;
-			if (i == 4)
-			{
-				start = 0;
-				signal = -0.4f;
-			}
-			start -= v * signal;			
-		}				
-		action_list[5] = !action_list[5];
-		break;
-	case 7:
-		index = 0;
-		for (size_t i = 0; i < 16; i++)
-		{
-			drawangles[i] = start;
-			if (i == 10)
-				signal = -2.f;
-			start -= v * signal;
-		}
-		action_list[6] = !action_list[6];
-		break;	
-	case 8:
-		if (scallion_use)
-		{
-			invisible_scallion_use = false;			
+	{	
+		case 1:
 			index = 0;
-			power = 0;
-			for (size_t i = 0; i < 50; i++)
+			for (size_t i = 0; i < 20; i++)
 			{
-				excaliburangle[i] = start;
-				if (i == 5)
-				{
+				cheerangles[i] = start;
+				if (i == 10)
 					signal = -1;
-				}
-				if (i == 10 || i == 15)
+				start += v * 3 * signal;
+			}		
+			action_list[0] = !action_list[0];
+			break;
+		case 2:
+			index = 0;
+			for (size_t i = 0; i < 40; i++)
+			{
+				walkangles[i] = start;
+				if (i == 10)
+					signal = -1;
+				if(i == 30)
+					signal = 1;
+				start += v * 2 * signal;
+			}		
+			action_list[1] = !action_list[1];
+			break;
+		case 3:
+			flyheight = 0.f;
+			action = origin;
+			index = 0;
+			start = 0.5f;		
+			for (size_t i = 0; i < 10; i++)
+			{
+				flyangles[i] = start;
+				if (i == 5)
+					signal = -1;
+				start -= v * 2 * signal;
+			}		
+			action_list[2] = !action_list[2];
+			break;
+		case 4:
+			index = 0;
+			for (size_t i = 0; i < 40; i++)
+			{
+				clapangles[i] = start;
+				if (i == 8 || i == 28)
 				{
-					if (i == 15)//Hold
+					if (i == 8)
+						start = 0;
+					signal = -1;
+				}				
+				if(i == 24 || i == 32)
+					signal = 1;
+				if (i == 36)
+					signal = -1.3f;
+				start += v * signal;
+			}
+			action_list[3] = !action_list[3];
+			break;
+		case 5:
+			index = 0;
+			for (size_t i = 0; i < 16; i++)
+			{
+				bowangles[i] = start;
+				if (i == 6)
+				{
+					start = 0;
+					signal = -1;
+				}			
+				start -= v * signal;
+			}			
+			action_list[4] = !action_list[4];
+			break;
+		case 6:
+			index = 0;
+			signal = 0.5f;
+			for (size_t i = 0; i < 15; i++)
+			{
+				takeoffangles[i] = start;
+				if (i == 4)
+				{
+					start = 0;
+					signal = -0.4f;
+				}
+				start -= v * signal;			
+			}				
+			action_list[5] = !action_list[5];
+			break;
+		case 7:
+			index = 0;
+			for (size_t i = 0; i < 16; i++)
+			{
+				drawangles[i] = start;
+				if (i == 10)
+					signal = -2.f;
+				start -= v * signal;
+			}
+			action_list[6] = !action_list[6];
+			break;	
+		case 8:
+			if (scallion_use)
+			{
+				invisible_scallion_use = false;			
+				index = 0;
+				power = 0;
+				for (size_t i = 0; i < 50; i++)
+				{
+					excaliburangle[i] = start;
+					if (i == 5)
+					{
+						signal = -1;
+					}
+					if (i == 10 || i == 15)
+					{
+						if (i == 15)//Hold
+							start = 0;
+						signal = 1;
+					}
+					if (i == 20)
+					{
+						start = 0;
+						signal = -0.25f;
+					}					
+					if (i == 30)
+						signal = 0.f;
+					if (i == 45)
+						signal = 0.9f;
+					start += v * signal;
+				}					
+				action_list[7] = !action_list[7];
+			}		
+			break;
+		case 9:
+			index = 0;
+			for (size_t i = 0; i < 300; i++)
+			{
+				loitumaangle[i] = start;
+				if (i == 10 || i == 18 || i == 26 || i == 34)
+				{
+					if(i == 10)
+						start = 0;
+					signal = 0.5f;
+				}
+				if (i == 14 || i == 22 || i == 30)
+				{				
+					signal = -0.5f;
+				}
+				if (i == 50 || i == 70 || i == 90 || i == 100 || i == 110 || i == 130 || i == 140 || i == 150 || i == 170 || i == 290)
+				{
+					if (i == 50 || i == 70 || i == 90 || i == 100 || i == 150 || i == 170 || i == 290)
 						start = 0;
 					signal = 1;
 				}
-				if (i == 20)
+				if (i == 190 || i == 210)
 				{
 					start = 0;
-					signal = -0.25f;
-				}					
-				if (i == 30)
-					signal = 0.f;
-				if (i == 45)
-					signal = 0.9f;
-				start += v * signal;
-			}					
-			action_list[7] = !action_list[7];
-		}		
-		break;
-	case 9:
-		index = 0;
-		for (size_t i = 0; i < 10; i++)
-		{
-			loitumaangle[i] = start;
-			start += v;
-		}
-		start = 0;
-		//Shaking
-		for (size_t i = 10; i < 14; i++)
-		{
-			loitumaangle[i] = start;
-			start += v/2.f;
-		}
-		for (size_t i = 14; i < 18; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v / 2.f;
-		}
-		for (size_t i = 18; i < 22; i++)
-		{
-			loitumaangle[i] = start;
-			start += v / 2.f;
-		}
-		for (size_t i = 22; i < 26; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v / 2.f;
-		}
-		for (size_t i = 26; i < 30; i++)
-		{
-			loitumaangle[i] = start;
-			start += v / 2.f;
-		}
-		for (size_t i = 30; i < 34; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v / 2.f;
-		}
-		for (size_t i = 34; i < 40; i++)
-		{
-			loitumaangle[i] = start;
-			start += v / 2.f;
-		}
-		start = 0;
-		//Arm cross
-		for (size_t i = 40; i < 50; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v;
-		}
-		start = 0;
-		//Left kick
-		for (size_t i = 50; i < 60; i++)
-		{
-			loitumaangle[i] = start;
-			start += v;
-		}
-		//Kick back
-		for (size_t i = 60; i < 70; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v;
-		}
-		start = 0;
-		//Right kick
-		for (size_t i = 70; i < 80; i++)
-		{
-			loitumaangle[i] = start;
-			start += v;
-		}
-		//Kick back
-		for (size_t i = 80; i < 90; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v;
-		}
-		start = 0;
-		//Arm shaking1 *2
-		for (size_t i = 90; i < 100; i++)
-		{
-			loitumaangle[i] = start;
-			start += v;
-		}
-		start = 0;
-		for (size_t i = 100; i < 105; i++)
-		{
-			loitumaangle[i] = start;
-			start += v;
-		}
-		for (size_t i = 105; i < 110; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v;
-		}
-		for (size_t i = 110; i < 115; i++)
-		{
-			loitumaangle[i] = start;
-			start += v;
-		}
-		for (size_t i = 115; i < 120; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v;
-		}
-		//Arm shaking2 *2
-		//start = 0;
-		for (size_t i = 120; i < 125; i++)
-		{
-			loitumaangle[i] = start;
-			start += v * 3;
-		}
-		for (size_t i = 125; i < 130; i++)
-		{
-			loitumaangle[i] = start;
-			start += v * 3;
-		}
-		for (size_t i = 130; i < 135; i++)
-		{
-			loitumaangle[i] = start;
-			start += v;
-		}
-		for (size_t i = 135; i < 140; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v;
-		}
-		for (size_t i = 140; i < 145; i++)
-		{
-			loitumaangle[i] = start;
-			start += v;
-		}
-		for (size_t i = 145; i < 150; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v;
-		}
-		//Right
-		start = 0;
-		for (size_t i = 150; i < 160; i++)
-		{
-			loitumaangle[i] = start;
-			start += v;
-		}
-		for (size_t i = 160; i < 170; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v;
-		}
-		//Left
-		start = 0;
-		for (size_t i = 170; i < 180; i++)
-		{
-			loitumaangle[i] = start;
-			start += v;
-		}
-		for (size_t i = 180; i < 190; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v;
-		}
-		//Right arm
-		start = 0;
-		for (size_t i = 190; i < 200; i++)
-		{
-			loitumaangle[i] = start;
-			start += v*2.f;
-		}
-		for (size_t i = 200; i < 210; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v* 2.f;
-		}
-		//Left arm
-		start = 0;
-		for (size_t i = 210; i < 220; i++)
-		{
-			loitumaangle[i] = start;
-			start += v * 2.f;
-		}
-		for (size_t i = 220; i < 230; i++)
-		{
-			loitumaangle[i] = start;
-			start -= v * 2.f;
-		}
-		//Rotate	
-		start = 0;
-		for (size_t i = 230; i < 290; i++)
-		{
-			loitumaangle[i] = act7_index;
-			act7_index++;
-			if (act7_index > 229)
-				act7_index = 0;			
-		}
-		for (size_t i = 290; i < 300; i++)
-		{
-			loitumaangle[i] = start;
-			start += v;
-		}
-		action_list[8] = !action_list[8];
-		break;
+					signal = 2;
+				}
+				if (i == 200 || i == 220)
+				{
+					//start = 0;
+					signal = -2;
+				}
+				if (i == 40 || i == 60 || i == 80 || i == 105 || i == 115 || i == 135 || i == 145 || i == 160 || i == 180)
+				{
+					if(i == 40)
+						start = 0;
+					signal = -1;
+				}
+				if (i == 120)
+				{				
+					signal = 3;
+				}
+				if (i > 229 && i < 290)
+				{
+					start = act7_index;
+					act7_index++;
+					if (act7_index > 229)
+						act7_index = 0;
+				}
+				else
+				{
+					start += signal * v;
+				}			
+			}
+			action_list[8] = !action_list[8];
+			break;
 	//Reset
 	case 10:
 		action = origin;
@@ -1703,131 +1555,28 @@ void Scene::MenuEvent(int item)
 			action_list[i] = false;
 		}	
 		break;
-	//Global effect
-	case 12:		
-		effect = 0;
-		miku_effect = effect;
-		scenery_effect= effect;
-		scallion_effect = effect;
-		break;
-	case 13:
-		effect = 1;
-		miku_effect = effect;
-		scenery_effect = effect;
-		scallion_effect = effect;
-		break;
-	case 14:
-		effect = 2;
-		miku_effect = effect;
-		scenery_effect = effect;
-		scallion_effect = effect;
-		break;
-	case 15:
-		effect = 3;
-		miku_effect = effect;
-		scenery_effect = effect;
-		scallion_effect = effect;
-		break;
-	case 16:		
-		effect = 4;
-		miku_effect = effect;
-		scenery_effect = effect;
-		scallion_effect = effect;
-		break;
-	case 17:		
-		effect = 5;
-		miku_effect = effect;
-		scenery_effect = effect;
-		scallion_effect = effect;
-		break;
-	case 18:		
-		effect = 6;
-		miku_effect = effect;
-		scenery_effect = effect;
-		scallion_effect = effect;
-		break;
-	//Miku effect
-	case 22:		
-		miku_effect = 0;
-		break;
-	case 23:		
-		miku_effect = 1;
-		break;
-	case 24:	
-		miku_effect = 2;
-		break;
-	case 25:		
-		miku_effect = 3;
-		break;
-	case 26:		
-		miku_effect = 4;
-		break;
-	case 27:		
-		miku_effect = 5;
-		break;
-	case 28:		
-		miku_effect = 6;
-		break;
-	//Scenery effect
-	case 32:		
-		scenery_effect = 0;
-		break;
-	case 33:		
-		scenery_effect = 1;
-		break;
-	case 34:		
-		scenery_effect = 2;
-		break;
-	case 35:		
-		scenery_effect = 3;
-		break;
-	case 36:		
-		scenery_effect = 4;
-		break;
-	case 37:		
-		scenery_effect = 5;
-		break;
-	case 38:		
-		scenery_effect = 6;		
-		break;
-	//Scallion effect
-	case 42:		
-		scallion_effect = 0;
-		break;		
-	case 43:		
-		scallion_effect = 1;
-		break;
-	case 44:		
-		scallion_effect = 2;
-		break;
-	case 45:		
-		scallion_effect = 3;
-		break;
-	case 46:		
-		scallion_effect = 4;
-		break;
-	case 47:		
-		scallion_effect = 5;
-		break;
-	case 48:		
-		scallion_effect = 6;
-		break;
-	//Hair cut effect
-	case 52:
-		miku_hair_effect = 7;
-		break;
-	case 53:
-		miku_hair_effect = 8;
-		break;
-	case 54:
-		miku_hair_effect = 9;
-		break;
-	case 55:
-		miku_hair_effect = 10;
-		break;
-	case 56:
-		miku_hair_effect = 11;
-		break;
+	}
+	if (item >= menu_offset[1] && item < menu_offset[2])//Global
+	{
+		miku_effect = item - menu_offset[1];
+		scenery_effect= miku_effect;
+		scallion_effect = miku_effect;
+	}
+	else if(item >= menu_offset[2] && item < menu_offset[3])//Miku effect
+	{
+		miku_effect = item - menu_offset[2];
+	}
+	else if (item >= menu_offset[3] && item < menu_offset[4])//Scenery effect
+	{
+		scenery_effect = item - menu_offset[3];
+	}
+	else if (item >= menu_offset[4] && item < menu_offset[5])//Scallion effect
+	{
+		scallion_effect = item - menu_offset[4];
+	}
+	else if (item >= menu_offset[5] && item <= menu_offset[6])//Miku haircut effect
+	{
+		miku_hair_effect = item - menu_offset[5] + 11;
 	}
 }
 
