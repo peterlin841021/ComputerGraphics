@@ -1343,7 +1343,6 @@ void Scene::KeyBoardEvent(unsigned char key)
 		break;
 	}
 }
-
 void Scene::MenuEvent(int item)
 {	
 	float start = 0.f;
@@ -1352,8 +1351,9 @@ void Scene::MenuEvent(int item)
 	mat4 identity(1.0);
 	float signal = 1;
 	action = origin;
-	int effect = -1;
-	int menu_offset[8] = { 0,10,22,34,46,58,70,78 };
+	int effect = -1;	
+	//int menu_offset[8] = { 0,10,29,48,67,86,105,111 };
+	int menu_offset[8] = { 0,10,30,50,70,90,110,117 };
 	//Action manager
 	for (size_t i = 0; i < 9; i++)
 	{
@@ -1597,20 +1597,20 @@ void Scene::Render()
 			models[i]->Render(action[SCALLION], scallion_effect, clock());
 			if (invisible_scallion_use)
 			{
-				models[INVISIBLE_SCALLION]->Render(action[INVISIBLE_SCALLION], 11, clock());				
+				models[INVISIBLE_SCALLION]->Render(action[INVISIBLE_SCALLION], 13, clock());				
 			}				
 		}
 		else if (i != GROUND && i != SCALLION && i != MILKYWAY && i != INVISIBLE_SCALLION)
 		{
 			if(invisible_scallion_use)
-				models[i]->Render(action[i], 11, clock());
+				models[i]->Render(action[i], 13, clock());
 			else
 				models[i]->Render(action[i], miku_effect, clock());
 		}
 		else if (i == GROUND)
 		{
 			if (invisible_scallion_use)
-				models[i]->Render(action[i], 27, clock());
+				models[i]->Render(action[i], 18, clock());
 			else
 				models[i]->Render(action[i], ground_effect, clock());
 		}

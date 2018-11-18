@@ -16,7 +16,7 @@ public:
 	void Mini_Map();
 	void Map_3D();
 	void loadTexture2D(QString, GLuint &);
-	float degree_change(float );
+	//float degree_change(float );	
 private:
 	GLuint grass_ID;
 	GLuint sky_ID;

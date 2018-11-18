@@ -12,56 +12,14 @@ uniform int shaderNumber; //特效編號
 uniform sampler2D tex; //輸入之貼圖 
 uniform float time;
 
-vec2 img_size = vec2(500, 500); 
+vec2 img_size = vec2(400, 400); 
 float count = 1.1;
 
- 
-vec3 color = vec3(0.2, 0.42, 0.68); // blue 1
-//vec3 color = vec3(0.1, 0.3, 0.6); // blue 2
-//vec3 color = vec3(0.6, 0.1, 0.3); // red
-//vec3 color = vec3(0.1, 0.6, 0.3); // green
- 
-float width = 8.0;   // n = 512/32 = 16
- 
 float rand(float x) { return fract(sin(x) * 4358.5453); }
 float rand(vec2 co) { return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 3758.5357); }
- 
- #define _SnowflakeAmount 400  // 雪花数
-#define _BlizardFactor 0.25          // 风的大小
-
-float rnd(float x)
-{
-   return fract(
-         sin(
-               dot(vec2(x + 47.49, 38.2467 / (x + 2.3)),
-                     vec2(12.9898, 78.233))) * (43758.5453));
-}
-
-
-float drawCircle(vec2 uv, vec2 center, float radius)
-{
-  return 1.0 - smoothstep(0.0, radius, length(uv - center));
-}
-
-
-
-float invader(vec2 p, float n)
-{
-   p.x = abs(p.x);
-   p.y = -floor(p.y - 5.0);
-   
-   //return step(p.x, 2.0) ;
-   //return floor(p.x + p.y*3.0);
-   //return n/exp2(floor(p.x + p.y*3.0));
-   //return mod(n/exp2(floor(p.x + p.y*3.0)), 2.);
-   //return floor(mod(n/exp2(floor(p.x + p.y*3.0)), 2.));
-   //return step(1.0, floor(mod(n/(exp2(floor(p.x + p.y*3.0))),2.0)));
-   return step(p.x, 2.0) * step(1.0, floor(mod(n/(exp2(floor(p.x + p.y*3.0))),2.0)));
-}
-
+float rnd(float x) {  return fract(sin(dot(vec2(x + 47.49, 38.2467 / (x + 2.3)),vec2(12.9898, 78.233))) * (43758.5453));}
 
 const vec2 iResolution = vec2(800., 800.);
-
 
 void Shader_Normal(){		
 	vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
@@ -136,9 +94,53 @@ void shader_ThresholdDither(){
 	fragColor = vec4(grayColor,grayColor,grayColor, 1.0);
 }
 void gold(){
-	fragColor = vec4(255.0 / 255.0 , 215.0 / 255.0, 0 / 255.0, 1.0);
+	fragColor = vec4(255.0 / 255.0 , 215.0 / 255.0, 0 / 255.0, 0.5);
 }
-void bluemove(){
+
+void mosaic(){
+	const vec2 TexSize = vec2(800.0, 800.0);	
+	const vec2 mosaicSize = vec2(30.0, 30.0);
+	vec2 intXY = vec2(vertexData.texcoord.x*TexSize.x, vertexData.texcoord.y*TexSize.y);
+    vec2 XYMosaic = vec2(floor(intXY.x/mosaicSize.x)*mosaicSize.x, floor(intXY.y/mosaicSize.y)*mosaicSize.y);
+    vec2 UVMosaic = vec2(XYMosaic.x/TexSize.x, XYMosaic.y/TexSize.y);
+    vec4 color = texture(tex, UVMosaic);
+     fragColor  = color;
+}
+
+void FD(){
+	const highp vec3 W = vec3(0.2125, 0.7154, 0.0721);
+	const vec2 TexSize = vec2(50.0, 50.0);
+	const vec4 bkColor = vec4(0.5, 0.5, 0.5, 1.0);  
+    vec2 upLeftUV = vec2(vertexData.texcoord.x-1.0/TexSize.x, vertexData.texcoord.y-1.0/TexSize.y);
+    vec4 curColor = texture(tex, vertexData.texcoord);
+    vec4 upLeftColor = texture(tex, upLeftUV);
+    vec4 delColor = curColor - upLeftColor;
+    float luminance = dot(delColor.rgb, W);
+    fragColor = vec4(vec3(luminance), 0.0) + bkColor;
+}
+
+/*---------------------------------------------------------------------*/
+float invader(vec2 p, float n)
+{
+   p.x = abs(p.x);
+   p.y = -floor(p.y - 5.0);
+   
+   //return step(p.x, 2.0) ;
+   //return floor(p.x + p.y*3.0);
+   //return n/exp2(floor(p.x + p.y*3.0));
+   //return mod(n/exp2(floor(p.x + p.y*3.0)), 2.);
+   //return floor(mod(n/exp2(floor(p.x + p.y*3.0)), 2.));
+   //return step(1.0, floor(mod(n/(exp2(floor(p.x + p.y*3.0))),2.0)));
+   return step(p.x, 2.0) * step(1.0, floor(mod(n/(exp2(floor(p.x + p.y*3.0))),2.0)));
+}
+
+void Textspeak(){
+	vec3 color = vec3(0.2, 0.42, 0.68); // blue 1
+	//vec3 color = vec3(0.1, 0.3, 0.6); // blue 2
+	//vec3 color = vec3(0.6, 0.1, 0.3); // red
+	//vec3 color = vec3(0.1, 0.6, 0.3); // green 
+	float width = 8.0;   // n = 512/32 = 16
+
 	vec2 p = gl_FragCoord.xy;
     vec2 uv = p / iResolution.xy - 0.5;
     
@@ -151,31 +153,42 @@ void bluemove(){
     a -= 0.3*smoothstep(0.0, 0.7, length(uv));   // 渐变效果
  
    
-    p.y += 20.0*time;
+    p.y += 20.0*time*0.002;
     float r = rand(floor(p/8.0));
     float inv = invader(mod(p,8.0)-4.0, 809999.0*r);
-    a += (0.06 + max(0.0, 0.2*sin(10.0*r*time))) * inv * step(id1, .3);   
-    //a += (0.06 + max(0.0, 0.2*sin(10.0*r*time))) * inv;
+    a += (0.06 + max(0.0, 0.2*sin(10.0*r*time*0.002))) * inv * step(id1, .3);   
+    //a += (0.06 + max(0.0, 0.2*sin(10.0*r*time*0.002))) * inv;
    
     
-   fragColor = vec4(color+a, 1.0);
+    fragColor = vec4(color+a, 1.0);
 
 
 }
+/*----------------------------------------------------------------*/
+#define _SnowflakeAmount 400  // 雪花数
+#define _BlizardFactor 0.25          // 风的大小
+
+float drawCircle(vec2 uv, vec2 center, float radius)
+{
+   return 1.0 - smoothstep(0.0, radius, length(uv - center));
+}
+
 void snow(){
-   vec2 uv =  gl_FragCoord.xy  /iResolution.y;
+   vec2 uv =  gl_FragCoord.xy  /iResolution.x;
    vec3 color = texture(tex,vertexData.texcoord).rgb;  
-   fragColor = vec4(color, 1.0);   
+   fragColor = vec4(color, 1.0);  
+   
    float j;   
    for (int i = 0; i < _SnowflakeAmount; i++)
    {
       j = float(i);      
       float speed = 0.3 + rnd(cos(j)) * (0.7 + 0.5 * cos(j / (float(_SnowflakeAmount) * 0.25)));           
       vec2 center = vec2((-0.25 + uv.y) * _BlizardFactor + rnd(j) + 0.1 * cos(time*0.001 + sin(j)),mod(rnd(j) - speed * (time * 0.001 * (0.1 + _BlizardFactor)),0.95));
-      fragColor += vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008)); 
+      fragColor += vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008 ));
+	  
    }
+   
 }
-
 vec2 rotateUV(vec2 uv, float rotation)
 {
     float mid = 0.5;
@@ -195,33 +208,10 @@ void gold_particle(){
    {
       j = float(i);      
       float speed = 0.3 + rnd(cos(j)) * (0.7 + 0.5 * cos(j / (float(_SnowflakeAmount) * 0.25)));
-      vec2 center = vec2((-0.25 + uv.y) * _BlizardFactor + rnd(j) + 0.1 * cos(time*0.001 + sin(j)),mod(rnd(j) - speed * (time * 0.001 * (0.1 + _BlizardFactor)),0.95));
-      //fragColor += mix(vec4(255.0 / 255.0 , 215.0 / 255.0, 0 / 255.0,0.2),vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008)),0.9);	  
+      vec2 center = vec2((-0.25 + uv.y) * _BlizardFactor + rnd(j) + 0.1 * cos(time*0.001 + sin(j)),mod(rnd(j) - speed * (time * 0.001 * (0.1 + _BlizardFactor)),0.95));      
 	  fragColor +=(vec4(255.0 / 255.0 , 215.0 / 255.0, 0 / 255.0,1.0) * vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008)));
    }
 }
-void mosaic(){
-	const vec2 TexSize = vec2(800.0, 800.0);	
-	const vec2 mosaicSize = vec2(30.0, 30.0);
-	vec2 intXY = vec2(vertexData.texcoord.x*TexSize.x, vertexData.texcoord.y*TexSize.y);
-    vec2 XYMosaic = vec2(floor(intXY.x/mosaicSize.x)*mosaicSize.x, floor(intXY.y/mosaicSize.y)*mosaicSize.y);
-    vec2 UVMosaic = vec2(XYMosaic.x/TexSize.x, XYMosaic.y/TexSize.y);
-    vec4 color = texture(tex, UVMosaic);
-     fragColor  = color;
-}
-void FD(){
-	const highp vec3 W = vec3(0.2125, 0.7154, 0.0721);
-	const vec2 TexSize = vec2(50.0, 50.0);
-	const vec4 bkColor = vec4(0.5, 0.5, 0.5, 1.0);  
-    vec2 upLeftUV = vec2(vertexData.texcoord.x-1.0/TexSize.x, vertexData.texcoord.y-1.0/TexSize.y);
-    vec4 curColor = texture(tex, vertexData.texcoord);
-    vec4 upLeftColor = texture(tex, upLeftUV);
-    vec4 delColor = curColor - upLeftColor;
-    float luminance = dot(delColor.rgb, W);
-    fragColor = vec4(vec3(luminance), 0.0) + bkColor;
-}
-
-
 /*-----------------------------------------------------------------------------*/
 vec2 hash( vec2 p ) 
 { 
@@ -248,7 +238,7 @@ vec2 voronoi( in vec2 x )
            vec2  o = hash( n + g );   // 影响cell的颜色
            
            // ❤
-           vec2  r = g - f + (0.5+0.5*sin(time+6.2831*o));
+           vec2  r = g - f + (0.5+0.5*sin(time*0.001+6.2831*o));
            //vec2  r = g - f + o;     // cell(n+g)[o] - cell(n)[f] 
           
            // ❤
@@ -264,21 +254,21 @@ vec2 voronoi( in vec2 x )
     return vec2( sqrt(m.x), m.y+m.z );
 }
 void VoronoiDiagram(){
-vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
+	vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
 	fragColor = vec4(texColor, 1.0);	
-vec2 iResolution = vec2(512., 512.);
-   vec2 p = gl_FragCoord.xy/max(iResolution.x,iResolution.y);
+	vec2 iResolution = vec2(512., 512.);
+    vec2 p = gl_FragCoord.xy/max(iResolution.x,iResolution.y);
     
-   // computer voronoi patterm
-   vec2 c = voronoi( (14.0+6.0*sin(0.2*time))*p );
+    // computer voronoi patterm
+    vec2 c = voronoi( (14.0+6.0*sin(0.2*time*0.001))*p );
    
-   // colorize
-   vec3 col = 0.5 + 0.5*cos( c.y*6.2831 + vec3(0.0,1.0,2.0) ); // cell的随机颜色
-     
-   col *= clamp(1.0 - 0.6*c.x*c.x, 0.0, 1.0);
-   col -= (1.0-smoothstep( 0.05, 0.06, c.x));                  // 画Voronoi的点集
+    // colorize
+    vec3 col = 0.5 + 0.5*cos( c.y*6.2831 + vec3(0.0,1.0,2.0) ); // cell的随机颜色
+       
+    col *= clamp(1.0 - 0.6*c.x*c.x, 0.0, 1.0);
+    col -= (1.0-smoothstep( 0.05, 0.06, c.x));                  // 画Voronoi的点集
    
-   fragColor += vec4( col, 0.0 );
+    fragColor += vec4( col, 0.0 );
 
 }
 /*-----------------------------------------------------------------------------*/
@@ -355,8 +345,8 @@ float fworley(vec2 p) {
 		sqrt(worley(p * 64. + 5.3 + time*0.001 * .0625)) *
 		sqrt(sqrt(worley(p * 128. + 7.3))))));
 }
-void Glorious_light() {
-vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
+void Phosgene() {
+	vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
 	fragColor = vec4(texColor, 1.0);
 	vec2 uv = gl_FragCoord.xy / iResolution.xy;
 	float t = fworley(uv * iResolution.xy / 600.);
@@ -364,7 +354,308 @@ vec3 texColor = texture(tex,vertexData.texcoord).rgb;
 	float r = length(abs(2.*uv - 1.) * iResolution.xy);
 	fragColor += vec4(t * vec3(1.8, 1.8*t, .1 + pow(t, 2.-t)), 1.);
 }
+
 /*-----------------------------------------------------------------------------*/
+vec2 cmul(vec2 z0, vec2 z1)
+{
+    return vec2(z0.x * z1.x - z0.y * z1.y, z0.x * z1.y + z0.y * z1.x);
+}
+
+vec2 cdiv(vec2 z0, vec2 z1)
+{
+    vec2 z1conj = vec2(z1.x, -z1.y);
+    return cmul(z0, z1conj) / cmul(z1, z1conj).x;
+}
+
+vec4 hermite(mat4 m, float t)
+{
+    float t2 = t * t, t3 = t2 * t;
+    return m * vec4(2.0 * t3 - 3.0 * t2 + 1.0, t3 - 2.0 * t2 + t, -2.0 * t3 + 3.0 * t2, t3 - t2);
+}
+
+vec3 catmullRom(mat4 m, float t)
+{
+    if(t > m[2].w)
+        m = mat4(m[1], m[2], m[3], m[3] * 2.0 - m[2]);
+    else if(t > m[1].w)
+        m = mat4(m[0], m[1], m[2], m[3]);
+    else
+        m = mat4(m[0] * 2.0 - m[1], m[0], m[1], m[2]);
+
+    t = (t - m[1].w) / (m[2].w - m[1].w);
+    m = m * mat4(0.0, 1.0, 0.0, 0.0, -0.5, 0.0, 0.5, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -0.5, 0.0, 0.5);
+    return hermite(m, t).xyz;
+}
+
+float pattern(vec2 p, int n, vec2 o)
+{
+    p *= 0.5;
+    vec2 t = vec2(cos(1.04719755), sin(1.04719755)) * 2.0;
+    float m = 1.0;
+    for(int i = 0; i < 8; i += 1)
+    {
+        if(i < n)
+        {
+            p = cdiv(vec2(1.0, 0.0), cmul(abs(fract(p) - vec2(0.5)), t));
+            m = max(m, length(p) / 2.0);
+        }
+    }
+    return 1.1 - exp(-distance(p, o) / m) * 1.6;
+}
+
+void Pulsations()
+{
+	
+    vec2 uv = gl_FragCoord.xy / iResolution.y * 0.7;
+    vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
+	fragColor = vec4(texColor, 1.0);
+
+    mat4 m = mat4( vec3(0.1, 0.1, 0.2), 0.2,  vec3(0.2, 0.3, 0.42), 0.7,   
+                vec3(1.0, 0.9, 0.5), 0.92, vec3(0.2, 0.3, 0.42), 1.0);
+
+    for(int i = 0; i < 8; i+=1)
+    {
+        vec2 c = uv + float(i) * 5e-5;
+        float p = pattern(c, 5, vec2(cos(time*0.005 + c.y * 15.0) * 0.5, 0.0)) * 0.75 +
+            pattern(c.yx, 6, vec2(0.0, sin(time*0.005 * 0.5) * 0.5)) * 0.25 +
+            pattern(c.yx * 2.0, 7, vec2(0.0, sin(time*0.005 + c.x * 8.0))) * 0.2;
+        fragColor.rgb += catmullRom(m, clamp(p * 0.9, 0.0, 1.0));
+    }
+    fragColor.rgb /= 8.0;
+}
+/*-----------------------------------------------------------------------------*/
+#define tau 6.2831853
+
+mat2 makem2(in float theta){float c = cos(theta);float s = sin(theta);return mat2(c,-s,s,c);}
+float noisess( in vec2 x ){return texture(tex, x*.01).x;}
+
+float fbmm(in vec2 p)
+{	
+	float z=2.;
+	float rz = 0.;
+	vec2 bp = p;
+	for (float i= 1.;i < 6.;i++)
+	{
+		rz+= abs((noisess(p)-0.5)*2.)/z;
+		z = z*2.;
+		p = p*2.;
+	}
+	return rz;
+}
+
+float dualfbm(in vec2 p)
+{
+    //get two rotated fbm calls and displace the domain
+	vec2 p2 = p*.7;
+	vec2 basis = vec2(fbmm(p2-time*0.0001*1.6),fbmm(p2+time*0.0001*1.7));
+	basis = (basis-.5)*.2;
+	p += basis;
+	
+	//coloring
+	return fbmm(p*makem2(time*0.0001*0.2));
+}
+
+float circc(vec2 p) 
+{
+	float r = length(p);
+	r = log(sqrt(r));
+	return abs(mod(r*4.,tau)-3.14)*3.+.2;
+
+}
+
+void PurpleHalo()
+{   
+    vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
+	fragColor = vec4(texColor, 1.0);
+	//setup system
+	vec2 p = gl_FragCoord.xy / iResolution.xy-0.5;
+	p.x *= iResolution.x/iResolution.y;
+	p*=4.;
+	
+    float rz = dualfbm(p);
+	
+	//rings
+	p /= exp(mod(time*0.0001*10.,3.14159));
+	rz *= pow(abs((0.1-circc(p))),.9);
+	
+	//final color
+	vec3 col = vec3(.2,0.1,0.4)/rz;
+	col=pow(abs(col),vec3(.99));
+	fragColor += vec4(col,1.);
+}
+/*----------------------------------------------------------------------------*/
+
+vec3 hsv2rgb (in vec3 hsv) {
+	hsv.yz = clamp (hsv.yz, 0.0, 1.0);
+	return hsv.z * (1.0 + 0.5 * hsv.y * (cos (2.0 * 3.14159 * (hsv.x + vec3 (0.0, 2.0 / 3.0, 1.0 / 3.0))) - 1.0));
+}
+
+float randd (in vec2 seed) {
+	return fract (sin (dot (seed, vec2 (12.9898, 78.233))) * 137.5453);
+}
+
+void DanceFloor() {
+	vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
+	fragColor = vec4(texColor, 1.0);
+	vec2 frag = (2.0 * gl_FragCoord.xy - iResolution.xy) / iResolution.y;
+	frag *= 1.0 - 0.2 * cos (frag.yx) * sin (3.14159 * 0.5 * texture (tex, vec2 (0.0)).x);
+	frag *= 5.0;
+	float random = randd (floor (frag));
+	vec2 black = smoothstep (1.0, 0.8, cos (frag * 3.14159 * 2.0));
+	vec3 color = hsv2rgb (vec3 (random, 1.0, 1.0));
+	color *= black.x * black.y * smoothstep (1.0, 0.0, length (fract (frag) - 0.5));
+	color *= 0.5 + 0.5 * cos (random + random * time*0.001 + time*0.001 + 3.14159 * 0.5 * texture (tex, vec2 (0.7)).x);
+	fragColor += vec4 (color, 1.0);
+}
+/*-------------------------------------------------------------------------*/
+mat2 m2 = mat2( 0.80,  0.60, -0.60,  0.80 );
+float grid(vec2 p)
+{
+	float s = sin(p.x)*cos(p.y);
+	return s;
+}
+
+float flow(in vec2 p)
+{
+	float z=2.;
+	float rz = 0.;
+	vec2 bp = p;
+	for (float i= 1.;i < 7.;i++ )
+	{
+		bp += time*0.0005*1.5;
+		vec2 gr = vec2(grid(p*3.-time*0.0005*2.),grid(p*3.+4.-time*0.0005*2.))*0.4;
+		gr = normalize(gr)*0.4;
+		gr *= makem2((p.x+p.y)*.3+time*0.0005*10.);
+		p += gr*0.5;
+		
+		rz+= (sin(noise(p)*8.)*0.5+0.5) /z;
+		
+		p = mix(bp,p,.5);
+		z *= 1.7;
+		p *= 2.5;
+		p*=m2;
+		bp *= 2.5;
+		bp*=m2;
+	}
+	return rz;	
+}
+
+float spiral(vec2 p,float scl) 
+{
+	float r = length(p);
+	r = log(r);
+	float a = atan(p.y, p.x);
+	return abs(mod(scl*(r-2./scl*a),tau)-1.)*2.;
+}
+
+void YellowWhirlwind() 
+{
+	vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
+	fragColor = vec4(texColor, 1.0);
+	vec2 p = gl_FragCoord.xy / iResolution.xy-0.5;
+	p.x *= iResolution.x/iResolution.y;
+	p*= 3.;
+	float rz = flow(p);
+	p /= exp(mod(time*0.0005*3.,2.1));
+	rz *= (6.-spiral(p,3.))*.9;
+	vec3 col = vec3(.2,0.07,0.01)/rz;
+	col=pow(abs(col),vec3(1.01));
+	fragColor += vec4(col,1.0);
+}
+/*-----------------------------------------------------------------------*/
+const vec3 BackColor	= vec3(0.0, 0.4, 0.58);
+const vec3 CloudColor	= vec3(0.18,0.70,0.87);
+
+
+float Func(float pX)
+{
+	return 0.6*(0.5*sin(0.1*pX) + 0.5*sin(0.553*pX) + 0.7*sin(1.2*pX));
+}
+
+
+float FuncR(float pX)
+{
+	return 0.5 + 0.25*(1.0 + sin(mod(40.0*pX, tau)));
+}
+
+
+float Layer(vec2 pQ, float pT)
+{
+	vec2 Qt = 3.5*pQ;
+	pT *= 0.5;
+	Qt.x += pT;
+
+	float Xi = floor(Qt.x);
+	float Xf = Qt.x - Xi -0.5;
+
+	vec2 C;
+	float Yi;
+	float D = 1.0 - step(Qt.y,  Func(Qt.x));
+
+	// Disk:
+	Yi = Func(Xi + 0.5);
+	C = vec2(Xf, Qt.y - Yi ); 
+	D =  min(D, length(C) - FuncR(Xi+ pT/80.0));
+
+	// Previous disk:
+	Yi = Func(Xi+1.0 + 0.5);
+	C = vec2(Xf-1.0, Qt.y - Yi ); 
+	D =  min(D, length(C) - FuncR(Xi+1.0+ pT/80.0));
+
+	// Next Disk:
+	Yi = Func(Xi-1.0 + 0.5);
+	C = vec2(Xf+1.0, Qt.y - Yi ); 
+	D =  min(D, length(C) - FuncR(Xi-1.0+ pT/80.0));
+
+	return min(1.0, D);
+}
+
+void ToonCloud()
+{
+	vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
+	fragColor = vec4(texColor, 1.0);
+	// Setup:
+	vec2 UV = 2.0*(gl_FragCoord.xy - iResolution.xy/2.0) / min(iResolution.x, iResolution.y);	
+	
+	// Render:
+	vec3 Color= BackColor;
+
+	for(float J=0.0; J<=1.0; J+=0.2)
+	{
+		// Cloud Layer: 
+		float Lt =  time*0.001*(0.5  + 2.0*J)*(1.0 + 0.1*sin(226.0*J)) + 17.0*J;
+		vec2 Lp = vec2(0.0, 0.3+1.5*( J - 0.5));
+		float L = Layer(UV + Lp, Lt);
+
+		// Blur and color:
+		float Blur = 4.0*(0.5*abs(2.0 - 5.0*J))/(11.0 - 5.0*J);
+
+		float V = mix( 0.0, 1.0, 1.0 - smoothstep( 0.0, 0.01 +0.2*Blur, L ) );
+		vec3 Lc=  mix( CloudColor, vec3(1.0), J);
+
+		Color =mix(Color, Lc,  V);
+	}
+
+	fragColor += vec4(Color, 1.0);
+}
+/*------------------------------------------------------------------------*/
+void TriangleFilter(){
+ vec2 coord1 = vertexData.texcoord + vec2(-3.0, -3.0) / img_size;
+ vec2 coord2 = vertexData.texcoord + vec2(-3.0, 3.0) / img_size;
+ vec2 coord3 = vertexData.texcoord + vec2(3.0, -3.0) / img_size;
+ vec2 coord4 = vertexData.texcoord + vec2(3.0, 3.0) / img_size;
+
+ vec4 s1 = vec4(texture(tex, coord1));
+ vec4 s2 = vec4(texture(tex, coord2));
+ vec4 s3 = vec4(texture(tex, coord3));
+ vec4 s4 = vec4(texture(tex, coord4));
+
+ vec4 tmp1 = mix(s1, s3, vertexData.texcoord.x);
+ vec4 tmp2 = mix(s2, s4, vertexData.texcoord.x);
+
+ fragColor = mix(tmp1, tmp2, vertexData.texcoord.y);
+}
+/*------------------------------------------------------------------------*/
 void main()
 {	
 	switch (shaderNumber)
@@ -376,7 +667,7 @@ void main()
 		}
 		case(1):
 		{					
-			Shader_Gray();
+			Shader_Gray();					
 			break;
 		}
 		case(2):
@@ -404,72 +695,111 @@ void main()
 			shader_ThresholdDither();
 			break;
 		}
-		case(7):{
+		case(7):
+		{
 		//Mosaic
 			mosaic();
-		
-		}
-		break;
+			break;		
+		}		
 		case(8):{
 		//Emboss
 			FD();
+			break;
 		}
-		break;
-		case(9):{		
+		case(9):{
+			Textspeak();
+			break;
+		}
+		case(10):{
+			snow();
+			break;
+		}
+		case(11):{		
 		//Voronoi
 			VoronoiDiagram();
+			break;
 		}
-		break;
-		case(10):{
+		
+		case(12):{
 		//Nebula smoke
 			NebulaSmoke();
+			break;
 		}
-		break;
-		case(11):{
-		//Glorious light
-			Glorious_light();
+		case(13):{		
+			Phosgene();
+			break;
 		}
-		break;
+		
+		case(14):{		
+			PurpleHalo();
+			break;
+		}
+		case(15):{		
+			DanceFloor();
+			break;
+		}
+		case(16):{		
+			YellowWhirlwind();
+			break;
+		}
+		case(17):{		
+			ToonCloud();
+			break;
+		}
+		case(18):{		
+			gold_particle();
+			break;
+		}
+		case(19):{		
+			TriangleFilter();
+			break;
+		}
+		case(20):{		
+			Pulsations();
+			break;
+		}
 		case(21):{
+			//Origin
+			vec3 texColor = texture(tex,vertexData.texcoord).rgb;				
+			fragColor = vec4(texColor, 1.0);	
+			break;
+		}
+		case(22):{
 			//white		
 			vec3 texColor = texture(tex,vertexData.texcoord).rgb;				
 			fragColor = vec4(texColor.r + 135.0/255.0,texColor.g + 19.0/255.0,texColor.b + 34.0/255.0, 1.0);	
 			break;
 		}
-		case(22):{			
+		case(23):{			
 			//pink
 			vec3 texColor = texture(tex,vertexData.texcoord).rgb;						
 			fragColor = vec4(texColor.g,texColor.r,texColor.b, 1.0);	
 			break;
 		}
-		case(23):{
+		case(24):{
 			//green			
 			vec3 texColor = texture(tex,vertexData.texcoord).rgb;						
 			fragColor = vec4(texColor.r,texColor.g,texColor.r, 1.0);	
 			break;
 		}
-		case(24):{
+		case(25):{
 			//purple
 			vec3 texColor = texture(tex,vertexData.texcoord).rgb;						
 			fragColor = vec4(texColor.r,texColor.g/7,texColor.b, 1.0);	
 			break;
 		}
-		case(25):{			
+		case(26):{			
 			//black			
 			vec3 texColor = texture(tex,vertexData.texcoord).rgb;
 			fragColor = vec4(texColor.r - 120.0/255.0,texColor.g - 236.0/255.0,texColor.b - 221.0/255.0, 1.0);	
 			break;
 		}
-		case(26):{
+		case(27):{
 			//blond
 			vec3 texColor = texture(tex,vertexData.texcoord).rgb;
-			fragColor = vec4(texColor.r + 135.0/255.0,texColor.g + 19.0/255.0,texColor.b - 221.0/255.0, 1.0);
+			fragColor = vec4(texColor.r + 135.0/255.0,texColor.g + 19.0/255.0,texColor.b - 221.0/255.0, 1.0);				
 			break;
-		}
-		case(27):{
-			gold_particle();
-			break;
-		}
+		}		
 	}
 }
 

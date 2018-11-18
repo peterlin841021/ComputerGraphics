@@ -82,8 +82,7 @@ void drawTextures(GLint textureid, QVector<QVector3D> vts)
 	uvbo.allocate(uvs.constData(), uvs.size() * sizeof(QVector2D));
 	shaderProgram->setAttributeArray(2, GL_FLOAT, 0, 2, NULL);
 	uvbo.release();
-	shaderProgram->enableAttributeArray(2);
-	//glDrawArrays(GL_TRIANGLE_STRIP, 0, vts.size());	
+	shaderProgram->enableAttributeArray(2);	
 	glDrawArrays(GL_TRIANGLES, 0, vts.size());
 }
 void drawMap(QVector<QVector2D> vts, QVector<QVector3D> colors,float *mm,float *pm)
@@ -133,18 +132,11 @@ void drawFrustum(QVector<QVector2D> vts, QVector<QVector3D> colors, float *mm, f
 	cvbo.allocate(colors.constData(), colors.size() * sizeof(QVector3D));
 	shaderProgram->setAttributeArray(1, GL_FLOAT, 0, 3, NULL);
 	cvbo.release();
-	shaderProgram->enableAttributeArray(1);
-	//glDrawArrays(GL_TRIANGLE_STRIP, 0, vts.size());	
+	shaderProgram->enableAttributeArray(1);	
 	glDrawArrays(GL_LINES, 0, vts.size());
 }
-void drawWall(QVector<QVector2D> vts, QVector<QVector3D> colors, float *mm, float *pm)
-{
-	GLfloat P[4][4];
-	GLfloat MV[4][4];
-	DimensionTransformation(mm, MV);
-	DimensionTransformation(pm, P);
-	shaderProgram->setUniformValue("ProjectionMatrix", P);
-	shaderProgram->setUniformValue("ModelViewMatrix", MV);
+void drawWall(QVector<QVector2D> vts, QVector<QVector3D> colors)
+{	
 	shaderProgram->setUniformValue("mode", 0);
 	shaderProgram->bind();
 	vao.bind();
@@ -159,9 +151,7 @@ void drawWall(QVector<QVector2D> vts, QVector<QVector3D> colors, float *mm, floa
 	cvbo.allocate(colors.constData(), colors.size() * sizeof(QVector3D));
 	shaderProgram->setAttributeArray(1, GL_FLOAT, 0, 3, NULL);
 	cvbo.release();
-	shaderProgram->enableAttributeArray(1);
-	//glDrawArrays(GL_TRIANGLE_STRIP, 0, vts.size());	
-	//glDrawArrays(GL_TRIANGLES, 0, vts.size());
+	shaderProgram->enableAttributeArray(1);	
 	glDrawArrays(GL_QUADS, 0, vts.size());
 }
 OpenGLWidget::OpenGLWidget(QWidget *parent) : QGLWidget(parent)
@@ -195,29 +185,9 @@ void OpenGLWidget::paintGL()
 		float maxWH = std::max(MazeWidget::maze->max_xp, MazeWidget::maze->max_yp);
 		glOrtho(-0.1, maxWH + 0.1, -0.1, maxWH + 0.1, 0, 10);				
 		Mini_Map();
-
 		//View 2
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		//glViewport(MazeWidget::w/2,0, MazeWidget::w/2, MazeWidget::h);
-		/*gluPerspective 定義透視
-		//視野大小, nearplane, farplane, distance
-		//Note: You shouldn't use this function to get view matrix, otherwise you will get 0.
-		*/
-		//gluPerspective(MazeWidget::maze->viewer_fov, 1 , 0.01 , 200);
-
-		/* gluLookAt
-		//原本相機位置
-		//看的方向
-		//哪邊是上面
-		//Note: You shouldn't use this function to get view matrix, otherwise you will get 0.
-		*/
-		/*gluLookAt(viewerPosX, viewerPosZ, viewerPosY,
-			viewerPosX + cos(degree_change(MazeWidget::maze->viewer_dir)), viewerPosZ, viewerPosY + sin(degree_change(MazeWidget::maze->viewer_dir)),
-			0.0, -1.0, 0.0);*/
-		
-		/*glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();*/		
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 		Map_3D();				
@@ -225,10 +195,16 @@ void OpenGLWidget::paintGL()
 }
 void OpenGLWidget::resizeGL(int w,int h)
 {
+
 }
+void OpenGLWidget::loadTexture2D(QString str, GLuint &textureID)
+{
 
-//Draw Left Part
-
+}
+float degree_change(float num)
+{
+	return num / 180.0f * 3.14159f;
+}
 void OpenGLWidget::Mini_Map()	
 {
 	float viewerPosX = MazeWidget::maze->viewer_posn[Maze::X];
@@ -244,16 +220,12 @@ void OpenGLWidget::Mini_Map()
 		float edgeStartX = (MazeWidget::maze->edges[i]->endpoints[Edge::START]->posn[Vertex::X]);
 		float edgeStartY = (MazeWidget::maze->edges[i]->endpoints[Edge::START]->posn[Vertex::Y]);
 		float edgeEndX = (MazeWidget::maze->edges[i]->endpoints[Edge::END]->posn[Vertex::X]);
-		float edgeEndY = (MazeWidget::maze->edges[i]->endpoints[Edge::END]->posn[Vertex::Y]);
-
-		//glColor3f(MazeWidget::maze->edges[i]->color[0], MazeWidget::maze->edges[i]->color[1], MazeWidget::maze->edges[i]->color[2]);
+		float edgeEndY = (MazeWidget::maze->edges[i]->endpoints[Edge::END]->posn[Vertex::Y]);		
 		colors			
 			<< QVector3D(MazeWidget::maze->edges[i]->color[0], MazeWidget::maze->edges[i]->color[1], MazeWidget::maze->edges[i]->color[2])
 			<< QVector3D(MazeWidget::maze->edges[i]->color[0], MazeWidget::maze->edges[i]->color[1], MazeWidget::maze->edges[i]->color[2]);			
 		if (MazeWidget::maze->edges[i]->opaque)
-		{
-			/*glVertex2f(edgeStartX, edgeStartY);
-			glVertex2f(edgeEndX, edgeEndY);*/
+		{			
 			vts 
 				<< QVector2D(edgeStartX, edgeStartY)
 				<< QVector2D(edgeEndX, edgeEndY)			
@@ -266,8 +238,7 @@ void OpenGLWidget::Mini_Map()
 	colors.clear();
 	//Draw frustum
 	float maxWH = std::max(MazeWidget::maze->max_xp, MazeWidget::maze->max_yp);
-	float len = 0.1f *10.f / maxWH;
-	
+	float len = 0.1f *10.f / maxWH;	
 	colors
 		<< QVector3D(1, 1, 1)
 		<< QVector3D(1, 1, 1)
@@ -284,55 +255,17 @@ void OpenGLWidget::Mini_Map()
 			viewerPosY + maxWH * len * sin(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)));
 	drawFrustum(vts, colors,mm, pm);
 }
-
-
-//**********************************************************************
-//
-// * Draws the first-person view of the maze.
-//   THIS IS THE FUINCTION YOU SHOULD MODIFY.
-//
-//Note: You must not use any openGL build-in function to set model matrix, view matrix and projection matrix.
-//		ex: gluPerspective, gluLookAt, glTraslatef, glRotatef... etc.
-//		Otherwise, You will get 0 !
-//======================================================================
-void OpenGLWidget::Map_3D()
-{		
-	glViewport(600, 0, MazeWidget::w / 2, MazeWidget::h);
-	QVector<QVector3D> vts;
-	vts 
-		<< QVector3D(-1, 1, 0) << QVector3D(1, 1, 0) << QVector3D(1, 0, 0) 
-		<< QVector3D(1, 0, 0) << QVector3D(-1, 0, 0) << QVector3D(-1, 1, 0);
-	textures[0]->bind(1);//Draw miku
-	drawTextures(1, vts);
-	vts.clear();
-	textures[1]->bind(2);//Draw bricks
-	vts 
-		<< QVector3D(-1, 0,0) << QVector3D(1, 0,0) << QVector3D(1, -1,0) 
-		<< QVector3D(1, -1, 0) << QVector3D(-1, -1, 0)<< QVector3D(-1, 0, 0);
-	drawTextures(2, vts);
-
-	QLineF rf = 
-		QLineF(MazeWidget::maze->X, MazeWidget::maze->Y,
-		MazeWidget::maze->X + 2 * MazeWidget::maze->max_xp * cos(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)),
-		MazeWidget::maze->Y + 2 * MazeWidget::maze->max_yp * sin(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)));
-
-	QLineF lf = 
-		QLineF(MazeWidget::maze->X, MazeWidget::maze->Y,
-		MazeWidget::maze->X + 2 * MazeWidget::maze->max_xp * cos(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)),
-		MazeWidget::maze->Y + 2 * MazeWidget::maze->max_yp * sin(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)));
-	//Draw walls	
-	Cell *current = MazeWidget::maze->view_cell;	
-	
+void drawcells(Cell *current, QLineF rightfrustum, QLineF leftfrustum)
+{
 	for (size_t i = 0; i < 4; i++)
 	{
 		Edge *each = current->edges[i];
-		bool draw = false;
-		
+		bool draw = false;		
 		QLineF edge_line = QLineF(each->endpoints[0]->posn[Maze::X], each->endpoints[0]->posn[Maze::Y], each->endpoints[1]->posn[Maze::X], each->endpoints[1]->posn[Maze::Y]);
 		QPointF rip;
 		QPointF lip;
-		int intersect_l = lf.intersect(edge_line,&lip);
-		int intersect_r = rf.intersect(edge_line, &rip);
+		int intersect_l = leftfrustum.intersect(edge_line, &lip);
+		int intersect_r = rightfrustum.intersect(edge_line, &rip);
 		if (intersect_l == 1 && intersect_r == 1)
 		{
 			draw = true;
@@ -352,16 +285,21 @@ void OpenGLWidget::Map_3D()
 				draw = true;
 			}
 		}
-		float model[16] = {rip.y(),1,rip.x(),1,rip.y(),-1,rip.x(),1,lip.y(),-1,lip.x(),1,lip.y(),1,lip.x(),1};
+		float model[16] = {
+			rip.y(),1,rip.x(),1,
+			rip.y(),-1,rip.x(),1,
+			lip.y(),-1,lip.x(),1,
+			lip.y(),1,lip.x(),1
+		};
 		QMatrix4x4 modelmatrix(model);
-		QMatrix4x4 viewmatrix,temp;
+		QMatrix4x4 viewmatrix, temp;
 		viewmatrix.setToIdentity();
-		temp.setToIdentity();
+		temp.setToIdentity();		
 		viewmatrix.rotate(180, 1, 0, 0);
 		viewmatrix.rotate(MazeWidget::maze->viewer_dir, 0, -1, 0);
-		temp.translate(-MazeWidget::maze->Y,0,-MazeWidget::maze->X);
+		temp.translate(-MazeWidget::maze->viewer_posn[Maze::Y], 0, -MazeWidget::maze->viewer_posn[Maze::X]);
 		viewmatrix *= temp;
-		
+
 		float screen[4][4] = { 0 };
 		for (size_t i = 0; i < 4; i++)
 		{
@@ -369,61 +307,78 @@ void OpenGLWidget::Map_3D()
 			{
 				for (size_t k = 0; k < 4; k++)
 				{
-					screen[i][j] += viewmatrix(j,k) * modelmatrix(i,k);
+					screen[i][j] += viewmatrix(j, k) * modelmatrix(i, k);
 				}
 			}
 		}
 		float maxWH = std::max(MazeWidget::maze->max_xp, MazeWidget::maze->max_yp);
-		float wall_length = 1;
+		float wall_length = 1.f;
 		float depth = maxWH / (5.f*2.f*tan(degree_change(MazeWidget::maze->viewer_fov*0.5f)));
 		for (size_t i = 0; i < 4; i++)
 		{
 			screen[i][0] *= depth / screen[i][2];
 			screen[i][1] *= depth / screen[i][2];
-		}			
+		}
 		if (draw && each->opaque)
 		{
 			QVector<QVector2D> twoDvts;
-			QVector<QVector3D> colors;				
-			
-			colors 
-				<< QVector3D(each[i].color[0],each[i].color[1],each[i].color[2])
-				<< QVector3D(each[i].color[0], each[i].color[1], each[i].color[2])
-				/*<< QVector3D(each[i].color[0], each[i].color[1], each[i].color[2])
-				<< QVector3D(each[i].color[0], each[i].color[1], each[i].color[2])*/
-				<< QVector3D(each[i].color[0], each[i].color[1], each[i].color[2])
-				<< QVector3D(each[i].color[0], each[i].color[1], each[i].color[2]);
-				
+			QVector<QVector3D> colors;			
+			colors
+				<< QVector3D(each->color[0], each->color[1], each->color[2])
+				<< QVector3D(each->color[0], each->color[1], each->color[2])
+				<< QVector3D(each->color[0], each->color[1], each->color[2])
+				<< QVector3D(each->color[0], each->color[1], each->color[2]);
+
 			twoDvts
 				<< QVector2D(screen[0][0], screen[0][1])
-				<< QVector2D(screen[1][0], screen[1][1]);
+				<< QVector2D(screen[1][0], screen[1][1]);									
 			if ((screen[1][0] > 0 && screen[2][0] < 0) &&
 				(screen[2][1] > 0 && screen[1][1] < 0))
 			{
 				twoDvts
-					<< QVector2D(screen[2][0], screen[2][1])
 					<< QVector2D(screen[3][0], screen[3][1])
-					;
+					<< QVector2D(screen[2][0], screen[2][1]);				
 			}
 			else
 			{
 				twoDvts
 					<< QVector2D(screen[2][0], screen[2][1])
-					<< QVector2D(screen[3][0], screen[3][1])
-					;
+					<< QVector2D(screen[3][0], screen[3][1]);
 			}
-			GLfloat mm[16], pm[16];
-			glGetFloatv(GL_PROJECTION_MATRIX, mm);
-			glGetFloatv(GL_MODELVIEW_MATRIX, pm);
-			drawWall(twoDvts,colors, mm,pm);
-		}		
-	}	
+			glEnd();				
+			drawWall(twoDvts,colors);
+		}
+	}
 }
-void OpenGLWidget::loadTexture2D(QString str,GLuint &textureID)
-{
-	
-}
-float OpenGLWidget::degree_change(float num)
-{
-	return num /180.0f * 3.14159f;
+void OpenGLWidget::Map_3D()
+{	
+	//Right window
+	glViewport(600, 0, MazeWidget::w, MazeWidget::h);
+	QVector<QVector3D> vts;
+	vts 
+		<< QVector3D(-1, 1, 0) << QVector3D(1, 1, 0) << QVector3D(1, 0, 0) 
+		<< QVector3D(1, 0, 0) << QVector3D(-1, 0, 0) << QVector3D(-1, 1, 0);
+	textures[0]->bind(1);//Draw miku
+	drawTextures(1, vts);
+	vts.clear();
+	textures[1]->bind(2);//Draw bricks
+	vts 
+		<< QVector3D(-1, 0,0) << QVector3D(1, 0,0) << QVector3D(1, -1,0) 
+		<< QVector3D(1, -1, 0) << QVector3D(-1, -1, 0)<< QVector3D(-1, 0, 0);
+	drawTextures(2, vts);
+	//- : clockwise +:counter clockwise	
+	float viewerPosX = MazeWidget::maze->viewer_posn[Maze::X];
+	float viewerPosY = MazeWidget::maze->viewer_posn[Maze::Y];
+	QLineF rf = 
+		QLineF(viewerPosX, viewerPosY,
+			viewerPosX + 2 * MazeWidget::maze->max_xp * cos(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)),
+			viewerPosY + 2 * MazeWidget::maze->max_yp * sin(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)));
+
+	QLineF lf = 
+		QLineF(viewerPosX, viewerPosY,
+			viewerPosX + 2 * MazeWidget::maze->max_xp * cos(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)),
+			viewerPosY + 2 * MazeWidget::maze->max_yp * sin(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)));
+	//Draw walls	
+	Cell *current = MazeWidget::maze->view_cell;
+	drawcells(current,rf,lf);
 }

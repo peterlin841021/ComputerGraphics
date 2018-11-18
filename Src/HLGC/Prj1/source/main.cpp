@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
 	glutAddSubMenu(strToChar(menus[7]), menu_hair_eff);
 	
 	glutAddMenuEntry(strToChar(menus[0]), 0);//EXIT
-	int menu_offset[8] = { 0,10,22,34,46,58,70,78};
+	int menu_offset[8] = { 0,10,30,50,70,90,110,117};
 	string menus_actionItems[10] = {"Cheering","Walking","Flying","Clapping" ,"Bowing" ,"Swing skirt" ,"Drawing sword " ,"Final attack: excalibur" ,"Loituma dance","Standing" };
 	glutSetMenu(menu_act);
 	for (size_t i = 0; i < 10; i++)
@@ -182,10 +182,11 @@ int main(int argc, char *argv[])
 		glutAddMenuEntry(strToChar(menus_actionItems[i]), menu_offset[0] + i + 1);
 	}
 	
-	int effect_items = 12;
-	int haircuts = 6;
-	string menus_effectItems[12] = {"Normal","Gray","Quantization","DoG","Abstraction","Meanfilter","Thresholddither","Mosaic","Emboss","Voronoi","Nebula","Glory"};
-	string menus_colorItems[6] = { "White","Pink","Green","Purple","Black","Blond"};
+	int effect_items = 20;
+	int haircuts = 7;
+	string menus_effectItems[20] = {"Normal","Gray","Quantization","DoG","Abstraction","Meanfilter","Thresholddither",
+		"Mosaic","Emboss","Textspeak curtain","Snow","Voronoi","Nebula","Phosgene","Purple halo","Dance floor","Yellow whirl wind","Toon clouds","Glory","Triangle filter"};
+	string menus_colorItems[7] = {"Origin","White","Pink","Green","Purple","Black","Blond"};
 
 	glutSetMenu(menu_eff);
 	for (size_t i = 0; i < effect_items; i++)
