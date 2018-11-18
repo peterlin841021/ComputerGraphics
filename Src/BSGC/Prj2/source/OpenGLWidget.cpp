@@ -10,7 +10,7 @@
 #include <QtGui/QOpenGLShaderProgram>
 #include <QtGui/qopengltexture.h>
 #include"LineSeg.h"
-
+using namespace std;
 QOpenGLShaderProgram* shaderProgram;
 QOpenGLShader* vertexShader;
 QOpenGLShader* fragmentShader;
@@ -18,7 +18,36 @@ QOpenGLVertexArrayObject vao;
 QOpenGLBuffer vvbo;
 QOpenGLBuffer cvbo;
 QOpenGLBuffer uvbo;
-
+class Player 
+{
+	std::vector<QLineF> frustum;
+	QVector3D position;
+public:
+	Player()
+	{
+		
+	}
+	void setFrustum(QLineF L, QLineF R)
+	{		
+		frustum.clear();
+		frustum.push_back(L);
+		frustum.push_back(R);
+	}
+	void setPosition(GLfloat x, GLfloat y, GLfloat z)
+	{
+		position = QVector3D(x,y,z);
+	}
+	std::vector<QLineF> getFrustum()
+	{
+		return frustum;
+	}
+	QVector3D getPosition()
+	{
+		return position;
+	}
+};
+Player player;
+float maxWH = 0;
 QVector<QOpenGLTexture*> textures;
 void shader_init()
 {
@@ -257,6 +286,9 @@ void OpenGLWidget::Mini_Map()
 }
 void drawcells(Cell *current, QLineF rightfrustum, QLineF leftfrustum)
 {
+	float viewerPosX = MazeWidget::maze->viewer_posn[Maze::X];
+	float viewerPosY = MazeWidget::maze->viewer_posn[Maze::Y];
+	float area = 0.5 *(-leftfrustum.y2()*rightfrustum.x2() + viewerPosY  * (-leftfrustum.x2() + rightfrustum.x2()) + viewerPosX * (leftfrustum.y2() - rightfrustum.y2()) + leftfrustum.x2()*rightfrustum.y2());
 	for (size_t i = 0; i < 4; i++)
 	{
 		Edge *each = current->edges[i];
@@ -271,20 +303,57 @@ void drawcells(Cell *current, QLineF rightfrustum, QLineF leftfrustum)
 			draw = true;
 		}
 		if (intersect_l != 1 && intersect_r != 1)
-		{
-			draw = true;
+		{					
+			float s = 1 / (2 * area)*(viewerPosY * rightfrustum.x2() - viewerPosX * rightfrustum.y2() + (rightfrustum.y2() - viewerPosY ) * each->endpoints[0]->posn[Maze::X] + (viewerPosX - rightfrustum.x2())*each->endpoints[0]->posn[Maze::Y]);
+			float t = 1 / (2 * area)*(viewerPosX * leftfrustum.y2() - viewerPosY * leftfrustum.x2() + (viewerPosY - leftfrustum.y2()) * each->endpoints[0]->posn[Maze::X] + (leftfrustum.x2() - viewerPosX ) * each->endpoints[0]->posn[Maze::Y]);
+			if ((0 <= s && s <= 1.0f) && (0 <= t && t <= 1.0f) && (s + t <= 1.0f)) 
+			{
+				draw = true;
+				lip = QPointF(each->endpoints[0]->posn[Maze::X], each->endpoints[0]->posn[Maze::Y]);
+				rip = QPointF(each->endpoints[1]->posn[Maze::X], each->endpoints[1]->posn[Maze::Y]);
+			}
 		}
 		else if (intersect_l == 1 && intersect_r != 1 || intersect_l != 1 && intersect_r == 1)
 		{
 			if (intersect_l == 1)
 			{
-				draw = true;
+								
+				float sstart = 1 / (2 * area)*(viewerPosY*rightfrustum.x2() - viewerPosX*rightfrustum.y2() + (rightfrustum.y2() - viewerPosY)*each->endpoints[0]->posn[Maze::X] + (viewerPosX - rightfrustum.x2())*each->endpoints[0]->posn[Maze::Y]);
+				float tstart = 1 / (2 * area)*(viewerPosX*leftfrustum.y2() - viewerPosY*leftfrustum.x2() + (viewerPosY - leftfrustum.y2())*each->endpoints[0]->posn[Maze::X] + (leftfrustum.x2() - viewerPosX)*each->endpoints[0]->posn[Maze::Y]);
+				float send = 1 / (2 * area)*(viewerPosY*rightfrustum.x2() - viewerPosX*rightfrustum.y2() + (rightfrustum.y2() - viewerPosY)*each->endpoints[1]->posn[Maze::X] + (viewerPosX - rightfrustum.x2())*each->endpoints[1]->posn[Maze::Y]);
+				float tend = 1 / (2 * area)*(viewerPosX*leftfrustum.y2() - viewerPosY*leftfrustum.x2() + (viewerPosY - leftfrustum.y2())*each->endpoints[1]->posn[Maze::X] + (leftfrustum.x2() - viewerPosX)*each->endpoints[1]->posn[Maze::Y]);
+
+				if ((0 <= sstart && sstart <= 1.0f) && (0 <= tstart && tstart <= 1.0f) && (sstart + tstart <= 1.0f)) 
+				{
+					draw = true;
+					rip = QPointF(each->endpoints[0]->posn[Maze::X], each->endpoints[0]->posn[Maze::Y]);
+				}
+				if ((0 <= send && send <= 1.0f) && (0 <= tend && tend <= 1.0f) && (send + tend <= 1.0f)) 
+				{
+					draw = true;
+					rip = QPointF(each->endpoints[1]->posn[Maze::X], each->endpoints[1]->posn[Maze::Y]);
+				}
 			}
 			if (intersect_r == 1)
 			{
 				draw = true;
+				float sstart = 1 / (2 * area)*(viewerPosY*rightfrustum.x2() - viewerPosX*rightfrustum.y2() + (rightfrustum.y2() - viewerPosY)*each->endpoints[0]->posn[Maze::X] + (viewerPosX - rightfrustum.x2())*each->endpoints[0]->posn[Maze::Y]);
+				float tstart = 1 / (2 * area)*(viewerPosX*leftfrustum.y2() - viewerPosY*leftfrustum.x2() + (viewerPosY - leftfrustum.y2())*each->endpoints[0]->posn[Maze::X] + (leftfrustum.x2() - viewerPosX)*each->endpoints[0]->posn[Maze::Y]);
+				float send = 1 / (2 * area)*(viewerPosY*rightfrustum.x2() - viewerPosX*rightfrustum.y2() + (rightfrustum.y2() - viewerPosY)*each->endpoints[1]->posn[Maze::X] + (viewerPosX - rightfrustum.x2())*each->endpoints[1]->posn[Maze::Y]);
+				float tend = 1 / (2 * area)*(viewerPosX*leftfrustum.y2() - viewerPosY*leftfrustum.x2() + (viewerPosY - leftfrustum.y2())*each->endpoints[1]->posn[Maze::X] + (leftfrustum.x2() - viewerPosX)*each->endpoints[1]->posn[Maze::Y]);
+
+				if ((0 <= sstart && sstart <= 1.0f) && (0 <= tstart && tstart <= 1.0f) && (sstart + tstart <= 1.0f)) {
+					draw = true;
+					lip = QPointF(each->endpoints[0]->posn[Maze::X], each->endpoints[0]->posn[Maze::Y]);
+				}
+				if ((0 <= send && send <= 1.0f) && (0 <= tend && tend <= 1.0f) && (send + tend <= 1.0f)) {
+					draw = true;
+					lip = QPointF(each->endpoints[1]->posn[Maze::X], each->endpoints[1]->posn[Maze::Y]);
+				}
+
 			}
 		}
+		
 		float model[16] = {
 			rip.y(),1,rip.x(),1,
 			rip.y(),-1,rip.x(),1,
@@ -294,12 +363,12 @@ void drawcells(Cell *current, QLineF rightfrustum, QLineF leftfrustum)
 		QMatrix4x4 modelmatrix(model);
 		QMatrix4x4 viewmatrix, temp;
 		viewmatrix.setToIdentity();
-		temp.setToIdentity();		
-		viewmatrix.rotate(180, 1, 0, 0);
-		viewmatrix.rotate(MazeWidget::maze->viewer_dir, 0, -1, 0);
+		temp.setToIdentity();
 		temp.translate(-MazeWidget::maze->viewer_posn[Maze::Y], 0, -MazeWidget::maze->viewer_posn[Maze::X]);
+		viewmatrix.rotate(180, 1, 0, 0);
+		viewmatrix.rotate(MazeWidget::maze->viewer_dir, 0, -1, 0);		
 		viewmatrix *= temp;
-
+		
 		float screen[4][4] = { 0 };
 		for (size_t i = 0; i < 4; i++)
 		{
@@ -354,6 +423,7 @@ void OpenGLWidget::Map_3D()
 {	
 	//Right window
 	glViewport(600, 0, MazeWidget::w, MazeWidget::h);
+	maxWH = std::max(MazeWidget::maze->max_xp, MazeWidget::maze->max_yp);
 	QVector<QVector3D> vts;
 	vts 
 		<< QVector3D(-1, 1, 0) << QVector3D(1, 1, 0) << QVector3D(1, 0, 0) 
@@ -366,19 +436,12 @@ void OpenGLWidget::Map_3D()
 		<< QVector3D(-1, 0,0) << QVector3D(1, 0,0) << QVector3D(1, -1,0) 
 		<< QVector3D(1, -1, 0) << QVector3D(-1, -1, 0)<< QVector3D(-1, 0, 0);
 	drawTextures(2, vts);
-	//- : clockwise +:counter clockwise	
-	float viewerPosX = MazeWidget::maze->viewer_posn[Maze::X];
-	float viewerPosY = MazeWidget::maze->viewer_posn[Maze::Y];
-	QLineF rf = 
-		QLineF(viewerPosX, viewerPosY,
-			viewerPosX + 2 * MazeWidget::maze->max_xp * cos(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)),
-			viewerPosY + 2 * MazeWidget::maze->max_yp * sin(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)));
 
-	QLineF lf = 
-		QLineF(viewerPosX, viewerPosY,
-			viewerPosX + 2 * MazeWidget::maze->max_xp * cos(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)),
-			viewerPosY + 2 * MazeWidget::maze->max_yp * sin(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)));
+	player.setPosition(MazeWidget::maze->viewer_posn[Maze::X], MazeWidget::maze->viewer_posn[Maze::Y], MazeWidget::maze->viewer_posn[Maze::Z]);
+	player.setFrustum(
+		QLineF(player.getPosition().x(), player.getPosition().y(),player.getPosition().x() + 2 * maxWH * cos(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)),player.getPosition().y() + 2 * maxWH * sin(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2))),
+		QLineF(player.getPosition().x(), player.getPosition().y(),player.getPosition().x() + 2 * maxWH * cos(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)),player.getPosition().y() + 2 * maxWH * sin(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2))));	
 	//Draw walls	
 	Cell *current = MazeWidget::maze->view_cell;
-	drawcells(current,rf,lf);
+	drawcells(current, player.getFrustum()[1], player.getFrustum()[0]);
 }

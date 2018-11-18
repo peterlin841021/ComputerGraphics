@@ -123,50 +123,38 @@ void FD(){
 float invader(vec2 p, float n)
 {
    p.x = abs(p.x);
-   p.y = -floor(p.y - 5.0);
-   
-   //return step(p.x, 2.0) ;
-   //return floor(p.x + p.y*3.0);
-   //return n/exp2(floor(p.x + p.y*3.0));
-   //return mod(n/exp2(floor(p.x + p.y*3.0)), 2.);
-   //return floor(mod(n/exp2(floor(p.x + p.y*3.0)), 2.));
-   //return step(1.0, floor(mod(n/(exp2(floor(p.x + p.y*3.0))),2.0)));
+   p.y = -floor(p.y - 5.0);   
    return step(p.x, 2.0) * step(1.0, floor(mod(n/(exp2(floor(p.x + p.y*3.0))),2.0)));
 }
 
 void Textspeak(){
-	vec3 color = vec3(0.2, 0.42, 0.68); // blue 1
-	//vec3 color = vec3(0.1, 0.3, 0.6); // blue 2
-	//vec3 color = vec3(0.6, 0.1, 0.3); // red
-	//vec3 color = vec3(0.1, 0.6, 0.3); // green 
-	float width = 8.0;   // n = 512/32 = 16
+	vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
+	fragColor = vec4(texColor, 1.0);	
+
+	vec3 color = vec3(0.2, 0.42, 0.68); 	
+	float width = 8.0;
 
 	vec2 p = gl_FragCoord.xy;
     vec2 uv = p / iResolution.xy - 0.5;
     
-    float id1 = rand(floor(p.x / width));             // 影响当前像素（矩形内）的颜色
-    float id2 = rand(floor((p.x - 1.0) / width));   // 影响其邻近左侧像素的颜色
+    float id1 = rand(floor(p.x / width));             
+    float id2 = rand(floor((p.x - 1.0) / width));   
     
-    float a = 0.3*id1;                                       // 当前矩形的颜色
-    a += 0.1*step(id2, id1 - 0.08);                     // 矩形左边界（如果当前像素比左侧淡，则亮边界）
-    a -= 0.1*step(id1 + 0.08, id2);                     // 矩形右边界（如果当前像素比左侧深，则亮边暗）
-    a -= 0.3*smoothstep(0.0, 0.7, length(uv));   // 渐变效果
+    float a = 0.3*id1;                                       
+    a += 0.1*step(id2, id1 - 0.08);                    
+    a -= 0.1*step(id1 + 0.08, id2);                     
+    a -= 0.3*smoothstep(0.0, 0.7, length(uv));   
  
    
     p.y += 20.0*time*0.002;
     float r = rand(floor(p/8.0));
     float inv = invader(mod(p,8.0)-4.0, 809999.0*r);
-    a += (0.06 + max(0.0, 0.2*sin(10.0*r*time*0.002))) * inv * step(id1, .3);   
-    //a += (0.06 + max(0.0, 0.2*sin(10.0*r*time*0.002))) * inv;
-   
-    
-    fragColor = vec4(color+a, 1.0);
-
-
+    a += (0.06 + max(0.0, 0.2*sin(10.0*r*time*0.002))) * inv * step(id1, .3);            
+    fragColor += vec4(color+a, 1.0);
 }
 /*----------------------------------------------------------------*/
-#define _SnowflakeAmount 400  // 雪花数
-#define _BlizardFactor 0.25          // 风的大小
+#define _SnowflakeAmount 300  
+#define _BlizardFactor 0.25          
 
 float drawCircle(vec2 uv, vec2 center, float radius)
 {
@@ -219,32 +207,22 @@ vec2 hash( vec2 p )
    
    return fract(sin(p)*18.5453);
 }
-
-// return distance, and cell id
 vec2 voronoi( in vec2 x )
 {
-    vec2 n = floor( x );              // cell(n)
-    vec2 f = fract( x );              // 当前像素在cell space的坐标
+    vec2 n = floor( x );              
+    vec2 f = fract( x );              
 
-   vec3 m = vec3( 8. );               // 影响每个cell的大小，影响背景颜色
+   vec3 m = vec3( 8. );               
    
-   // 遍历相邻的9个cell
+   
     for( int j=-1; j<=1; j++ )
     {
        for( int i=-1; i<=1; i++ )
        {
-           vec2  g = vec2( float(i), float(j) );  // 临近的 cell id offset
-           // n+g 临近的 cell(n+g) 的随机像素坐标 o (cell space)
-           vec2  o = hash( n + g );   // 影响cell的颜色
-           
-           // ❤
-           vec2  r = g - f + (0.5+0.5*sin(time*0.001+6.2831*o));
-           //vec2  r = g - f + o;     // cell(n+g)[o] - cell(n)[f] 
-          
-           // ❤
-           float d = dot( r, r );
- 
-           // 保存更小的d
+           vec2  g = vec2( float(i), float(j) );            
+           vec2  o = hash( n + g );                       
+           vec2  r = g - f + (0.5+0.5*sin(time*0.001+6.2831*o));                          
+           float d = dot( r, r );           
            if( d<m.x )
            {
               m = vec3( d, o );
@@ -257,19 +235,12 @@ void VoronoiDiagram(){
 	vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
 	fragColor = vec4(texColor, 1.0);	
 	vec2 iResolution = vec2(512., 512.);
-    vec2 p = gl_FragCoord.xy/max(iResolution.x,iResolution.y);
-    
-    // computer voronoi patterm
-    vec2 c = voronoi( (14.0+6.0*sin(0.2*time*0.001))*p );
-   
-    // colorize
-    vec3 col = 0.5 + 0.5*cos( c.y*6.2831 + vec3(0.0,1.0,2.0) ); // cell的随机颜色
-       
+    vec2 p = gl_FragCoord.xy/max(iResolution.x,iResolution.y);      
+    vec2 c = voronoi( (14.0+6.0*sin(0.2*time*0.001))*p );    
+    vec3 col = 0.5 + 0.5*cos( c.y*6.2831 + vec3(0.0,1.0,2.0) );        
     col *= clamp(1.0 - 0.6*c.x*c.x, 0.0, 1.0);
-    col -= (1.0-smoothstep( 0.05, 0.06, c.x));                  // 画Voronoi的点集
-   
+    col -= (1.0-smoothstep( 0.05, 0.06, c.x));                   
     fragColor += vec4( col, 0.0 );
-
 }
 /*-----------------------------------------------------------------------------*/
 float polygonDistance(vec2 p, float radius, float angleOffset, int sideCount) {
@@ -279,7 +250,7 @@ float polygonDistance(vec2 p, float radius, float angleOffset, int sideCount) {
 }
 
 #define HASHSCALE1 443.8975
-float hash11(float p) // assumes p in ~0-1 range
+float hash11(float p) 
 {
 	vec3 p3  = fract(vec3(p) * HASHSCALE1);
     p3 += dot(p3, p3.yzx + 19.19);
@@ -287,7 +258,7 @@ float hash11(float p) // assumes p in ~0-1 range
 }
 
 #define HASHSCALE3 vec3(.1031, .1030, .0973)
-vec2 hash21(float p) // assumes p in larger integer range
+vec2 hash21(float p) 
 {
 	vec3 p3 = fract(vec3(p) * HASHSCALE3);
 	p3 += dot(p3, p3.yzx + 19.19);
@@ -313,8 +284,8 @@ void NebulaSmoke()
         accum += pow(smoothstep(radius, 0.0, polygonDistance(uv - center, 0.1 + hash11(fi * 2.3) * 0.2, rotation, 5) + 0.1), 3.0);
     }
     
-    vec3 subColor = vec3(0.4, 0.8, 0.2); //vec3(0.4, 0.2, 0.8);
-    vec3 addColor = vec3(0.3, 0.2, 0.1);//vec3(0.3, 0.1, 0.2);
+    vec3 subColor = vec3(0.4, 0.8, 0.2); 
+    vec3 addColor = vec3(0.3, 0.2, 0.1);
     
 	fragColor += vec4(vec3(1.0) - accum * subColor + addColor, 1.0);
 }
@@ -445,13 +416,11 @@ float fbmm(in vec2 p)
 
 float dualfbm(in vec2 p)
 {
-    //get two rotated fbm calls and displace the domain
+    
 	vec2 p2 = p*.7;
 	vec2 basis = vec2(fbmm(p2-time*0.0001*1.6),fbmm(p2+time*0.0001*1.7));
 	basis = (basis-.5)*.2;
-	p += basis;
-	
-	//coloring
+	p += basis;	
 	return fbmm(p*makem2(time*0.0001*0.2));
 }
 
@@ -466,19 +435,16 @@ float circc(vec2 p)
 void PurpleHalo()
 {   
     vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
-	fragColor = vec4(texColor, 1.0);
-	//setup system
+	fragColor = vec4(texColor, 1.0);	
 	vec2 p = gl_FragCoord.xy / iResolution.xy-0.5;
 	p.x *= iResolution.x/iResolution.y;
 	p*=4.;
 	
-    float rz = dualfbm(p);
+    float rz = dualfbm(p);	
 	
-	//rings
 	p /= exp(mod(time*0.0001*10.,3.14159));
-	rz *= pow(abs((0.1-circc(p))),.9);
+	rz *= pow(abs((0.1-circc(p))),.9);	
 	
-	//final color
 	vec3 col = vec3(.2,0.1,0.4)/rz;
 	col=pow(abs(col),vec3(.99));
 	fragColor += vec4(col,1.);
@@ -591,18 +557,15 @@ float Layer(vec2 pQ, float pT)
 	vec2 C;
 	float Yi;
 	float D = 1.0 - step(Qt.y,  Func(Qt.x));
-
-	// Disk:
+	
 	Yi = Func(Xi + 0.5);
 	C = vec2(Xf, Qt.y - Yi ); 
 	D =  min(D, length(C) - FuncR(Xi+ pT/80.0));
-
-	// Previous disk:
+	
 	Yi = Func(Xi+1.0 + 0.5);
 	C = vec2(Xf-1.0, Qt.y - Yi ); 
 	D =  min(D, length(C) - FuncR(Xi+1.0+ pT/80.0));
-
-	// Next Disk:
+	
 	Yi = Func(Xi-1.0 + 0.5);
 	C = vec2(Xf+1.0, Qt.y - Yi ); 
 	D =  min(D, length(C) - FuncR(Xi-1.0+ pT/80.0));
@@ -613,27 +576,22 @@ float Layer(vec2 pQ, float pT)
 void ToonCloud()
 {
 	vec3 texColor = texture(tex,vertexData.texcoord).rgb;	
-	fragColor = vec4(texColor, 1.0);
-	// Setup:
+	fragColor = vec4(texColor, 1.0);	
 	vec2 UV = 2.0*(gl_FragCoord.xy - iResolution.xy/2.0) / min(iResolution.x, iResolution.y);	
-	
-	// Render:
 	vec3 Color= BackColor;
 
 	for(float J=0.0; J<=1.0; J+=0.2)
-	{
-		// Cloud Layer: 
+	{		
 		float Lt =  time*0.001*(0.5  + 2.0*J)*(1.0 + 0.1*sin(226.0*J)) + 17.0*J;
 		vec2 Lp = vec2(0.0, 0.3+1.5*( J - 0.5));
 		float L = Layer(UV + Lp, Lt);
-
-		// Blur and color:
+		
 		float Blur = 4.0*(0.5*abs(2.0 - 5.0*J))/(11.0 - 5.0*J);
 
 		float V = mix( 0.0, 1.0, 1.0 - smoothstep( 0.0, 0.01 +0.2*Blur, L ) );
 		vec3 Lc=  mix( CloudColor, vec3(1.0), J);
 
-		Color =mix(Color, Lc,  V);
+		Color = mix(Color, Lc,  V);
 	}
 
 	fragColor += vec4(Color, 1.0);
