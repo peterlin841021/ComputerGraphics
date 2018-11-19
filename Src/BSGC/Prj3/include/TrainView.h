@@ -70,7 +70,7 @@ public:
 
 	CTrack*			m_pTrack;		// The track of the entire scene
 	float t_time;
-	unsigned int DIVIDE_LINE = 12;
+	unsigned int DIVIDE_LINE = 21;
 	int camera;
 	int curve;
 	int track;

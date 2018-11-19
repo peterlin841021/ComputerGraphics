@@ -23,7 +23,7 @@ AppMain::AppMain(QWidget *parent)
 	this->trainview->curve = 0;
 	this->trainview->isrun = false;
 
-	setWindowTitle( "Roller Coaster" );
+	setWindowTitle( "OuO" );
 
 	connect( ui.aLoadPath	,SIGNAL(triggered()),this,SLOT(LoadTrackPath())	);
 	connect( ui.aSavePath	,SIGNAL(triggered()),this,SLOT(SaveTrackPath())	);
@@ -53,7 +53,7 @@ AppMain::AppMain(QWidget *parent)
 	connect( ui.rcpxsub		,SIGNAL(clicked()),this,SLOT(RotateControlPointSubX())				);
 	connect( ui.rcpzadd		,SIGNAL(clicked()),this,SLOT(RotateControlPointAddZ())					);
 	connect( ui.rcpzsub		,SIGNAL(clicked()),this,SLOT(RotateControlPointSubZ())				);
-	LoadTrackPath_Default();
+	//LoadTrackPath_Default();
 	//this->trainview->curve = 2;
 	this->ChangeTrackToTrack();
 	//this->trainview->track = 1;
@@ -65,7 +65,8 @@ AppMain::~AppMain()
 
 }
 
-bool AppMain::eventFilter(QObject *watched, QEvent *e) {
+bool AppMain::eventFilter(QObject *watched, QEvent *e) 
+{
 	if (e->type() == QEvent::MouseButtonPress) {
 		QMouseEvent *event = static_cast<QMouseEvent*> (e);
 		// Get the mouse position
@@ -338,7 +339,8 @@ void AppMain::AddControlPoint()
 
 	// make it so that the train doesn't move - unless its affected by this control point
 	// it should stay between the same points
-	if (ceil(this->m_Track.trainU) > ((float)newidx)) {
+	if (ceil(this->m_Track.trainU) > ((float)newidx)) 
+	{
 		this->m_Track.trainU += 1;
 		if (this->m_Track.trainU >= npts) this->m_Track.trainU -= npts;
 	}
