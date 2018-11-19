@@ -83,7 +83,10 @@ void MazeWidget::CollisionDetection(float inx,float iny)
 				break;
 			}
 		}
-			
+		else if (!maze->edges[i]->opaque)
+		{
+			//printf("Opaque!\n");
+		}
 	if(!collision_bool_X)
 		maze->viewer_posn[Maze::X] += inx;
 	if(!collision_bool_Y)
