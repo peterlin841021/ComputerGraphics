@@ -454,7 +454,6 @@ Find_View_Cell(Cell *seed_cell)
 //======================================================================
 {
 	Cell    *new_cell;
-
 	// 
 	while ( ! ( seed_cell->Point_In_Cell(viewer_posn[X], viewer_posn[Y],
 													 viewer_posn[Z], new_cell) ) ) {
