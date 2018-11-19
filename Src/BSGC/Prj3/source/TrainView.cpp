@@ -790,7 +790,7 @@ void TrainView::drawStuff(bool doingShadows)
 		}
 		update();
 	}
-	//drawTrack(doingShadows);
+	drawTrack(doingShadows);
 #ifdef EXAMPLE_SOLUTION
 	//drawTrack(this, doingShadows);
 	

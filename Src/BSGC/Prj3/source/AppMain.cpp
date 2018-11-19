@@ -6,6 +6,7 @@
 #include <time.h>
 #include<iostream>
 
+
 AppMain* AppMain::Instance = NULL;
 AppMain::AppMain(QWidget *parent)
 	: QMainWindow(parent)
@@ -53,7 +54,7 @@ AppMain::AppMain(QWidget *parent)
 	connect( ui.rcpxsub		,SIGNAL(clicked()),this,SLOT(RotateControlPointSubX())				);
 	connect( ui.rcpzadd		,SIGNAL(clicked()),this,SLOT(RotateControlPointAddZ())					);
 	connect( ui.rcpzsub		,SIGNAL(clicked()),this,SLOT(RotateControlPointSubZ())				);
-	//LoadTrackPath_Default();
+	LoadTrackPath_Default();
 	//this->trainview->curve = 2;
 	this->ChangeTrackToTrack();
 	//this->trainview->track = 1;
@@ -101,7 +102,8 @@ bool AppMain::eventFilter(QObject *watched, QEvent *e)
 			trainview->arcball.eyeZ *= zamt;
 	}
 
-	if (e->type() == QEvent::MouseMove) {
+	if (e->type() == QEvent::MouseMove) 
+	{
 		QMouseEvent *event = static_cast<QMouseEvent*> (e);
 		if(isHover && trainview->selectedCube >= 0){
 			ControlPoint* cp = &trainview->m_pTrack->points[trainview->selectedCube];
@@ -111,7 +113,9 @@ bool AppMain::eventFilter(QObject *watched, QEvent *e)
 			int iy = event->localPos().y();
 			double mat1[16],mat2[16];		// we have to deal with the projection matrices
 			int viewport[4];
-
+			//11/20 OWO
+			initializeOpenGLFunctions();
+			
 			glGetIntegerv(GL_VIEWPORT, viewport);
 			glGetDoublev(GL_MODELVIEW_MATRIX,mat1);
 			glGetDoublev(GL_PROJECTION_MATRIX,mat2);
