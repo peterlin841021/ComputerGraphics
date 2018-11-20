@@ -58,8 +58,7 @@ Edge(int i, Vertex *start, Vertex *end, float r, float g, float b)
 //   if you were standing at the START of the edge and looking along it,
 //   with your head in the z direction.
 //=======================================================================
-char Edge::
-Cell_Side(Cell *cell)
+char Edge::Cell_Side(Cell *cell)
 //=======================================================================
 {
 	if ( cell == neighbors[LEFT] )
