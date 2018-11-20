@@ -645,33 +645,29 @@ void TrainView::drawTrack(bool doingShadows)
 				head_in = Pnt3f(qt1.x - cross_t0.x, qt1.y - cross_t0.y, qt1.z - cross_t0.z);
 				head_out = Pnt3f(qt1.x + cross_t0.x, qt1.y + cross_t0.y, qt1.z + cross_t0.z);
 			}
-			if (track == 1) {
+			if (track == 1) 
+			{
 				glLineWidth(2);
 				glBegin(GL_LINES);				
 				orient_t.normalize();
 				float tan_v = atan2f(cross_t0.z, cross_t0.x);
-				/*glVertex3f(qt1.x + cross_t0.x , qt1.y + cross_t0.y, qt1.z + cross_t0.z);
-				glVertex3f(qt0.x + cross_t0.x , qt0.y + cross_t0.y, qt0.z + cross_t0.z);
-				glVertex3f(qt1.x - cross_t0.x , qt1.y - cross_t0.y, qt1.z - cross_t0.z);
-				glVertex3f(qt0.x - cross_t0.x , qt0.y - cross_t0.y, qt0.z - cross_t0.z);*/
-				if (!doingShadows) {
+				if (!doingShadows) 
+				{
 					glColor4f(0, 0, 0, 1);
 				}
-				else {
+				else 
+				{
 					glColor4f(0, 0, 0, alpha);
 				}
-				/*glVertex3f(qt0.x + cross_t0.x, qt0.y + cross_t0.y, qt0.z + cross_t0.z);
-				glVertex3f(qt1.x + cross_t0.x, qt1.y + cross_t0.y, qt1.z + cross_t0.z);
-
-				glVertex3f(qt0.x - cross_t0.x, qt0.y - cross_t0.y, qt0.z - cross_t0.z);
-				glVertex3f(qt1.x - cross_t1.x, qt0.y - cross_t0.y, qt1.z - cross_t0.z);*/
-				if (j > 0) {					
+				if (j > 0) 
+				{					
 					glVertex3f(qt1.x + cross_t0.x, qt1.y + cross_t0.y, qt1.z + cross_t0.z);
 					glVertex3f(connect_outside.x, connect_outside.y, connect_outside.z);
 					glVertex3f(qt1.x - cross_t0.x, qt1.y - cross_t0.y, qt1.z - cross_t0.z);
 					glVertex3f(connect_inside.x, connect_inside.y, connect_inside.z);
 				}
-				else if (j == 0 && i > 0) {
+				else if (j == 0 && i > 0) 
+				{
 					glVertex3f(qt1.x + cross_t0.x, qt1.y + cross_t0.y, qt1.z + cross_t0.z);
 					glVertex3f(track_end_out.x, track_end_out.y, track_end_out.z);
 
@@ -679,12 +675,8 @@ void TrainView::drawTrack(bool doingShadows)
 					glVertex3f(track_end_in.x, track_end_in.y, track_end_in.z);
 				}
 
-				/*	connect_inside = Pnt3f(qt0.x - cross_t0.x, qt0.y - cross_t0.y, qt0.z - cross_t0.z);
-				connect_outside = Pnt3f(qt0.x + cross_t0.x, qt0.y + cross_t0.y , qt0.z + cross_t0.z);*/
-
-				//Head
-
-				if (j == DIVIDE_LINE - 1) {
+				if (j == DIVIDE_LINE - 1) 
+				{
 					track_end_in = Pnt3f(qt1.x - cross_t0.x, qt1.y - cross_t0.y, qt1.z - cross_t0.z);
 					track_end_out = Pnt3f(qt1.x + cross_t0.x, qt1.y + cross_t0.y, qt1.z + cross_t0.z);
 					if (i == (m_pTrack->points.size() - 1)) {
@@ -695,7 +687,8 @@ void TrainView::drawTrack(bool doingShadows)
 						glVertex3f(head_in.x, head_in.y, head_in.z);
 					}
 				}
-				if (!doingShadows) {
+				if (!doingShadows) 
+				{
 					glColor4f(255, 255, 255, 1);
 				}
 				else {
@@ -729,43 +722,8 @@ void TrainView::drawTrack(bool doingShadows)
 	for (size_t i = 0; i < track_path.size(); i++)
 	{
 		TrackTrail t1 = TrackTrail(track_path[i], track_orient[i], track_orient_cross[i]);
-		TrackTrail t2 = TrackTrail(
-			track_path[(i + 1) % track_path.size()],
-			track_orient[(i + 1) % track_orient.size()],
-			track_orient_cross[(i + 1) % track_orient_cross.size()]);
-		track_distance = sqrtf(powf((t1.points.x - t2.points.x), 2) + powf((t1.points.y - t2.points.y), 2) + powf((t1.points.z - t2.points.z), 2));
-		float savedistance = 3.f;
-		if (track_distance >= savedistance)
-		{
-			int divide = ceil((track_distance - savedistance) / savedistance);
-			Pnt3f p = t2.points - t1.points;
-			Pnt3f o = t2.orients - t1.orients;
-			Pnt3f oc = t2.orients_cross - t1.orients_cross;
-			for (size_t j = 0; j < divide; j++)
-			{
-				TrackTrail t = TrackTrail(
-					Pnt3f(t1.points.x + p.x / divide * j, t1.points.y + p.y / divide * j, t1.points.z + p.z / divide * j)
-					, Pnt3f(t1.orients.x + o.x / divide * j, t1.orients.y + o.y / divide * j, t1.orients.z + o.z / divide * j)
-					, Pnt3f(t1.orients_cross.x + oc.x / divide * j, t1.orients_cross.y + oc.y / divide * j, t1.orients_cross.z + oc.z / divide * j))
-					;
-				path.push_back(t);
-			}
-		}
-		else
-		{
-			int d = ceil(savedistance / (track_distance));
-			Pnt3f p = t2.points - t1.points;
-			Pnt3f o = t2.orients - t1.orients;
-			Pnt3f oc = t2.orients_cross - t1.orients_cross;
-			for (size_t j = 1; j <= d; j++) 
-			{
-				TrackTrail t = TrackTrail(Pnt3f(t1.points.x + p.x / d * j, t1.points.y + p.y / d * j, t1.points.z + p.z / d * j)
-					, Pnt3f(t1.orients.x + o.x / d * j, t1.orients.y + o.y / d * j, t1.orients.z + o.z / d * j)
-					, Pnt3f(t1.orients_cross.x + oc.x / d * j, t1.orients_cross.y + oc.y / d * j, t1.orients_cross.z + oc.z / d * j)
-				);
-				path.push_back(t);
-			}
-		}
+		TrackTrail t2 = TrackTrail(track_path[(i + 1) % track_path.size()],track_orient[(i + 1) % track_orient.size()],track_orient_cross[(i + 1) % track_orient_cross.size()]);		
+		path.push_back(t1);
 	}
 }
 void TrainView::drawStuff(bool doingShadows)
