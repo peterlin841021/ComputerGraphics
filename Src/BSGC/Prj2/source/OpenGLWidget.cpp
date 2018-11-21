@@ -256,19 +256,18 @@ void setProjection(float mv[4][4])
 		mv[i][1] *= depth / mv[i][2];
 	}
 }
-void drawcells(Cell *current, Player player)
+void drawcells(Cell *current, Player player,QLineF L, QLineF R)
 {		
 	current->counter = 1;
 	for (size_t i = 0; i < 4; i++)
 	{
 		bool draw = false;
-		Edge *each = current->edges[i];
-		current->counter = 1;
+		Edge *each = current->edges[i];		
 		QLineF edge_line = QLineF(each->endpoints[0]->posn[Maze::X], each->endpoints[0]->posn[Maze::Y], each->endpoints[1]->posn[Maze::X], each->endpoints[1]->posn[Maze::Y]);
 		QPointF rip;
 		QPointF lip;
-		int intersect_l = player.getFrustum().first.intersect(edge_line, &lip);
-		int intersect_r = player.getFrustum().second.intersect(edge_line, &rip);
+		int intersect_l = L.intersect(edge_line, &lip);
+		int intersect_r = R.intersect(edge_line, &rip);
 		if (intersect_l == 1 && intersect_r == 1)
 		{
 			draw = true;
@@ -351,35 +350,35 @@ void drawcells(Cell *current, Player player)
 		}
 		else if(!each->opaque && draw)//Far wall
 		{
-			Cell *next = current = each->Neighbor(current);			
-			int seeFarer = 10000;
-			if (current->counter == 0)
+			Cell *next = each->neighbors[!each->Cell_Side(current)] ;
+			int seeFarer = 100;
+			if (next->counter == 0)
 			{				
 				if (intersect_l == 1 && intersect_r == 1 || intersect_l != 1 && intersect_r != 1)
 				{
-					QLineF t1 = QLineF(player.getPosition().x(), player.getPosition().y(), lip.x(), lip.y());
-					t1.setLength(t1.length() * seeFarer);
-					QLineF t2 = QLineF(player.getPosition().x(), player.getPosition().y(), rip.x(), lip.x());
-					t2.setLength(t2.length() * seeFarer);
-					player.setFrustum(t1,t2);
-					drawcells(next, player);
+					QLineF L = QLineF(player.getPosition().x(), player.getPosition().y(), lip.x(), lip.y());
+					L.setLength(L.length() * seeFarer);
+					QLineF R = QLineF(player.getPosition().x(), player.getPosition().y(), rip.x(), lip.x());
+					R.setLength(R.length() * seeFarer);
+					//player.setFrustum(L,R);
+					drawcells(next, player,L,R);
 				}
 				else if(intersect_l == 1 || intersect_r == 1 )
 				{
 					QLineF temp;
 					if (intersect_l == 1)
 					{
-						temp = QLineF(player.getPosition().x(), player.getPosition().y(), rip.x(), lip.x());
+						temp = QLineF(player.getPosition().x(), player.getPosition().y(), rip.x(), rip.y());
 						temp.setLength(temp.length() * seeFarer);
-						player.setFrustum(player.getFrustum().first,temp);
-						drawcells(next, player);
+						//player.setFrustum(player.getFrustum().first,temp);
+						drawcells(next, player,L, temp);
 					}
 					else
 					{
 						temp = QLineF(player.getPosition().x(), player.getPosition().y(), lip.x(), lip.y());
 						temp.setLength(temp.length() * seeFarer);
-						player.setFrustum(temp,player.getFrustum().second);
-						drawcells(next, player);
+						//player.setFrustum(temp,player.getFrustum().second);
+						drawcells(next, player,temp,R);
 					}
 				}
 			}
@@ -433,7 +432,6 @@ void OpenGLWidget::loadTexture2D(QString str, GLuint &textureID)
 {
 
 }
-
 void OpenGLWidget::Mini_Map()	
 {
 	float viewerPosX = MazeWidget::maze->viewer_posn[Maze::X];
@@ -482,7 +480,6 @@ void OpenGLWidget::Mini_Map()
 			viewerPosY + maxWH * len * sin(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)));
 	drawFrustum(vts, colors,mm, pm);
 }
-
 void OpenGLWidget::Map_3D()
 {	
 	//Right window
@@ -519,5 +516,5 @@ void OpenGLWidget::Map_3D()
 	Cell *current;
 	MazeWidget::maze->Find_View_Cell(MazeWidget::maze->view_cell);
 	current = MazeWidget::maze->view_cell;	
-	drawcells(current, player);
+	drawcells(current, player, player.getFrustum().first, player.getFrustum().second);
 }
