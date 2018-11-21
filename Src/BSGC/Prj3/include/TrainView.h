@@ -69,8 +69,7 @@ public:
 	int				selectedCube;  // simple - just remember which cube is selected
 
 	CTrack*			m_pTrack;		// The track of the entire scene
-	float t_time;
-	unsigned int DIVIDE_LINE = 21;
+	float t_time;	
 	int camera;
 	int curve;
 	int track;
