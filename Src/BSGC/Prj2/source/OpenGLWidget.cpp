@@ -11,7 +11,8 @@
 #include <QtGui/qopengltexture.h>
 #include"LineSeg.h"
 #include<time.h>
-
+#define ERROR 0.0001
+#define VIEW 100
 using namespace std;
 QOpenGLShaderProgram* shaderProgram;
 QOpenGLShader* vertexShader;
@@ -20,6 +21,8 @@ QOpenGLVertexArrayObject vao;
 QOpenGLBuffer vvbo;
 QOpenGLBuffer cvbo;
 QOpenGLBuffer uvbo;
+float degree_change(float num);
+void setProjection(float mv[4][4]);
 class Player 
 {
 	std::pair<QLineF, QLineF> frustum;
@@ -174,14 +177,8 @@ void drawTextures(GLint textureid, QVector<QVector3D> vts,float time)
 	shaderProgram->enableAttributeArray(2);	
 	glDrawArrays(GL_TRIANGLES, 0, vts.size());
 }
-void drawMap(QVector<QVector2D> vts, QVector<QVector3D> colors,float *mm,float *pm)
-{
-	GLfloat P[4][4];
-	GLfloat MV[4][4];
-	DimensionTransformation(mm, MV);
-	DimensionTransformation(pm, P);
-	shaderProgram->setUniformValue("ProjectionMatrix", P);
-	shaderProgram->setUniformValue("ModelViewMatrix", MV);
+void drawMap(QVector<QVector2D> vts, QVector<QVector3D> colors)
+{	
 	shaderProgram->setUniformValue("mode", 2);	
 	shaderProgram->bind();
 	vao.bind();
@@ -243,26 +240,13 @@ void drawWall(QVector<QVector2D> vts, QVector<QVector3D> colors)
 	shaderProgram->enableAttributeArray(1);	
 	glDrawArrays(GL_QUADS, 0, vts.size());
 }
-float degree_change(float num)
+void drawcells(Cell *current, Player player, QLineF L, QLineF R)
 {
-	return num / 180.0f * 3.14159f;
-}
-void setProjection(float mv[4][4])
-{
-	float depth = maxWH / (10.f * tan(degree_change(MazeWidget::maze->viewer_fov * 0.5f)));
-	for (size_t i = 0; i < 4; i++)
-	{
-		mv[i][0] *= depth / mv[i][2];
-		mv[i][1] *= depth / mv[i][2];
-	}
-}
-void drawcells(Cell *current, Player player,QLineF L, QLineF R)
-{		
 	current->counter = 1;
 	for (size_t i = 0; i < 4; i++)
 	{
 		bool draw = false;
-		Edge *each = current->edges[i];		
+		Edge *each = current->edges[i];
 		QLineF edge_line = QLineF(each->endpoints[0]->posn[Maze::X], each->endpoints[0]->posn[Maze::Y], each->endpoints[1]->posn[Maze::X], each->endpoints[1]->posn[Maze::Y]);
 		QPointF rip;
 		QPointF lip;
@@ -273,24 +257,36 @@ void drawcells(Cell *current, Player player,QLineF L, QLineF R)
 			draw = true;
 		}
 		else if (intersect_l != 1 && intersect_r != 1)
-		{			
-			float edge_point1 = 1 / (2 * player.getFrustumArea())*(player.getPosition().y() * player.getFrustum().second.x2() - player.getPosition().x() * player.getFrustum().second.y2()+ (player.getFrustum().second.y2() - player.getPosition().y()) * each->endpoints[0]->posn[Maze::X] + (player.getPosition().x() - player.getFrustum().second.x2()) * each->endpoints[0]->posn[Maze::Y]);
-			float edge_point2 = 1 / (2 * player.getFrustumArea())*(player.getPosition().x() * player.getFrustum().first.y2() - player.getPosition().y() * player.getFrustum().first.x2()+ (player.getPosition().y() - player.getFrustum().first.y2()) * each->endpoints[0]->posn[Maze::X]+ (player.getFrustum().first.x2() - player.getPosition().x()) * each->endpoints[0]->posn[Maze::Y]);
+		{
+			player.setFrustumArea(
+				0.5f *(-L.y2() * R.x2()
+					+ player.getPosition().y() * (-L.x2() + R.x2())
+					+ player.getPosition().x() * (L.y2() - R.y2())
+					+ L.x2() * R.y2())
+			);
+			float edge_point1 = 1 / (2 * player.getFrustumArea())*(player.getPosition().y() * R.x2() - player.getPosition().x() * R.y2() + (R.y2() - player.getPosition().y()) * each->endpoints[0]->posn[Maze::X] + (player.getPosition().x() - R.x2()) * each->endpoints[0]->posn[Maze::Y]);
+			float edge_point2 = 1 / (2 * player.getFrustumArea())*(player.getPosition().x() * L.y2() - player.getPosition().y() * L.x2() + (player.getPosition().y() - L.y2()) * each->endpoints[0]->posn[Maze::X] + (L.x2() - player.getPosition().x()) * each->endpoints[0]->posn[Maze::Y]);
 			if ((0 <= edge_point1 && edge_point1 <= 1.0f) &&
-			(0 <= edge_point2 && edge_point2 <= 1.0f) &&
-			(edge_point1 + edge_point2  <= 1.0f))
+				(0 <= edge_point2 && edge_point2 <= 1.0f) &&
+				(edge_point1 + edge_point2 <= 1.0f))
 			{
 				draw = true;
 				lip = QPointF(each->endpoints[0]->posn[Maze::X], each->endpoints[0]->posn[Maze::Y]);
-				rip = QPointF(each->endpoints[1]->posn[Maze::X], each->endpoints[1]->posn[Maze::Y]);				
+				rip = QPointF(each->endpoints[1]->posn[Maze::X], each->endpoints[1]->posn[Maze::Y]);
 			}
 		}
 		else if (intersect_l == 1 && intersect_r != 1 || intersect_l != 1 && intersect_r == 1)
 		{
-			float edge1_start = 1 / (2 * player.getFrustumArea())*(player.getPosition().y()*player.getFrustum().second.x2() - player.getPosition().x()*player.getFrustum().second.y2() + (player.getFrustum().second.y2() - player.getPosition().y())*each->endpoints[0]->posn[Maze::X] + (player.getPosition().x() - player.getFrustum().second.x2())*each->endpoints[0]->posn[Maze::Y]);
-			float edge2_start = 1 / (2 * player.getFrustumArea())*(player.getPosition().x()*player.getFrustum().first.y2() - player.getPosition().y()*player.getFrustum().first.x2() + (player.getPosition().y() - player.getFrustum().first.y2())*each->endpoints[0]->posn[Maze::X] + (player.getFrustum().first.x2() - player.getPosition().x())*each->endpoints[0]->posn[Maze::Y]);
-			float edge1_end = 1 / (2 * player.getFrustumArea())*(player.getPosition().y()*player.getFrustum().second.x2() - player.getPosition().x()*player.getFrustum().second.y2() + (player.getFrustum().second.y2() - player.getPosition().y())*each->endpoints[1]->posn[Maze::X] + (player.getPosition().x() - player.getFrustum().second.x2())*each->endpoints[1]->posn[Maze::Y]);
-			float edge2_end = 1 / (2 * player.getFrustumArea())*(player.getPosition().x()*player.getFrustum().first.y2() - player.getPosition().y()*player.getFrustum().first.x2() + (player.getPosition().y() - player.getFrustum().first.y2())*each->endpoints[1]->posn[Maze::X] + (player.getFrustum().first.x2() - player.getPosition().x())*each->endpoints[1]->posn[Maze::Y]);
+			player.setFrustumArea(
+				0.5f *(-L.y2() * R.x2()
+					+ player.getPosition().y() * (-L.x2() + R.x2())
+					+ player.getPosition().x() * (L.y2() - R.y2())
+					+ L.x2() * R.y2())
+			);
+			float edge1_start = 1 / (2 * player.getFrustumArea())*(player.getPosition().y()*R.x2() - player.getPosition().x()*R.y2() + (R.y2() - player.getPosition().y())*each->endpoints[0]->posn[Maze::X] + (player.getPosition().x() - R.x2())*each->endpoints[0]->posn[Maze::Y]);
+			float edge2_start = 1 / (2 * player.getFrustumArea())*(player.getPosition().x()*L.y2() - player.getPosition().y()*L.x2() + (player.getPosition().y() - L.y2())*each->endpoints[0]->posn[Maze::X] + (L.x2() - player.getPosition().x())*each->endpoints[0]->posn[Maze::Y]);
+			float edge1_end = 1 / (2 * player.getFrustumArea())*(player.getPosition().y()*R.x2() - player.getPosition().x()*R.y2() + (R.y2() - player.getPosition().y())*each->endpoints[1]->posn[Maze::X] + (player.getPosition().x() - R.x2())*each->endpoints[1]->posn[Maze::Y]);
+			float edge2_end = 1 / (2 * player.getFrustumArea())*(player.getPosition().x()*L.y2() - player.getPosition().y()*L.x2() + (player.getPosition().y() - L.y2())*each->endpoints[1]->posn[Maze::X] + (L.x2() - player.getPosition().x())*each->endpoints[1]->posn[Maze::Y]);
 			if (intersect_l == 1 || intersect_r == 1)
 			{
 				if ((0 <= edge1_start && edge1_start <= 1.0f) &&
@@ -348,42 +344,55 @@ void drawcells(Cell *current, Player player,QLineF L, QLineF R)
 			glEnd();
 			drawWall(twoDvts, colors);
 		}
-		else if(!each->opaque && draw)//Far wall
+		else if (!each->opaque && draw)//Far wall
 		{
-			Cell *next = each->neighbors[!each->Cell_Side(current)] ;
-			int seeFarer = 100;
+			Cell *next = each->neighbors[!each->Cell_Side(current)];
+			
 			if (next->counter == 0)
-			{				
+			{
 				if (intersect_l == 1 && intersect_r == 1 || intersect_l != 1 && intersect_r != 1)
 				{
-					QLineF L = QLineF(player.getPosition().x(), player.getPosition().y(), lip.x(), lip.y());
-					L.setLength(L.length() * seeFarer);
-					QLineF R = QLineF(player.getPosition().x(), player.getPosition().y(), rip.x(), lip.x());
-					R.setLength(R.length() * seeFarer);
+					QLineF L = QLineF(player.getPosition().x(), player.getPosition().y(), lip.x() + ERROR, lip.y() + ERROR);
+					L.setLength(L.length() * VIEW);
+					QLineF R = QLineF(player.getPosition().x(), player.getPosition().y(), rip.x() + ERROR, rip.y() + ERROR);
+					R.setLength(R.length() * VIEW);
 					//player.setFrustum(L,R);
-					drawcells(next, player,L,R);
+					drawcells(next, player, L, R);
 				}
-				else if(intersect_l == 1 || intersect_r == 1 )
+				else if (intersect_l == 1 || intersect_r == 1)
 				{
 					QLineF temp;
 					if (intersect_l == 1)
 					{
-						temp = QLineF(player.getPosition().x(), player.getPosition().y(), rip.x(), rip.y());
-						temp.setLength(temp.length() * seeFarer);
-						//player.setFrustum(player.getFrustum().first,temp);
-						drawcells(next, player,L, temp);
+						temp = QLineF(player.getPosition().x(), player.getPosition().y(), rip.x() + ERROR, rip.y() + ERROR);
+						temp.setLength(temp.length() * VIEW);
+						//player.setFrustum(L,temp);
+						drawcells(next, player, L, temp);
 					}
 					else
 					{
-						temp = QLineF(player.getPosition().x(), player.getPosition().y(), lip.x(), lip.y());
-						temp.setLength(temp.length() * seeFarer);
-						//player.setFrustum(temp,player.getFrustum().second);
-						drawcells(next, player,temp,R);
+						temp = QLineF(player.getPosition().x(), player.getPosition().y(), lip.x() + ERROR, lip.y() + ERROR);
+						temp.setLength(temp.length() * VIEW);
+						//player.setFrustum(temp,R);
+						drawcells(next, player, temp, R);
 					}
 				}
 			}
 		}
 	}//Each edges
+}
+float degree_change(float num)
+{
+	return num / 180.0f * 3.14159f;
+}
+void setProjection(float mv[4][4])
+{
+	float depth = maxWH / (10.f * tan(degree_change(MazeWidget::maze->viewer_fov * 0.5f)));
+	for (size_t i = 0; i < 4; i++)
+	{
+		mv[i][0] *= depth / mv[i][2];
+		mv[i][1] *= depth / mv[i][2];
+	}
 }
 OpenGLWidget::OpenGLWidget(QWidget *parent) : QGLWidget(parent)
 {	
@@ -416,11 +425,7 @@ void OpenGLWidget::paintGL()
 		float maxWH = std::max(MazeWidget::maze->max_xp, MazeWidget::maze->max_yp);
 		glOrtho(-0.1, maxWH + 0.1, -0.1, maxWH + 0.1, 0, 10);				
 		Mini_Map();
-		//View 2
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
+		//View 2		
 		Map_3D();				
 	}
 }
@@ -458,7 +463,7 @@ void OpenGLWidget::Mini_Map()
 				<< QVector2D(edgeEndX, edgeEndY);
 		}
 	}
-	drawMap(vts, colors,mm,pm);
+	drawMap(vts, colors);
 	vts.clear();
 	colors.clear();
 	//Draw frustum
@@ -504,8 +509,8 @@ void OpenGLWidget::Map_3D()
 	}
 	player.setPosition(MazeWidget::maze->viewer_posn[Maze::X], MazeWidget::maze->viewer_posn[Maze::Y], MazeWidget::maze->viewer_posn[Maze::Z]);
 	player.setFrustum(
-		QLineF(player.getPosition().x(), player.getPosition().y(),player.getPosition().x() + 2 * maxWH * cos(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)),player.getPosition().y() + 2 * maxWH * sin(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2))),
-		QLineF(player.getPosition().x(), player.getPosition().y(),player.getPosition().x() + 2 * maxWH * cos(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)),player.getPosition().y() + 2 * maxWH * sin(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2))));	
+		QLineF(player.getPosition().x(), player.getPosition().y(),player.getPosition().x() + 2 * maxWH * cos(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)),player.getPosition().y() + 2 * maxWH * sin(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2) + ERROR) ),
+		QLineF(player.getPosition().x(), player.getPosition().y(),player.getPosition().x() + 2 * maxWH * cos(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)),player.getPosition().y() + 2 * maxWH * sin(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)) + ERROR) );
 	//Draw walls
 	player.setFrustumArea(
 		0.5f *(-player.getFrustum().first.y2() * player.getFrustum().second.x2() 
