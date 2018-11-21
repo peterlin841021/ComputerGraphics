@@ -26,39 +26,39 @@ AppMain::AppMain(QWidget *parent)
 
 	setWindowTitle( "OuO" );
 
-	connect( ui.aLoadPath	,SIGNAL(triggered()),this,SLOT(LoadTrackPath())	);
-	connect( ui.aSavePath	,SIGNAL(triggered()),this,SLOT(SaveTrackPath())	);
-	connect( ui.aExit		,SIGNAL(triggered()),this,SLOT(ExitApp())		);
+	connect( ui.aLoadPath	,SIGNAL(triggered()),this,SLOT(LoadTrackPath()));
+	connect( ui.aSavePath	,SIGNAL(triggered()),this,SLOT(SaveTrackPath()));
+	connect( ui.aExit		,SIGNAL(triggered()),this,SLOT(ExitApp()));
 
 	connect( ui.comboCamera	,SIGNAL(currentIndexChanged(QString)),this,SLOT(ChangeCameraType(QString)));
-	connect( ui.aWorld		,SIGNAL(triggered()),this,SLOT(ChangeCamToWorld())	);
-	connect( ui.aTop		,SIGNAL(triggered()),this,SLOT(ChangeCamToTop())	);
-	connect( ui.aTrain		,SIGNAL(triggered()),this,SLOT(ChangeCamToTrain())	);
+	connect( ui.aWorld		,SIGNAL(triggered()),this,SLOT(ChangeCamToWorld()));
+	connect( ui.aTop		,SIGNAL(triggered()),this,SLOT(ChangeCamToTop()));
+	connect( ui.aTrain		,SIGNAL(triggered()),this,SLOT(ChangeCamToTrain()));
 
 	connect( ui.comboCurve	,SIGNAL(currentIndexChanged(QString)),this,SLOT(ChangeCurveType(QString)));
-	connect( ui.aLinear		,SIGNAL(triggered()),this,SLOT(ChangeCurveToLinear())	);
-	connect( ui.aCardinal	,SIGNAL(triggered()),this,SLOT(ChangeCurveToCardinal())	);
-	connect( ui.aCubic		,SIGNAL(triggered()),this,SLOT(ChangeCurveToCubic())	);
+	connect( ui.aLinear		,SIGNAL(triggered()),this,SLOT(ChangeCurveToLinear()));
+	connect( ui.aCardinal	,SIGNAL(triggered()),this,SLOT(ChangeCurveToCardinal()));
+	connect( ui.aCubic		,SIGNAL(triggered()),this,SLOT(ChangeCurveToCubic()));
 
 	connect( ui.comboTrack	,SIGNAL(currentIndexChanged(QString)),this,SLOT(ChangeTrackType(QString)));
-	connect( ui.aLine		,SIGNAL(triggered()),this,SLOT(ChangeTrackToLine())		);
-	connect( ui.aTrack		,SIGNAL(triggered()),this,SLOT(ChangeTrackToTrack())	);
-	connect( ui.aRoad		,SIGNAL(triggered()),this,SLOT(ChangeTrackToRoad())		);
+	connect( ui.aLine		,SIGNAL(triggered()),this,SLOT(ChangeTrackToLine()));
+	connect( ui.aTrack		,SIGNAL(triggered()),this,SLOT(ChangeTrackToTrack()));
+	connect( ui.aRoad		,SIGNAL(triggered()),this,SLOT(ChangeTrackToRoad()));
 
-	connect( ui.bPlay		,SIGNAL(clicked()),this,SLOT(SwitchPlayAndPause())				);
-	connect( ui.sSpeed		,SIGNAL(valueChanged(int)),this,SLOT(ChangeSpeedOfTrain(int))	);
-	connect( ui.bAdd		,SIGNAL(clicked()),this,SLOT(AddControlPoint())					);
-	connect( ui.bDelete		,SIGNAL(clicked()),this,SLOT(DeleteControlPoint())				);
+	connect( ui.bPlay		,SIGNAL(clicked()),this,SLOT(SwitchPlayAndPause()));
+	connect( ui.sSpeed		,SIGNAL(valueChanged(int)),this,SLOT(ChangeSpeedOfTrain(int)));
+	connect( ui.bAdd		,SIGNAL(clicked()),this,SLOT(AddControlPoint()));
+	connect( ui.bDelete		,SIGNAL(clicked()),this,SLOT(DeleteControlPoint()));
 
-	connect( ui.rcpxadd		,SIGNAL(clicked()),this,SLOT(RotateControlPointAddX())					);
-	connect( ui.rcpxsub		,SIGNAL(clicked()),this,SLOT(RotateControlPointSubX())				);
-	connect( ui.rcpzadd		,SIGNAL(clicked()),this,SLOT(RotateControlPointAddZ())					);
-	connect( ui.rcpzsub		,SIGNAL(clicked()),this,SLOT(RotateControlPointSubZ())				);
+	connect(ui.rcpxadd, SIGNAL(clicked()), this, SLOT(RotateControlPointAddX()));
+	connect( ui.rcpxsub		,SIGNAL(clicked()),this,SLOT(RotateControlPointSubX()));
+	connect( ui.rcpzadd		,SIGNAL(clicked()),this,SLOT(RotateControlPointAddZ()));
+	connect( ui.rcpzsub		,SIGNAL(clicked()),this,SLOT(RotateControlPointSubZ()));
 	LoadTrackPath_Default();
 	//this->trainview->curve = 2;
-	this->ChangeTrackToTrack();
-	//this->trainview->track = 1;
-	this->ChangeCurveToCubic();
+	//this->ChangeTrackToTrack();
+	this->trainview->track = 1;
+	//this->ChangeCurveToCubic();
 }
 
 AppMain::~AppMain()
@@ -93,7 +93,8 @@ bool AppMain::eventFilter(QObject *watched, QEvent *e)
 		trainview->arcball.mode = trainview->arcball.None;
 	}
 
-	if (e->type() == QEvent::Wheel) {
+	if (e->type() == QEvent::Wheel) 
+	{
 		float n= 1.f;
 		float f = 1000.f;
 		QWheelEvent *event = static_cast<QWheelEvent*> (e);
