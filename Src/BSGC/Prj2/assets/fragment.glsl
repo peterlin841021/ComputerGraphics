@@ -56,12 +56,12 @@ void main()
 	switch(mode)
 	{
 		case 0:
-		fColor = colors;
-		//snow_wall();
+		//fColor = colors;
+		snow_wall();
 		break;
 		case 1:
-		fColor = texture(Texture,vUV);
-		//snow_texture();
+		//fColor = texture(Texture,vUV);
+		snow_texture();
 		break;
 		case 2:
 		fColor = colors;		

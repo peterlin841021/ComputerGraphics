@@ -177,8 +177,14 @@ void drawTextures(GLint textureid, QVector<QVector3D> vts,float time)
 	shaderProgram->enableAttributeArray(2);	
 	glDrawArrays(GL_TRIANGLES, 0, vts.size());
 }
-void drawMap(QVector<QVector2D> vts, QVector<QVector3D> colors)
+void drawMap(QVector<QVector2D> vts, QVector<QVector3D> colors, float *mm, float *pm)
 {	
+	GLfloat P[4][4];
+	GLfloat MV[4][4];
+	DimensionTransformation(mm, MV);
+	DimensionTransformation(pm, P);
+	shaderProgram->setUniformValue("ProjectionMatrix", P);
+	shaderProgram->setUniformValue("ModelViewMatrix", MV);
 	shaderProgram->setUniformValue("mode", 2);	
 	shaderProgram->bind();
 	vao.bind();
@@ -246,7 +252,9 @@ void drawcells(Cell *current, Player player, QLineF L, QLineF R)
 	for (size_t i = 0; i < 4; i++)
 	{
 		bool draw = false;
+		
 		Edge *each = current->edges[i];
+		//printf("Color:(%f,%f,%f)\n", each->color[0], each->color[1], each->color[2]);
 		QLineF edge_line = QLineF(each->endpoints[0]->posn[Maze::X], each->endpoints[0]->posn[Maze::Y], each->endpoints[1]->posn[Maze::X], each->endpoints[1]->posn[Maze::Y]);
 		QPointF rip;
 		QPointF lip;
@@ -347,7 +355,7 @@ void drawcells(Cell *current, Player player, QLineF L, QLineF R)
 		else if (!each->opaque && draw)//Far wall
 		{
 			Cell *next = each->neighbors[!each->Cell_Side(current)];
-			
+			//Cell *next = each->neighbors[1];
 			if (next->counter == 0)
 			{
 				if (intersect_l == 1 && intersect_r == 1 || intersect_l != 1 && intersect_r != 1)
@@ -449,21 +457,23 @@ void OpenGLWidget::Mini_Map()
 	glGetFloatv(GL_MODELVIEW_MATRIX, pm);
 	for (int i = 0; i < (int)MazeWidget::maze->num_edges; i++)
 	{
-		float edgeStartX = (MazeWidget::maze->edges[i]->endpoints[Edge::START]->posn[Vertex::X]);
-		float edgeStartY = (MazeWidget::maze->edges[i]->endpoints[Edge::START]->posn[Vertex::Y]);
-		float edgeEndX = (MazeWidget::maze->edges[i]->endpoints[Edge::END]->posn[Vertex::X]);
-		float edgeEndY = (MazeWidget::maze->edges[i]->endpoints[Edge::END]->posn[Vertex::Y]);		
-		colors			
-			<< QVector3D(MazeWidget::maze->edges[i]->color[0], MazeWidget::maze->edges[i]->color[1], MazeWidget::maze->edges[i]->color[2])
-			<< QVector3D(MazeWidget::maze->edges[i]->color[0], MazeWidget::maze->edges[i]->color[1], MazeWidget::maze->edges[i]->color[2]);			
+				
 		if (MazeWidget::maze->edges[i]->opaque)
 		{			
-			vts 
+			float edgeStartX = (MazeWidget::maze->edges[i]->endpoints[Edge::START]->posn[Vertex::X]);
+			float edgeStartY = (MazeWidget::maze->edges[i]->endpoints[Edge::START]->posn[Vertex::Y]);
+			float edgeEndX = (MazeWidget::maze->edges[i]->endpoints[Edge::END]->posn[Vertex::X]);
+			float edgeEndY = (MazeWidget::maze->edges[i]->endpoints[Edge::END]->posn[Vertex::Y]);
+			colors
+				<< QVector3D(MazeWidget::maze->edges[i]->color[0], MazeWidget::maze->edges[i]->color[1], MazeWidget::maze->edges[i]->color[2])
+				<< QVector3D(MazeWidget::maze->edges[i]->color[0], MazeWidget::maze->edges[i]->color[1], MazeWidget::maze->edges[i]->color[2]);
+			vts
 				<< QVector2D(edgeStartX, edgeStartY)
 				<< QVector2D(edgeEndX, edgeEndY);
+				
 		}
 	}
-	drawMap(vts, colors);
+	drawMap(vts, colors,mm,pm);
 	vts.clear();
 	colors.clear();
 	//Draw frustum
@@ -518,8 +528,7 @@ void OpenGLWidget::Map_3D()
 		+ player.getPosition().x() * (player.getFrustum().first.y2() - player.getFrustum().second.y2()) 
 		+ player.getFrustum().first.x2() * player.getFrustum().second.y2())
 	);
-	Cell *current;
-	MazeWidget::maze->Find_View_Cell(MazeWidget::maze->view_cell);
-	current = MazeWidget::maze->view_cell;	
-	drawcells(current, player, player.getFrustum().first, player.getFrustum().second);
+	//Cell *current;
+	MazeWidget::maze->Find_View_Cell(MazeWidget::maze->view_cell);	
+	drawcells(MazeWidget::maze->view_cell, player, player.getFrustum().first, player.getFrustum().second);
 }

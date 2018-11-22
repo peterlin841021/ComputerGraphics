@@ -16,8 +16,9 @@ MazeWidget::MazeWidget(QWidget *parent): QMainWindow(parent)
 	//Read initially
 	//filename = ;
 	//maze = new Maze("maze-1x1-45");
+	maze = new Maze("maze.txt");
 	//maze = new Maze("maze-2x2");
-	maze = new Maze("maze-10x10-100");
+	//maze = new Maze("maze-10x10-100");
 	ui.widget->updateGL();
 	timer->start(20);
 }
