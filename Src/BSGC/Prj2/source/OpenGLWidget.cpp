@@ -478,7 +478,7 @@ void OpenGLWidget::Mini_Map()
 	colors.clear();
 	//Draw frustum
 	float maxWH = std::max(MazeWidget::maze->max_xp, MazeWidget::maze->max_yp);
-	float len = 0.1f *10.f / maxWH;	
+	float len = 0.1f;	
 	colors
 		<< QVector3D(1, 1, 1)
 		<< QVector3D(1, 1, 1)
@@ -487,12 +487,12 @@ void OpenGLWidget::Mini_Map()
 	vts
 		<< QVector2D(viewerPosX, viewerPosY)
 		<< QVector2D(
-			viewerPosX + maxWH * len * cos(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)),
-			viewerPosY + maxWH * len * sin(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)));
+			viewerPosX + (MazeWidget::maze->max_xp) * len * cos(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)),
+			viewerPosY + (MazeWidget::maze->max_yp) * len * sin(degree_change(MazeWidget::maze->viewer_dir - MazeWidget::maze->viewer_fov / 2)));
 	vts
 		<< QVector2D(viewerPosX, viewerPosY)
-		<< QVector2D(viewerPosX + maxWH * len * cos(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)),
-			viewerPosY + maxWH * len * sin(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)));
+		<< QVector2D(viewerPosX + (MazeWidget::maze->max_xp) * len * cos(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)),
+			viewerPosY + (MazeWidget::maze->max_yp) * len * sin(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)));
 	drawFrustum(vts, colors,mm, pm);
 }
 void OpenGLWidget::Map_3D()
