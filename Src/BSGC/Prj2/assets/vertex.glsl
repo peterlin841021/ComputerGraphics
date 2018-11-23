@@ -16,6 +16,7 @@ void main(void)
         case 0:
             gl_Position = vec4(vertex, 1.0);
             colors = vec4(color,1.0);
+            vUV = uv;
         break;
         case 1:
             gl_Position = vec4(vertex, 1.0);

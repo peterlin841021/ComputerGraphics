@@ -10,12 +10,12 @@ public:
 
 	void initializeGL();
 	void paintGL();
-	void resizeGL(int ,int );
+	//void resizeGL(int ,int );
 
 	//Maze Setting
 	void Mini_Map();
 	void Map_3D();
-	void loadTexture2D(QString, GLuint &);
+	//void loadTexture2D(QString, GLuint &);
 	//float degree_change(float );	
 private:
 	GLuint grass_ID;
