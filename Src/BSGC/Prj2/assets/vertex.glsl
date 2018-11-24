@@ -19,7 +19,7 @@ void main(void)
             vUV = uv;
         break;
         case 1:
-            gl_Position = vec4(vertex, 1.0);
+            gl_Position = ProjectionMatrix * ModelViewMatrix * vec4(vertex, 1.0);
             vUV = uv;
         break;
         case 2:

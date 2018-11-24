@@ -1,4 +1,5 @@
-﻿#include "OpenGLWidget.h"
+﻿#include "glew.h"
+#include "OpenGLWidget.h"
 #include <iostream>
 #include "MazeWidget.h"
 #include <gl\gl.h>
@@ -11,8 +12,15 @@
 #include <QtGui/qopengltexture.h>
 #include"LineSeg.h"
 #include<time.h>
+#include<fstream>
+#include <sstream> 
+#include "stb_image.h"
+#include "tiny_obj_loader.h"
+#include "Common.h"
+
 #define E 0.00001
 #define VIEW 100
+
 using namespace std;
 QOpenGLShaderProgram* shaderProgram;
 QOpenGLShader* vertexShader;
@@ -21,6 +29,9 @@ QOpenGLVertexArrayObject vao;
 QOpenGLBuffer vvbo;
 QOpenGLBuffer cvbo;
 QOpenGLBuffer uvbo;
+
+GLuint vs,fs,sp,model_vao;
+
 
 class Player
 {
@@ -79,7 +90,7 @@ public:
 			{
 				for (size_t k = 0; k < 4; k++)
 				{
-					screen[i][j] += viewmatrix(j, k) * modelmatrix(i, k);
+					screen[i][j] += viewmatrix(j, k) * modelmatrix(i, k);//Column major
 				}
 			}
 		}
@@ -107,6 +118,34 @@ public:
 float degree_change(float num);
 void setProjection(float mv[4][4],int max);
 pair<bool, pair<QPointF, QPointF>> clipWall(Edge *wall, Player player, QLineF L, QLineF R, int intersect_l, int intersect_r,QPointF lip, QPointF rip);
+struct
+{
+	GLint  mv_matrix;
+	GLint  proj_matrix;
+	GLint  mode;
+	GLint time;
+} uniforms;
+
+//model info
+
+typedef struct
+{
+	GLuint vao;
+	GLuint vbo;
+	GLuint vboTex;
+	GLuint ebo;
+
+	GLuint p_normal;
+	int materialId;
+	int indexCount;
+	GLuint m_texture;
+
+	QMatrix4x4 model;
+} Shape;
+Shape m_shape;
+void LoadModel(const char *objName, const char * textureName);
+void Init();
+void Render(float *mm, float *pm, GLint shaderMode, GLfloat time);
 Player player;
 QVector<QOpenGLTexture*> textures;
 void shader_init()
@@ -146,9 +185,15 @@ void DimensionTransformation(GLfloat source[], GLfloat target[][4])
 		}
 	}	
 }
-void drawTextures(GLint textureid, QVector<QVector3D> vts,float time)
+void drawTextures(GLint textureid, QVector<QVector3D> vts, float *mm, float *pm,float time)
 {	
 	shaderProgram->setUniformValue("Texture", textureid);
+	GLfloat P[4][4];
+	GLfloat MV[4][4];
+	DimensionTransformation(mm, MV);
+	DimensionTransformation(pm, P);
+	shaderProgram->setUniformValue("ProjectionMatrix", P);
+	shaderProgram->setUniformValue("ModelViewMatrix", MV);
 	shaderProgram->setUniformValue("mode",1);
 	shaderProgram->setUniformValue("time", time);
 	float w = 1, h = 1;
@@ -227,15 +272,13 @@ void drawFrustum(QVector<QVector2D> vts, QVector<QVector3D> colors, float *mm, f
 	glDrawArrays(GL_LINES, 0, vts.size());
 }
 void drawWall(GLint textureid,QVector<QVector2D> vts, QVector<QVector3D> colors,float time)
-{	
-	//shaderProgram->setUniformValue("mode", 0);
+{		
 	shaderProgram->setUniformValue("Texture", textureid);
 	shaderProgram->setUniformValue("mode", 0);
 	shaderProgram->setUniformValue("time", time);
 	shaderProgram->bind();
 	vao.bind();
 	vvbo.bind();
-	
 	vvbo.allocate(vts.constData(), vts.size() * sizeof(QVector2D));
 	shaderProgram->setAttributeArray(0, GL_FLOAT, 0, 2, NULL);
 	vvbo.release();
@@ -452,16 +495,26 @@ void OpenGLWidget::initializeGL()
 	textures[0]->bind(1);//Draw sky
 	textures[1]->bind(2);//Draw snow ground
 	textures[2]->bind(3);//Draw snow brick wall
+	//Init();
 }
 void OpenGLWidget::paintGL()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	if(MazeWidget::maze!=NULL)
 	{
-		//View 1		
+		////View 1		
 		Mini_Map();
-		//View 2				
-		Map_3D();				
+		////View 2				
+		Map_3D();
+		
+		/*glViewport(0, 0, MazeWidget::w, MazeWidget::h);
+		GLfloat mm[16], pm[16];
+		
+		glGetFloatv(GL_PROJECTION_MATRIX, pm);
+		glGetFloatv(GL_MODELVIEW_MATRIX, mm);
+		QMatrix4x4 m(mm);		
+		m.rotate(1,QVector3D(0, 0, 1));
+		Render(m.data(),pm,0,clock());*/
 	}
 }
 void OpenGLWidget::Mini_Map()	
@@ -524,23 +577,34 @@ void OpenGLWidget::Map_3D()
 	glViewport(600, 0, MazeWidget::w/2, MazeWidget::h);
 	int maxWH = std::max(MazeWidget::maze->max_xp, MazeWidget::maze->max_yp);
 	QVector<QVector3D> vts;
+	GLfloat mm[16], pm[16];
+	glGetFloatv(GL_PROJECTION_MATRIX, mm);
+	glGetFloatv(GL_MODELVIEW_MATRIX, pm);
 	vts 
-		<< QVector3D(-1, 1, 0) << QVector3D(1, 1, 0) << QVector3D(1, 0, 0) 
-		<< QVector3D(1, 0, 0) << QVector3D(-1, 0, 0) << QVector3D(-1, 1, 0);
-	
-	drawTextures(1, vts, clock());
+		<< QVector3D(-1 , 1 ,0) 
+		<< QVector3D(1 , 1 , 0) 
+		<< QVector3D(1 , 0 , 0)
+		<< QVector3D(1 , 0 , 0) 
+		<< QVector3D(-1 , 0 , 0) 
+		<< QVector3D(-1 , 1 , 0);			
+	drawTextures(1, vts,mm,pm,clock());
+
+
 	vts.clear();
-	
+	//
 	vts 
 		<< QVector3D(-1, 0,0) << QVector3D(1, 0,0) << QVector3D(1, -1,0) 
 		<< QVector3D(1, -1, 0) << QVector3D(-1, -1, 0)<< QVector3D(-1, 0, 0);
-	drawTextures(2, vts,clock());
-	//Init cells	
+	
+	drawTextures(2, vts, mm,pm,clock());
+	
+	//Init cells
 	float len = 2.f * maxWH;//20 or 80
 	for (int i = 0; i < MazeWidget::maze->num_cells; i++)
 	{
 		MazeWidget::maze->cells[i]->counter = 0;
 	}
+	
 	player.setPosition(MazeWidget::maze->viewer_posn[Maze::X], MazeWidget::maze->viewer_posn[Maze::Y], MazeWidget::maze->viewer_posn[Maze::Z]);
 	player.setFrustum(		
 		QLineF(player.getPosition().x(), player.getPosition().y(), player.getPosition().x() + len * cos(degree_change(MazeWidget::maze->viewer_dir + MazeWidget::maze->viewer_fov / 2)),
@@ -551,4 +615,103 @@ void OpenGLWidget::Map_3D()
 	MazeWidget::maze->Find_View_Cell(MazeWidget::maze->view_cell);
 	//Draw walls
 	drawcells(MazeWidget::maze->view_cell, player, player.getFrustum().first, player.getFrustum().second);	
+}
+void Init()
+{
+	glewInit();
+	sp = glCreateProgram();
+	
+	char** vsSource = Common::LoadShaderSource("./src/bsgc/prj2/assets/vs.glsl");
+	char** fsSource = Common::LoadShaderSource("./src/bsgc/prj2/assets/fs.glsl");
+	vs = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vs,1, vsSource,NULL);
+	fs = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fs,1, fsSource, NULL);
+
+	glAttachShader(sp,vs);
+	glAttachShader(sp,fs);
+	
+	glLinkProgram(sp);
+
+
+	uniforms.proj_matrix = glGetUniformLocation(sp, "pm");
+	uniforms.mv_matrix = glGetUniformLocation(sp, "mv");
+	printf("ID:(%d,%d)\n", uniforms.proj_matrix, uniforms.mv_matrix);
+	/*uniforms.mode = glGetUniformLocation(sp, "shaderNumber");
+	uniforms.time = glGetUniformLocation(sp, "time");*/
+	
+	LoadModel("./src/bsgc/prj2/assets/MikuHair.obj","./src/bsgc/prj2/assets/MikuHair.png");
+}
+vector<float> temp;
+void LoadModel(const char *objName, const char * textureName)
+{
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string err;
+	bool ret = tinyobj::LoadObj(shapes, materials, err, objName,"./src/bsgc/prj2/assets/");
+	if (err.size() > 0)
+	{
+		printf("Load Models Fail! Please check the solution path\n");
+		return;
+	}
+	
+	for (size_t i = 0; i < shapes.size(); i++)
+	{						
+		glGenVertexArrays(1, &m_shape.vao);
+		glBindVertexArray(m_shape.vao);
+
+		glGenBuffers(3, &m_shape.vbo);
+		glGenBuffers(1, &m_shape.p_normal);
+		glBindBuffer(GL_ARRAY_BUFFER, m_shape.vbo);
+		glBufferData(GL_ARRAY_BUFFER, shapes[i].mesh.positions.size() * sizeof(float) + shapes[i].mesh.normals.size() * sizeof(float), NULL, GL_STATIC_DRAW);
+
+		glBufferSubData(GL_ARRAY_BUFFER, 0, shapes[i].mesh.positions.size() * sizeof(float), &shapes[i].mesh.positions[0]);
+		glBufferSubData(GL_ARRAY_BUFFER, shapes[i].mesh.positions.size() * sizeof(float), shapes[i].mesh.normals.size() * sizeof(float), &shapes[i].mesh.normals[0]);
+		temp = shapes[i].mesh.positions;
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void *)(shapes[i].mesh.positions.size() * sizeof(float)));
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_shape.p_normal);
+		glBufferData(GL_ARRAY_BUFFER, shapes[i].mesh.normals.size() * sizeof(float), shapes[i].mesh.normals.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_shape.vboTex);
+		glBufferData(GL_ARRAY_BUFFER, shapes[i].mesh.texcoords.size() * sizeof(float), shapes[i].mesh.texcoords.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_shape.ebo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, shapes[i].mesh.indices.size() * sizeof(unsigned int), shapes[i].mesh.indices.data(), GL_STATIC_DRAW);
+		m_shape.materialId = shapes[i].mesh.material_ids[0];
+		m_shape.indexCount = shapes[i].mesh.indices.size();
+
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glEnableVertexAttribArray(2);
+	}	
+	TextureData tdata = Common::Load_png(textureName);
+
+	//Generate empty texture
+	glGenTextures(1, &m_shape.m_texture);
+	glBindTexture(GL_TEXTURE_2D, m_shape.m_texture);
+
+	//Do texture setting
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tdata.width, tdata.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tdata.data);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
+void Render(float *mm, float *pm, GLint shaderMode, GLfloat time)
+{	
+	glBindVertexArray(m_shape.vao);
+	glLinkProgram(sp);
+	glActiveTexture(GL_TEXTURE0);//!
+	glBindTexture(GL_TEXTURE_2D, m_shape.m_texture);	
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, pm);
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, mm);
+	//glUniform1i(uniforms.mode, shaderMode);	
+	//glUniform1f(uniforms.time, time);
+	//glDrawElements(GL_TRIANGLES, m_shape.indexCount, GL_UNSIGNED_INT, 0);
+	//glDrawArrays(GL_TRIANGLES, 0, temp.size());
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, temp.size());
 }
