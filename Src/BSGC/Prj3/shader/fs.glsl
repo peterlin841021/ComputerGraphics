@@ -1,4 +1,5 @@
 #version 430 core
+const vec2 iResolution = vec2(800., 800.);
 // in vec3 vs_worldpos;
 // in vec3 vs_normal;
 in vec2 texturecoord;
@@ -16,6 +17,31 @@ uniform int mode;
 uniform float alpha;
 uniform sampler2D tex;
 uniform float time;
+float rnd(float x) {  return fract(sin(dot(vec2(x + 47.49, 38.2467 / (x + 2.3)),vec2(12.9898, 78.233))) * (43758.5453));}
+/*********Snow**********/
+#define _SnowflakeAmount 300  
+#define _BlizardFactor 0.25          
+
+float drawCircle(vec2 uv, vec2 center, float radius)
+{
+   return 1.0 - smoothstep(0.0, radius, length(uv - center));
+}
+
+void snow()
+{
+   vec2 uv =  gl_FragCoord.xy  / iResolution.x;
+   vec3 color = texture(tex,texturecoord).rgb;  
+   fragmentcolor = vec4(color, 1.0);  
+   
+   float j;   
+   for (int i = 0; i < _SnowflakeAmount; i++)
+   {
+      j = float(i);      
+      float speed = 0.3 + rnd(cos(j)) * (0.7 + 0.5 * cos(j / (float(_SnowflakeAmount) * 0.25)));           
+      vec2 center = vec2((-0.25 + uv.y) * _BlizardFactor + rnd(j) + 0.1 * cos(time*0.001 + sin(j)),mod(rnd(j) - speed * (time * 0.001 * (0.1 + _BlizardFactor)),0.95));
+      fragmentcolor += vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008 ));	  
+   }   
+}
 void main(void)
 {	
 	// vec3 light_direction = normalize(light_position - vs_worldpos);
@@ -33,15 +59,18 @@ void main(void)
 			fragmentcolor = vec4(fcolor,1.0);
             break;
         }
-        case(1)://Draw texture
-        case(2)://Draw skybox
+        case(1)://Draw texture        
         {
 			vec4 color = texture2D(tex,texturecoord);
             if(alpha !=1)
 			    color.a = alpha;
 			fragmentcolor = color;
             break;
-        }        
+        }
+		case(2)://Draw skybox
+		{
+			snow();
+		}
     }			
 	// vec4 RefractColor = textureCube(box,RefractVec);
 	// vec4 ReflectColor = textureCube(box,ReflectVec);

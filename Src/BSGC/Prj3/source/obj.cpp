@@ -87,7 +87,7 @@ void Obj::Init(int buffers)
 		vvbo.bind();
 		vvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
 
-		uvbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+		/*uvbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
 		uvbo.create();
 		uvbo.bind();
 		uvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
@@ -95,7 +95,7 @@ void Obj::Init(int buffers)
 		cvbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
 		cvbo.create();
 		cvbo.bind();
-		cvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+		cvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);*/
 		break;
 	case 4:
 		vvbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
