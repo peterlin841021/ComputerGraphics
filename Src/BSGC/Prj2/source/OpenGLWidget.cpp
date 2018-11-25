@@ -29,9 +29,7 @@ QOpenGLVertexArrayObject vao;
 QOpenGLBuffer vvbo;
 QOpenGLBuffer cvbo;
 QOpenGLBuffer uvbo;
-
-GLuint vs,fs,sp,model_vao;
-
+QOpenGLBuffer *vertexbuffer,*normalbuffer,*indexsbuffer,*texturebuffer;
 
 class Player
 {
@@ -488,14 +486,14 @@ void OpenGLWidget::initializeGL()
 {
 	glClearColor(0,0,0,1);
 	glEnable(GL_TEXTURE_2D);
-	shader_init();
+	//shader_init();
 	textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj2/assets/sky.png")));
 	textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj2/assets/snowground.png")));
 	textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj2/assets/brick.png")));
 	textures[0]->bind(1);//Draw sky
 	textures[1]->bind(2);//Draw snow ground
 	textures[2]->bind(3);//Draw snow brick wall
-	//Init();
+	Init();
 }
 void OpenGLWidget::paintGL()
 {
@@ -503,18 +501,22 @@ void OpenGLWidget::paintGL()
 	if(MazeWidget::maze!=NULL)
 	{
 		////View 1		
-		Mini_Map();
+		//Mini_Map();
 		////View 2				
-		Map_3D();
+		//Map_3D();
 		
-		/*glViewport(0, 0, MazeWidget::w, MazeWidget::h);
+		glViewport(600, 0, MazeWidget::w/2, MazeWidget::h);
 		GLfloat mm[16], pm[16];
-		
+		gluLookAt(0,0,10,0,0,0,0,1,0);
+		gluPerspective(120,1.5f,10,200);
 		glGetFloatv(GL_PROJECTION_MATRIX, pm);
 		glGetFloatv(GL_MODELVIEW_MATRIX, mm);
-		QMatrix4x4 m(mm);		
-		m.rotate(1,QVector3D(0, 0, 1));
-		Render(m.data(),pm,0,clock());*/
+		QMatrix4x4 m(mm);
+		m.translate(0,0,-5);
+		m.scale(1000, 1000, 1000);
+		//m.rotate(1,QVector3D(0, 0, 1));
+		//Render(mm,pm,0,clock());
+		Render(m.data(), pm, 0, 0);
 	}
 }
 void OpenGLWidget::Mini_Map()	
@@ -618,31 +620,33 @@ void OpenGLWidget::Map_3D()
 }
 void Init()
 {
-	glewInit();
-	sp = glCreateProgram();
-	
+	/*glewInit();
+	sp = glCreateProgram();	
 	char** vsSource = Common::LoadShaderSource("./src/bsgc/prj2/assets/vs.glsl");
 	char** fsSource = Common::LoadShaderSource("./src/bsgc/prj2/assets/fs.glsl");
 	vs = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vs,1, vsSource,NULL);
 	fs = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fs,1, fsSource, NULL);
-
 	glAttachShader(sp,vs);
-	glAttachShader(sp,fs);
-	
+	glAttachShader(sp,fs);	
 	glLinkProgram(sp);
-
-
 	uniforms.proj_matrix = glGetUniformLocation(sp, "pm");
 	uniforms.mv_matrix = glGetUniformLocation(sp, "mv");
-	printf("ID:(%d,%d)\n", uniforms.proj_matrix, uniforms.mv_matrix);
-	/*uniforms.mode = glGetUniformLocation(sp, "shaderNumber");
-	uniforms.time = glGetUniformLocation(sp, "time");*/
-	
+	*/
+	glewInit();
+	shaderProgram = new QOpenGLShaderProgram();
+	vertexShader = new QOpenGLShader(QOpenGLShader::Vertex);
+	vertexShader->compileSourceFile("./src/bsgc/prj2/assets/vs.glsl");	
+	fragmentShader = new QOpenGLShader(QOpenGLShader::Fragment);
+	fragmentShader->compileSourceFile("./src/bsgc/prj2/assets/fs.glsl");
+	shaderProgram->addShader(vertexShader);
+	shaderProgram->addShader(fragmentShader);
+	shaderProgram->link();	
 	LoadModel("./src/bsgc/prj2/assets/MikuHair.obj","./src/bsgc/prj2/assets/MikuHair.png");
 }
-vector<float> temp;
+vector<float> vts, normals,texture_coord,indexes;
+QVector<QOpenGLTexture*>  Textures;
 void LoadModel(const char *objName, const char * textureName)
 {
 	std::vector<tinyobj::shape_t> shapes;
@@ -657,24 +661,20 @@ void LoadModel(const char *objName, const char * textureName)
 	
 	for (size_t i = 0; i < shapes.size(); i++)
 	{						
-		glGenVertexArrays(1, &m_shape.vao);
+		/*glGenVertexArrays(1, &m_shape.vao);
 		glBindVertexArray(m_shape.vao);
-
 		glGenBuffers(3, &m_shape.vbo);
 		glGenBuffers(1, &m_shape.p_normal);
 		glBindBuffer(GL_ARRAY_BUFFER, m_shape.vbo);
 		glBufferData(GL_ARRAY_BUFFER, shapes[i].mesh.positions.size() * sizeof(float) + shapes[i].mesh.normals.size() * sizeof(float), NULL, GL_STATIC_DRAW);
-
 		glBufferSubData(GL_ARRAY_BUFFER, 0, shapes[i].mesh.positions.size() * sizeof(float), &shapes[i].mesh.positions[0]);
-		glBufferSubData(GL_ARRAY_BUFFER, shapes[i].mesh.positions.size() * sizeof(float), shapes[i].mesh.normals.size() * sizeof(float), &shapes[i].mesh.normals[0]);
-		temp = shapes[i].mesh.positions;
+		glBufferSubData(GL_ARRAY_BUFFER, shapes[i].mesh.positions.size() * sizeof(float), shapes[i].mesh.normals.size() * sizeof(float), &shapes[i].mesh.normals[0]);		
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void *)(shapes[i].mesh.positions.size() * sizeof(float)));
 
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void *)(shapes[i].mesh.positions.size() * sizeof(float)));
 		glBindBuffer(GL_ARRAY_BUFFER, m_shape.p_normal);
 		glBufferData(GL_ARRAY_BUFFER, shapes[i].mesh.normals.size() * sizeof(float), shapes[i].mesh.normals.data(), GL_STATIC_DRAW);
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
 		glBindBuffer(GL_ARRAY_BUFFER, m_shape.vboTex);
 		glBufferData(GL_ARRAY_BUFFER, shapes[i].mesh.texcoords.size() * sizeof(float), shapes[i].mesh.texcoords.data(), GL_STATIC_DRAW);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
@@ -682,36 +682,119 @@ void LoadModel(const char *objName, const char * textureName)
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, shapes[i].mesh.indices.size() * sizeof(unsigned int), shapes[i].mesh.indices.data(), GL_STATIC_DRAW);
 		m_shape.materialId = shapes[i].mesh.material_ids[0];
 		m_shape.indexCount = shapes[i].mesh.indices.size();
-
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
-		glEnableVertexAttribArray(2);
+		glEnableVertexAttribArray(2);*/
+
+		vao.create();
+		//vao.bind();
+		
+		for (size_t j = 0; j < shapes[i].mesh.positions.size(); j++)
+		{
+			vts.push_back(shapes[i].mesh.positions[j]);
+		}
+		vertexbuffer = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+		vertexbuffer->create();
+		vertexbuffer->setUsagePattern(QOpenGLBuffer::StaticDraw);
+		/*vvbo.bind();
+		vvbo.allocate(vts.data(), vts.size() * sizeof(float));
+		shaderProgram->setAttributeBuffer(0, GL_FLOAT,0,3,0);
+		shaderProgram->enableAttributeArray(0);*/
+		normalbuffer = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+		normalbuffer->create();
+		normalbuffer->setUsagePattern(QOpenGLBuffer::StaticDraw);
+		/*normalbuffer.bind();
+		normalbuffer.allocate(shapes[i].mesh.normals.data(), shapes[i].mesh.normals.size() * sizeof(float));
+		shaderProgram->setAttributeBuffer(2, GL_FLOAT, 0, 3, 0);*/
+		for (size_t j = 0; j < shapes[i].mesh.normals.size(); j++)
+		{
+			normals.push_back(shapes[i].mesh.normals[j]);
+		}		
+		texturebuffer = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+		texturebuffer->create();
+		texturebuffer->setUsagePattern(QOpenGLBuffer::StaticDraw);
+		/*texturebuffer.bind();
+		texturebuffer.allocate(shapes[i].mesh.texcoords.data(), shapes[i].mesh.texcoords.size() * sizeof(float));
+		shaderProgram->setAttributeBuffer(1, GL_FLOAT, 0, 2, 0);*/
+		for (size_t j = 0; j < shapes[i].mesh.texcoords.size(); j++)
+		{
+			texture_coord.push_back(shapes[i].mesh.texcoords[j]);
+		}		
+		indexsbuffer = new QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
+		indexsbuffer->create();
+		/*indexsbuffer.bind();
+		indexsbuffer.allocate(shapes[i].mesh.indices.data(), shapes[i].mesh.indices.size() * sizeof(unsigned int));*/
+		for (size_t j = 0; j < shapes[i].mesh.indices.size(); j++)
+		{
+			indexes.push_back(shapes[i].mesh.indices[j]);
+		}
+		m_shape.materialId = shapes[i].mesh.material_ids[0];
+		m_shape.indexCount = shapes[i].mesh.indices.size();
 	}	
-	TextureData tdata = Common::Load_png(textureName);
-
-	//Generate empty texture
-	glGenTextures(1, &m_shape.m_texture);
-	glBindTexture(GL_TEXTURE_2D, m_shape.m_texture);
-
-	//Do texture setting
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tdata.width, tdata.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tdata.data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//TextureData tdata = Common::Load_png(textureName);
+	////Generate empty texture
+	//glGenTextures(1, &m_shape.m_texture);
+	//glBindTexture(GL_TEXTURE_2D, m_shape.m_texture);
+	////Do texture setting
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tdata.width, tdata.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tdata.data);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	Textures.push_back(new QOpenGLTexture(QImage(textureName)));
 }
 
 void Render(float *mm, float *pm, GLint shaderMode, GLfloat time)
 {	
-	glBindVertexArray(m_shape.vao);
-	glLinkProgram(sp);
-	glActiveTexture(GL_TEXTURE0);//!
-	glBindTexture(GL_TEXTURE_2D, m_shape.m_texture);	
-	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, pm);
-	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, mm);
+	//glBindVertexArray(m_shape.vao);
+	//glLinkProgram(sp);
+	//glActiveTexture(GL_TEXTURE0);//!
+	//glBindTexture(GL_TEXTURE_2D, m_shape.m_texture);	
+	//glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, pm);
+	//glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, mm);	
+	GLfloat P[4][4];
+	GLfloat MV[4][4];
+	DimensionTransformation(pm, P);
+	DimensionTransformation(mm, MV);
+	vao.bind();
+	Textures[0]->bind(1);
+	shaderProgram->setUniformValue("pm", P);
+	shaderProgram->setUniformValue("mv", MV);
+	shaderProgram->setUniformValue("tex", 1);
+
+	vertexbuffer->bind();
+	QVector<QVector3D> vt;
+	for (int i = 0; i < vts.size(); i+=3)
+	{
+		vt << QVector3D(vts[i], vts[i+1], vts[i+2]);
+	}
+	vertexbuffer->allocate(vt.constData(), vt.size() * sizeof(QVector3D));
+	shaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 3, 0);
+	shaderProgram->enableAttributeArray(0);
+
+	QVector<QVector3D> ns;
+	for (int i = 0; i < normals.size(); i += 3)
+	{
+		ns << QVector3D(normals[i], normals[i + 1], normals[i + 2]);
+	}
+	normalbuffer->bind();
+	normalbuffer->allocate(ns.constData(), ns.size() * sizeof(float));
+	shaderProgram->setAttributeBuffer(2, GL_FLOAT, 0, 3, 0);
+
+	texturebuffer->bind();
+	texturebuffer->allocate(texture_coord.data(), texture_coord.size() * sizeof(float));
+	shaderProgram->setAttributeBuffer(1, GL_FLOAT, 0, 2, 0);
+
+	indexsbuffer->bind();
+	indexsbuffer->allocate(indexes.data(), indexes.size() * sizeof(unsigned int));
+
+	glDrawElements(GL_TRIANGLES,m_shape.indexCount, GL_UNSIGNED_INT, 0);
+	//glDrawArrays(GL_TRIANGLES, 0, vts.size());
+	shaderProgram->disableAttributeArray(0);
+	shaderProgram->disableAttributeArray(1);
+	shaderProgram->disableAttributeArray(2);
+	vao.release();
+	shaderProgram->release();
 	//glUniform1i(uniforms.mode, shaderMode);	
-	//glUniform1f(uniforms.time, time);
-	//glDrawElements(GL_TRIANGLES, m_shape.indexCount, GL_UNSIGNED_INT, 0);
-	//glDrawArrays(GL_TRIANGLES, 0, temp.size());
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, temp.size());
+	//glUniform1f(uniforms.time, time);	
 }

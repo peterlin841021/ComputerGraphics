@@ -12,6 +12,6 @@ out vec2 texcoord;
 
 void main()
 {
-	gl_Position = pm * mv * vec4(iv3vertex, 1.0);
+	gl_Position = pm * mv * vec4(iv3vertex, 1.0);    
     texcoord = iv2tex_coord;  
 }
