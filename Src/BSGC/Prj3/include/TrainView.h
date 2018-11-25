@@ -10,11 +10,7 @@
 #include "ArcBallCam.H"
 #include "3DUtils.H"
 #include "Track.H"
-#include "Triangle.h"
-#include "Square.h"
-#include "water.h"
-#include "land.h"
-#include "Cube.h"
+#include "obj.h"
 #include<iostream>
 #include<time.h>
 #include<cmath>
@@ -63,7 +59,7 @@ public:
 	void drawTrack(bool shadow);
 	void initializeGL();
 	void initializeTexture();
-	void load3Dmodel(char *modelpath);
+	
 public:
 	ArcBallCam		arcball;			// keep an ArcBall for the UI
 	int				selectedCube;  // simple - just remember which cube is selected
@@ -107,10 +103,7 @@ public:
 			fs = f;
 		}
 	};
-	Triangle* triangle;
-	Square* stand;	
-	Square* nendoroid_back;
-	Square*	nendoroid_front;
+			
 	GLfloat ProjectionMatrex[16];
 	GLfloat ModelViewMatrex[16];
 	QVector<QOpenGLTexture*> Textures;
@@ -121,18 +114,19 @@ public:
 	int path_index = 0;	
 	float current_time = 0;
 	float track_angle = 0;
-	Pnt3f trainStart, trainEnd;	
-	Cube *skybox;
-	Water *water;
-	Land *land;
-	Land *grass;
+	Pnt3f trainStart, trainEnd;
+	Obj *miku;
+	Obj *skybox;
+	Obj *water;
+	Obj *land;
+	Obj *nendoroid_back;
+	Obj *nendoroid_front;
 	float t_temp = 0;	
 	bool trackupdate = true;
 	vector<TrackTrail> path;	
 	int train_speed = 5;
 	float offset = 0.f;
 	float wt = 0;
-	float shake = 0.5f;	
-	Model miku ;
+	float shake = 0.5f;		
 };  
 #endif // TRAINVIEW_H  

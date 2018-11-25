@@ -14,27 +14,23 @@
 #include <QtGui/QOpenGLTexture>
 #include <QtGui/QImage>
 
-
-
-
-
-class Water
+class Obj
 {
 public:
 	QOpenGLShaderProgram * shaderProgram;
 	QOpenGLShader* vertexShader;
 	QOpenGLShader* fragmentShader;
-	
-	QVector<QVector3D> colors;
+
 	QOpenGLVertexArrayObject vao;
 	QOpenGLBuffer vvbo;
-	QOpenGLBuffer uvbo;	
+	QOpenGLBuffer uvbo;
+	QOpenGLBuffer cvbo;
+	QOpenGLBuffer fbo;
+	QOpenGLBuffer indexbo;
 public:
-	Water();
-	void Paint(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix,QVector<GLfloat> vts);
-	void Init();
-	void InitVAO();
-	void InitVBO();
+	Obj();
+	void Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix,QVector<GLfloat> values,std::vector<int> buffersize,int mode,float alpha,float time);
+	void Init(int buffers);	
 	void InitShader(QString vertexShaderPath, QString fragmentShaderPath);
 	void DimensionTransformation(GLfloat source[], GLfloat target[][4]);
 	void Begin();	
