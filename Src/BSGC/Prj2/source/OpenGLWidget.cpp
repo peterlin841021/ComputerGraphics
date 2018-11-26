@@ -123,9 +123,7 @@ struct
 	GLint  mode;
 	GLint time;
 } uniforms;
-
 //model info
-
 typedef struct
 {
 	GLuint vao;
@@ -486,14 +484,14 @@ void OpenGLWidget::initializeGL()
 {
 	glClearColor(0,0,0,1);
 	glEnable(GL_TEXTURE_2D);
-	//shader_init();
+	shader_init();
 	textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj2/assets/sky.png")));
 	textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj2/assets/snowground.png")));
 	textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj2/assets/brick.png")));
 	textures[0]->bind(1);//Draw sky
 	textures[1]->bind(2);//Draw snow ground
 	textures[2]->bind(3);//Draw snow brick wall
-	Init();
+	//Init();
 }
 void OpenGLWidget::paintGL()
 {
@@ -501,22 +499,9 @@ void OpenGLWidget::paintGL()
 	if(MazeWidget::maze!=NULL)
 	{
 		////View 1		
-		//Mini_Map();
+		Mini_Map();
 		////View 2				
-		//Map_3D();
-		
-		glViewport(600, 0, MazeWidget::w/2, MazeWidget::h);
-		GLfloat mm[16], pm[16];
-		gluLookAt(0,0,10,0,0,0,0,1,0);
-		gluPerspective(120,1.5f,10,200);
-		glGetFloatv(GL_PROJECTION_MATRIX, pm);
-		glGetFloatv(GL_MODELVIEW_MATRIX, mm);
-		QMatrix4x4 m(mm);
-		m.translate(0,0,-5);
-		m.scale(1000, 1000, 1000);
-		//m.rotate(1,QVector3D(0, 0, 1));
-		//Render(mm,pm,0,clock());
-		Render(m.data(), pm, 0, 0);
+		Map_3D();
 	}
 }
 void OpenGLWidget::Mini_Map()	
@@ -743,7 +728,6 @@ void LoadModel(const char *objName, const char * textureName)
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	Textures.push_back(new QOpenGLTexture(QImage(textureName)));
 }
-
 void Render(float *mm, float *pm, GLint shaderMode, GLfloat time)
 {	
 	//glBindVertexArray(m_shape.vao);
