@@ -1,12 +1,14 @@
 ﻿#include <glew.h>
 #include <time.h>
 #include"TrainView.h"
-#include "tiny_obj_loader.h"
+#include <fstream>
+
 float uv[12] = { 0.f , 0.f, 1.f , 0.f, 1.f , 1.f, 1.f , 1.f, 0.f , 1.f, 0.f , 0.f };
 QVector<GLfloat> model_vts;
 int pos_size = 0;
 int uv_size = 0;
-void load3dmodel(char *objName);
+void loadmodel(string modelname, string texturename, QVector<QOpenGLTexture*> *textures);
+char *stringToChar(string str);
 void TrainView::initializeGL()
 {	
 	initializeTexture();
@@ -26,9 +28,109 @@ void TrainView::initializeGL()
 	nendoroid_front->Init(2);
 	miku3d = new Obj();
 	miku3d->Init(2);
-	load3dmodel("./src/BSGC/prj3/3dmodel/Mikuhair.obj");
+	
+	QVector<QVector3D> vs, fs, vns;
+	QVector<QVector2D> vts;
+	loadmodel("./src/BSGC/prj3/3dmodel/HatsuneMiku.obj", "./src/BSGC/prj3/3dmodel/body.png", &Textures);
 }
+char *stringToChar(string str)
+{
+	char *c = new char[str.length() + 1];
+	return strcpy(c, str.c_str());
+}
+void loadmodel(string modelname,string texturename, QVector<QOpenGLTexture*> *textures)
+{
+	ifstream in;
+	QVector<QVector3D> v,vn,f;
+	QVector<QVector2D> vt;
+	in.open(modelname,ios::in || ios::binary);
+	if (!in)
+	{
+		printf("Can't read file.");
+		return;
+	}
+	char buffer[4096];
+	while (in.peek() != EOF)
+	{
+		in.getline(buffer, 4096);
+		char *t = strtok(buffer, " "),*t1,*t2,*t3;
+		if (t && strncmp(t, "v", 1) == 0 && strncmp(t, "vt", 2) != 0 && strncmp(t, "vn", 2) != 0)
+		{
+			float f1 = 0,f2 = 0,f3 = 0;
+			t = strtok(NULL, " ");
+			f1 = atof(t);
+			t = strtok(NULL, " ");
+			f2 = atof(t);
+			t = strtok(NULL, " ");
+			f3 = atof(t);
+			v << QVector3D(f1,f2,f3);
+		}
+		else if (t && strncmp(t, "v", 1) == 0 && strncmp(t, "vt", 2) == 0 && strncmp(t, "vn", 2) != 0)
+		{
+			float f1 = 0, f2 = 0;
+			t = strtok(NULL, " ");
+			f1 = atof(t);
+			t = strtok(NULL, " ");
+			f2 = atof(t);			
+			vt << QVector2D(f1, f2);
+		}
+		else if (t && strncmp(t, "v", 1) == 0 && strncmp(t, "vt", 2) != 0 && strncmp(t, "vn", 2) == 0)
+		{
+			float f1 = 0, f2 = 0, f3 = 0;
+			t = strtok(NULL, " ");
+			f1 = atof(t);
+			t = strtok(NULL, " ");
+			f2 = atof(t);
+			t = strtok(NULL, " ");
+			f3 = atof(t);
+			vn << QVector3D(f1, f2, f3);
+		}
+		else if (t && strncmp(t, "f", 1) == 0)
+		{	
+			int i1= 0 , i2 = 0, i3 = 0;
+			t1 = strtok(NULL, " ");			
+			t2 = strtok(NULL, " ");
+			t3 = strtok(NULL, " ");
 
+			t = strtok(t1, "/");
+			i1 = atoi(t);
+			t = strtok(NULL, "/");
+			i2 = atoi(t);
+			t = strtok(NULL, "/");
+			i3 = atoi(t);
+			f << QVector3D(i1,i2,i3);
+
+			t = strtok(t2, "/");
+			i1 = atoi(t);
+			t = strtok(NULL, "/");
+			i2 = atoi(t);
+			t = strtok(NULL, "/");
+			i3 = atoi(t);
+			f << QVector3D(i1, i2, i3);
+			
+			t = strtok(t3, "/");
+			i1 = atoi(t);
+			t = strtok(NULL, "/");
+			i2 = atoi(t);
+			t = strtok(NULL, "/");
+			i3 = atoi(t);
+			f << QVector3D(i1, i2, i3);
+		}
+	}
+	in.close();
+	//Model processing
+	for (size_t i = 0; i < f.size(); i++)
+	{
+		model_vts << v[f[i].x()-1].x() << v[f[i].x()-1].y() << v[f[i].x()-1].z();
+	}
+	pos_size = model_vts.size();
+	for (size_t i = 0; i < f.size(); i++)
+	{
+		model_vts << vt[f[i].y()-1].x() << vt[f[i].y()-1].y();
+	}
+	uv_size = model_vts.size() - pos_size;
+	textures->push_back(new QOpenGLTexture(QImage(stringToChar(texturename))));
+}
 void TrainView::initializeTexture()
 {	
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/miku_transparent.png")));
@@ -41,8 +143,7 @@ void TrainView::initializeTexture()
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_top.jpg")));
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_bottom.jpg")));
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/nendoroid_front.png")));
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/nendoroid_back.png")));	
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/3dmodel/Mikuhair.png")));
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/nendoroid_back.png")));		
 }
 TrainView::TrainView(QWidget *parent) :  
 QGLWidget(parent)  
@@ -67,7 +168,7 @@ void TrainView::changeSpeed(int speed)
 }
 
 void TrainView::paintGL()
-{	
+{		
 	glViewport(0,0,width(),height());
 	glClearColor(0,0,0,0);
 	glClearStencil(0);
@@ -116,18 +217,23 @@ void TrainView::paintGL()
 	glGetFloatv(GL_PROJECTION_MATRIX, ProjectionMatrex);
 	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 	//All texture
-	Textures[0]->bind(0);//miku
-	Textures[1]->bind(1);//land
-	Textures[2]->bind(2);//water
-	Textures[3]->bind(3);//sky1
-	Textures[4]->bind(4);//sky2
-	Textures[5]->bind(5);//sky3
-	Textures[6]->bind(6);//sky4
-	Textures[7]->bind(7);//sky5
-	Textures[8]->bind(8);//sky6
-	Textures[9]->bind(9);//nendoroid f
-	Textures[10]->bind(10);	//nendoroid b
-	Textures[11]->bind(11);	//3D miku
+
+	//Textures[0]->bind(0);//miku
+	//Textures[1]->bind(1);//land
+	//Textures[2]->bind(2);//water
+	//Textures[3]->bind(3);//sky1
+	//Textures[4]->bind(4);//sky2
+	//Textures[5]->bind(5);//sky3
+	//Textures[6]->bind(6);//sky4
+	//Textures[7]->bind(7);//sky5
+	//Textures[8]->bind(8);//sky6
+	//Textures[9]->bind(9);//nendoroid f
+	//Textures[10]->bind(10);	//nendoroid b
+	//Textures[11]->bind(11);	//3D miku
+	for (size_t i = 0; i < Textures.size(); i++)
+	{
+		Textures[i]->bind(i);
+	}
 	
 	glDisable(GL_DEPTH_TEST);
 	std::vector<int> buffer_size;
@@ -390,35 +496,6 @@ void TrainView::paintGL()
 		else
 			shake = -shake;
 	}
-}
-void load3dmodel(char *objName)
-{
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
-	std::string err;
-	bool ret = tinyobj::LoadObj(shapes, materials, err, objName, "./src/bsgc/prj3/3dmodel/");
-	if (err.size() > 0)
-	{
-		printf("Load Models Fail! Please check the solution path\n");
-		return;
-	}
-	QVector<QVector3D> pos;
-	for (size_t i = 0; i < shapes[0].mesh.positions.size() -2; i+=3)
-	{
-		pos << QVector3D(shapes[0].mesh.positions[i], shapes[0].mesh.positions[i+1], shapes[0].mesh.positions[i+2]);
-	}
-	for (size_t i = 0; i < shapes[0].mesh.indices.size(); i++)
-	{
-		model_vts << pos[shapes[0].mesh.indices[i]].x() << pos[shapes[0].mesh.indices[i]].y() << pos[shapes[0].mesh.indices[i]].z();	
-	}
-	//printf("Pos size:%d\n", model_vts.size());
-	pos_size = model_vts.size();
-	for (size_t i = 0; i < shapes[0].mesh.texcoords.size(); i++)
-	{
-		model_vts << shapes[0].mesh.texcoords[i];
-	}
-	//printf("Total size:%d\n",model_vts.size());
-	uv_size = model_vts.size() - pos_size;
 }
 //************************************************************************
 //
