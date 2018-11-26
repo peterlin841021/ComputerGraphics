@@ -6,16 +6,16 @@ float uv[12] = { 0.f , 0.f, 1.f , 0.f, 1.f , 1.f, 1.f , 1.f, 0.f , 1.f, 0.f , 0.
 void TrainView::initializeGL()
 {	
 	initializeTexture();
+	trackobj = new Obj();
+	trackobj->Init(2);
 	miku = new Obj();
 	miku->Init(2);
 	land = new Obj();
-	land->Init(2);
-	
+	land->Init(2);	
 	water = new Obj();
 	water->Init(2);	
 	skybox = new Obj();
 	skybox->Init(2);
-
 	nendoroid_back = new Obj();
 	nendoroid_back->Init(2);
 	nendoroid_front = new Obj();
@@ -202,7 +202,7 @@ void TrainView::paintGL()
 		buffer_size.push_back(18);
 		buffer_size.push_back(12);
 		
-		skybox->Render(ProjectionMatrex, ModelViewMatrex, skybox_vts, buffer_size,2,1.f,clock());
+		skybox->Render(ProjectionMatrex, ModelViewMatrex, skybox_vts, buffer_size,2,1.f,clock(),1);
 		skybox_vts.clear();
 		buffer_size.clear();
 	}		
@@ -232,7 +232,7 @@ void TrainView::paintGL()
 
 	miku->Begin();
 	miku->shaderProgram->setUniformValue("tex", 0);
-	miku->Render(ProjectionMatrex, ModelViewMatrex, miku_vts, buffer_size,1,1.f,clock());
+	miku->Render(ProjectionMatrex, ModelViewMatrex, miku_vts, buffer_size,1,1.f,clock(),1);
 	miku->End();
 
 	glDisable(GL_ALPHA_TEST);
@@ -259,7 +259,7 @@ void TrainView::paintGL()
 	buffer_size.clear();
 	buffer_size.push_back(18);
 	buffer_size.push_back(12);
-	land->Render(ProjectionMatrex, ModelViewMatrex, land_vts,buffer_size,1,1,0);
+	land->Render(ProjectionMatrex, ModelViewMatrex, land_vts,buffer_size,1,1,0,1);
 	land->End();
 	
 	//Draw water
@@ -342,7 +342,7 @@ void TrainView::paintGL()
 	buffer_size.clear();
 	buffer_size.push_back(18 * water_size * water_size);
 	buffer_size.push_back(24 * water_size * water_size);
-	water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 1, 0.45f,0);
+	water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 1, 0.45f,0,1);
 
 	water_vertices.clear();
 	buffer_size.clear();
@@ -356,7 +356,7 @@ void TrainView::paintGL()
 	}
 	buffer_size.push_back(18);
 	buffer_size.push_back(12);
-	water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 1, 0.45f,0);
+	water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 1, 0.45f,0,1);
 	water->End();
 	water_vertices.clear();
 	buffer_size.clear();
@@ -466,6 +466,8 @@ void TrainView::setProjection()
 void TrainView::drawTrack(bool doingShadows) 
 {
 	float alpha = 0.3f;
+	QVector<GLfloat> tracks,sleepers;
+	std::vector<int> buffer_size;
 	spline_t spline_type = (spline_t)curve;
 	Pnt3f qt0, qt, orient_t, or0, or1;		
 	track_path.clear();
@@ -491,21 +493,21 @@ void TrainView::drawTrack(bool doingShadows)
 		
 		if (i == 0)
 		{
-			q_matrix[0] = m_pTrack->points[m_pTrack->points.size() - 2];
-			q_matrix[1] = m_pTrack->points[m_pTrack->points.size() - 1];
-		}
-		else if (i == 1)
-		{
 			q_matrix[0] = m_pTrack->points[m_pTrack->points.size() - 1];
 			q_matrix[1] = m_pTrack->points[0];
 		}
+		else if (i == 1)
+		{
+			q_matrix[0] = m_pTrack->points[0];
+			q_matrix[1] = m_pTrack->points[i];
+		}
 		else
 		{
-			q_matrix[0] = m_pTrack->points[i - 2];
-			q_matrix[1] = m_pTrack->points[i - 1];
+			q_matrix[0] = m_pTrack->points[i - 1];
+			q_matrix[1] = m_pTrack->points[i];
 		}		
-		q_matrix[2] = m_pTrack->points[(i) % m_pTrack->points.size()];
-		q_matrix[3] = m_pTrack->points[(i + 1) % m_pTrack->points.size()];
+		q_matrix[2] = m_pTrack->points[(i + 1) % m_pTrack->points.size()];
+		q_matrix[3] = m_pTrack->points[(i + 2) % m_pTrack->points.size()];
 		
 		float percent = 1.f / divide;
 		float t = 0.f - percent;
@@ -590,34 +592,9 @@ void TrainView::drawTrack(bool doingShadows)
 					+ (q_matrix[0].pos * (-3 / 6.f) + q_matrix[1].pos * 0 + q_matrix[2].pos * (3 / 6.f) + q_matrix[3].pos * 0) * pow(t, 1)
 					+ (q_matrix[0].pos * (1 / 6.f) + q_matrix[1].pos * (4 / 6.f) + q_matrix[2].pos * (1 / 6.f) + q_matrix[3].pos * 0) * 1;
 				break;
-			}			
-			
+			}
 			trainEnd = qt;
-			if (!doingShadows) 
-			{
-				//glColor3ub(32, 32, 64);
-				glColor4f(0, 0, 0, 1);
-			}
-			else 
-			{
-				glColor4f(0, 0, 0, alpha);
-			}
-			if (track == 0) 
-			{				
-				if (!doingShadows) 
-				{
-					glColor4f(0, 0, 0, 1);
-				}
-				else 
-				{
-					glColor4f(0, 0, 0, alpha);
-				}				
-				glLineWidth(5);
-				glBegin(GL_LINES);
-				glVertex3f(qt0.x, qt0.y, qt0.z);
-				glVertex3f(qt.x, qt.y, qt.z);
-				glEnd();
-			}
+			
 			Pnt3f cross_t0, cross_t1;
 			float track_width = 5.f;
 			cross_t0 = Pnt3f(qt.x - qt0.x, qt.y - qt0.y, qt.z - qt0.z) * or0;
@@ -640,31 +617,28 @@ void TrainView::drawTrack(bool doingShadows)
 					glColor4f(0, 0, 0, alpha);
 				}
 				if (j > 1 && spline_type != spline_Linear)
-				{						
-					glBegin(GL_LINES);
-					glVertex3f(qt.x - cross_t0.x, qt.y - cross_t0.y, qt.z - cross_t0.z);
-					glVertex3f(connect_inside.x, connect_inside.y, connect_inside.z);
-					glVertex3f(qt.x + cross_t1.x, qt.y + cross_t1.y, qt.z + cross_t1.z);
-					glVertex3f(connect_outside.x, connect_outside.y, connect_outside.z);
-					glEnd();
+				{
+					tracks
+						<< qt.x - cross_t0.x << qt.y - cross_t0.y << qt.z - cross_t0.z
+						<< connect_inside.x << connect_inside.y << connect_inside.z
+						<< qt.x + cross_t1.x << qt.y + cross_t1.y << qt.z + cross_t1.z
+						<< connect_outside.x << connect_outside.y << connect_outside.z;					
 				}
 				else if(j == 1 && spline_type == spline_Linear)
-				{
-					glBegin(GL_LINES);
-					glVertex3f(qt.x - cross_t0.x, qt.y - cross_t0.y, qt.z - cross_t0.z);
-					glVertex3f(connect_inside.x, connect_inside.y, connect_inside.z);
-					glVertex3f(qt.x + cross_t1.x, qt.y + cross_t1.y, qt.z + cross_t1.z);
-					glVertex3f(connect_outside.x, connect_outside.y, connect_outside.z);
-					glEnd();
+				{					
+					tracks
+						<< qt.x - cross_t0.x << qt.y - cross_t0.y << qt.z - cross_t0.z
+						<< connect_inside.x << connect_inside.y << connect_inside.z
+						<< qt.x + cross_t1.x << qt.y + cross_t1.y << qt.z + cross_t1.z
+						<< connect_outside.x << connect_outside.y << connect_outside.z;					
 				}
 				else if ( (j != divide && j > 1) && spline_type == spline_Linear)
-				{
-					glBegin(GL_LINES);
-					glVertex3f(qt.x - cross_t0.x, qt.y - cross_t0.y, qt.z - cross_t0.z);
-					glVertex3f(connect_inside.x, connect_inside.y, connect_inside.z);
-					glVertex3f(qt.x + cross_t1.x, qt.y + cross_t1.y, qt.z + cross_t1.z);
-					glVertex3f(connect_outside.x, connect_outside.y, connect_outside.z);
-					glEnd();
+				{					
+					tracks
+						<< qt.x - cross_t0.x << qt.y - cross_t0.y << qt.z - cross_t0.z
+						<< connect_inside.x << connect_inside.y << connect_inside.z
+						<< qt.x + cross_t1.x << qt.y + cross_t1.y << qt.z + cross_t1.z
+						<< connect_outside.x << connect_outside.y << connect_outside.z;					
 				}							
 				if (j == 1)
 				{					
@@ -692,28 +666,28 @@ void TrainView::drawTrack(bool doingShadows)
 						connect_tail.push_back(connect_outside);
 					}					
 				}
-				if (!doingShadows) 
-				{
-					glColor4f(255, 255, 255, 1);
-				}
-				else 
-				{
-					glColor4f(255, 255, 255, alpha);
-				}
-				//Ties
+				
+				//Sleepers
 				if (j == divide && spline_type == spline_Linear)
 				{
 
 				}
 				else
-				{
-					glBegin(GL_LINES);
-					glVertex3f(qt.x - cross_t0.x, qt.y - cross_t0.y, qt.z - cross_t0.z);
-					glVertex3f(qt.x + cross_t1.x, qt.y + cross_t1.y, qt.z + cross_t1.z);
-					glEnd();
+				{					
+					sleepers
+						<< qt.x - cross_t0.x << qt.y - cross_t0.y << qt.z - cross_t0.z					
+						<< qt.x + cross_t1.x << qt.y + cross_t1.y << qt.z + cross_t1.z;
 				}				
 				connect_inside = Pnt3f(qt.x - cross_t0.x, qt.y - cross_t0.y, qt.z - cross_t0.z);
 				connect_outside = Pnt3f(qt.x + cross_t1.x, qt.y + cross_t1.y, qt.z + cross_t1.z);
+			}
+			else if (track == 0)
+			{
+				glLineWidth(5);
+				glBegin(GL_LINES);
+				glVertex3f(qt0.x, qt0.y, qt0.z);
+				glVertex3f(qt.x, qt.y, qt.z);
+				glEnd();
 			}
 			if (j > 0) 
 			{
@@ -724,19 +698,63 @@ void TrainView::drawTrack(bool doingShadows)
 		}//Divide			
 	}//Controlpoints
 	
-	glColor3f(0, 0, 0);
-	glBegin(GL_LINES);
-	for (size_t i = 0; i < connect_tail.size()-1; i+=2)
-	{		
-		glVertex3f(connect_tail[i].x, connect_tail[i].y, connect_tail[i].z);
-		glVertex3f(connect_head[(i + 2) % connect_head.size()].x, connect_head[(i + 2) % connect_head.size()].y, connect_head[(i + 2) % connect_head.size()].z);
-
-		glVertex3f(connect_tail[i + 1].x, connect_tail[i + 1].y, connect_tail[i + 1].z);
-		glVertex3f(connect_head[(i + 3) % connect_head.size()].x, connect_head[(i + 3) % connect_head.size()].y, connect_head[(i + 3) % connect_head.size()].z);
+	glGetFloatv(GL_PROJECTION_MATRIX, ProjectionMatrex);
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+	
+	buffer_size.push_back(tracks.size());
+	int color_counts = tracks.size();
+	for (size_t i = 0; i < color_counts; i++)
+	{
+		tracks << 0;
 	}
-	glEnd();
-	
-	
+	buffer_size.push_back(color_counts);//Colors
+	trackobj->Begin();
+	if (!doingShadows)
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size,0,1.f,clock(),0);
+	else
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 0, 0.2f, clock(), 0);
+	trackobj->End();
+	buffer_size.clear();
+	tracks.clear();
+	//Draw connects
+	for (size_t i = 0; i < connect_tail.size() - 1; i += 2)
+	{		
+		tracks
+			<< connect_tail[i].x << connect_tail[i].y << connect_tail[i].z
+			<< connect_head[(i + 2) % connect_head.size()].x << connect_head[(i + 2) % connect_head.size()].y << connect_head[(i + 2) % connect_head.size()].z
+			<< connect_tail[i + 1].x << connect_tail[i + 1].y << connect_tail[i + 1].z
+			<< connect_head[(i + 3) % connect_head.size()].x << connect_head[(i + 3) % connect_head.size()].y << connect_head[(i + 3) % connect_head.size()].z;
+	}
+	buffer_size.push_back(tracks.size());
+	color_counts = tracks.size();
+	for (size_t i = 0; i < color_counts; i++)
+	{
+		tracks << 0;
+	}
+	buffer_size.push_back(color_counts);
+	trackobj->Begin();
+	if (!doingShadows)
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 0, 1.f, clock(), 0);
+	else
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 0, 0.2f, clock(), 0);
+	trackobj->End();
+
+	//Draw sleepers
+	buffer_size.clear();
+	color_counts = sleepers.size();
+	buffer_size.push_back(sleepers.size());
+	for (size_t i = 0; i < color_counts; i++)
+	{
+		sleepers << 1.f;
+	}	
+	buffer_size.push_back(color_counts);
+	trackobj->Begin();
+	if (!doingShadows)
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 0, 1.f, clock(), 0);
+	else
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 0, 0.2f, clock(), 0);
+	trackobj->End();
+
 	//Generate path	
 	path.clear();
 	trackupdate = false;
@@ -746,7 +764,7 @@ void TrainView::drawTrack(bool doingShadows)
 		TrackTrail t1 = TrackTrail(track_path[i], track_orient[i], track_orient_cross[i]);
 		TrackTrail t2 = TrackTrail(track_path[(i + 1) % track_path.size()],track_orient[(i + 1) % track_orient.size()],track_orient_cross[(i + 1) % track_orient_cross.size()]);		
 		path.push_back(t1);
-	}
+	}	
 }
 void TrainView::drawStuff(bool doingShadows)
 {
@@ -1117,13 +1135,13 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	glFrontFace(GL_CW);		
 	nendoroid_front->Begin();
 	nendoroid_front->shaderProgram->setUniformValue("tex", 9);
-	nendoroid_front->Render(ProjectionMatrex, mv, nendoroid_vts, buffersize,1,1,0);
+	nendoroid_front->Render(ProjectionMatrex, mv, nendoroid_vts, buffersize,1,1,0,1);
 	nendoroid_front->End();	
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CW);		
 	nendoroid_back->Begin();
 	nendoroid_back->shaderProgram->setUniformValue("tex", 10);
-	nendoroid_back->Render(ProjectionMatrex, mv, nendoroid_vts, buffersize, 1, 1, 0);
+	nendoroid_back->Render(ProjectionMatrex, mv, nendoroid_vts, buffersize, 1, 1, 0,1);
 	nendoroid_back->End();
 	glDisable(GL_ALPHA_TEST);
 	glDisable(GL_BLEND);

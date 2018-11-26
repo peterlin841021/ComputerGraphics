@@ -20,11 +20,16 @@ void main(void)
     //ReflectVec = reflect(InVec, normal);
     //vs_worldpos = pos.xyz;
     //vec3 p = normalize(pos.xyz);
-    //vs_normal = vec3(p.x,p.y,p.z);
-    if(mode == 1)
-        gl_Position = pos;
-    else if(mode == 2)    
-        gl_Position = pos.xyww;
+    //vs_normal = vec3(p.x,p.y,p.z);    
+    if(mode == 2)
+    {
+		gl_Position = pos.xyww;		
+	}
+    else
+	{
+        
+		gl_Position = pos;
+	}        
     texturecoord = uv;
     fcolor = color;
 }

@@ -29,7 +29,7 @@ void Obj::DimensionTransformation(GLfloat source[],GLfloat target[][4])
 			i++;
 		}
 }
-void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GLfloat> values,std::vector<int> buffersize,int mode, float alpha, float time)
+void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GLfloat> values,std::vector<int> buffersize,int mode, float alpha, float time, int drawtype)
 {	
 	GLfloat P[4][4];
 	GLfloat MV[4][4];	
@@ -69,10 +69,22 @@ void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GL
 		vvbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
 		shaderProgram->setAttributeBuffer(1, GL_FLOAT, buffersize[0] * sizeof(GLfloat), 2, 0);
 		shaderProgram->enableAttributeArray(1);
-	}			
-	glDrawArrays(GL_TRIANGLES, 0, positions.size()/3);
+	}
+	switch (drawtype)
+	{
+	case 0:
+		glDrawArrays(GL_LINES, 0, positions.size()/2);
+		break;
+	case 1:
+		glDrawArrays(GL_TRIANGLES, 0, positions.size() / 3);
+		break;
+	default:
+		break;
+	}
+	
 	vvbo.release();	
 }
+
 void Obj::Init(int buffers)
 {
 	InitShader("./src/BSGC/prj3/Shader/vs.glsl", "./src/BSGC/prj3/Shader/fs.glsl");

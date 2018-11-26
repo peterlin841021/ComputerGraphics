@@ -54,7 +54,7 @@ AppMain::AppMain(QWidget *parent)
 	connect( ui.rcpxsub		,SIGNAL(clicked()),this,SLOT(RotateControlPointSubX()));
 	connect( ui.rcpzadd		,SIGNAL(clicked()),this,SLOT(RotateControlPointAddZ()));
 	connect( ui.rcpzsub		,SIGNAL(clicked()),this,SLOT(RotateControlPointSubZ()));
-	//LoadTrackPath_Default();
+	LoadTrackPath_Default();
 	//this->trainview->curve = 2;
 	//this->ChangeTrackToTrack();
 	this->trainview->track = 1;

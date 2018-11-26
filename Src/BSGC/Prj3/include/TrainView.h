@@ -115,6 +115,7 @@ public:
 	float current_time = 0;
 	float track_angle = 0;
 	Pnt3f trainStart, trainEnd;
+	Obj *trackobj;
 	Obj *miku;
 	Obj *skybox;
 	Obj *water;

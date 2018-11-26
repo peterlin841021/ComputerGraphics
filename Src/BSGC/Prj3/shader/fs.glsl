@@ -42,6 +42,32 @@ void snow()
       fragmentcolor += vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008 ));	  
    }   
 }
+/************Gold particles**********/
+vec2 rotateUV(vec2 uv, float rotation)
+{
+    float mid = 0.5;
+    return vec2(
+        cos(rotation) * (uv.x - mid) + sin(rotation) * (uv.y - mid) + mid,
+        cos(rotation) * (uv.y - mid) - sin(rotation) * (uv.x - mid) + mid
+    );
+}
+void gold_particle()
+{
+   vec2 uv =  gl_FragCoord.xy / iResolution.y;
+   uv = rotateUV(uv,180);
+   //vec3 color = texture(tex,vertexData.texcoord).rgb;
+   
+   fragmentcolor = vec4(fcolor, alpha);
+   float j;   
+   for (int i = 0; i < _SnowflakeAmount; i++)
+   {
+      j = float(i);      
+      float speed = 0.3 + rnd(cos(j)) * (0.7 + 0.5 * cos(j / (float(_SnowflakeAmount) * 0.25)));
+      vec2 center = vec2((-0.25 + uv.y) * _BlizardFactor + rnd(j) + 0.1 * cos(time*0.0005 + sin(j)),mod(rnd(j) - speed * (time * 0.0005 * (0.1 + _BlizardFactor)),0.95));      
+	  fragmentcolor +=(vec4(255.0 / 255.0 , 215.0 / 255.0, 0 / 255.0,1.0) * vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008)));
+   }
+}
+/**************************/
 void main(void)
 {	
 	// vec3 light_direction = normalize(light_position - vs_worldpos);
@@ -56,7 +82,11 @@ void main(void)
     {
         case(0)://Draw origin color
         {
-			fragmentcolor = vec4(fcolor,1.0);
+			// if(alpha !=1)			    
+			// 	fragmentcolor = vec4(fcolor,alpha);
+			// else
+			// 	fragmentcolor = vec4(fcolor,1.0);			
+			gold_particle();
             break;
         }
         case(1)://Draw texture        
