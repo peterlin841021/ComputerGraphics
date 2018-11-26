@@ -1,8 +1,12 @@
 ﻿#include <glew.h>
 #include <time.h>
 #include"TrainView.h"
-
+#include "tiny_obj_loader.h"
 float uv[12] = { 0.f , 0.f, 1.f , 0.f, 1.f , 1.f, 1.f , 1.f, 0.f , 1.f, 0.f , 0.f };
+QVector<GLfloat> model_vts;
+int pos_size = 0;
+int uv_size = 0;
+void load3dmodel(char *objName);
 void TrainView::initializeGL()
 {	
 	initializeTexture();
@@ -20,6 +24,9 @@ void TrainView::initializeGL()
 	nendoroid_back->Init(2);
 	nendoroid_front = new Obj();
 	nendoroid_front->Init(2);
+	miku3d = new Obj();
+	miku3d->Init(2);
+	load3dmodel("./src/BSGC/prj3/3dmodel/Mikuhair.obj");
 }
 
 void TrainView::initializeTexture()
@@ -35,6 +42,7 @@ void TrainView::initializeTexture()
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_bottom.jpg")));
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/nendoroid_front.png")));
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/nendoroid_back.png")));	
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/3dmodel/Mikuhair.png")));
 }
 TrainView::TrainView(QWidget *parent) :  
 QGLWidget(parent)  
@@ -118,7 +126,8 @@ void TrainView::paintGL()
 	Textures[7]->bind(7);//sky5
 	Textures[8]->bind(8);//sky6
 	Textures[9]->bind(9);//nendoroid f
-	Textures[10]->bind(10);	//nendoroid b	
+	Textures[10]->bind(10);	//nendoroid b
+	Textures[11]->bind(11);	//3D miku
 	
 	glDisable(GL_DEPTH_TEST);
 	std::vector<int> buffer_size;
@@ -361,6 +370,14 @@ void TrainView::paintGL()
 	water_vertices.clear();
 	buffer_size.clear();
 
+	//Draw 3d models
+	buffer_size.clear();
+	buffer_size.push_back(pos_size);
+	buffer_size.push_back(uv_size);	
+	miku3d->Begin();
+	miku3d->shaderProgram->setUniformValue("tex", 11);
+	miku3d->Render(ProjectionMatrex, ModelViewMatrex, model_vts, buffer_size,1,1,0,1);
+	miku3d->End();
 	//Draw shadows			
 	if (this->camera != 1) 
 	{
@@ -374,7 +391,35 @@ void TrainView::paintGL()
 			shake = -shake;
 	}
 }
-
+void load3dmodel(char *objName)
+{
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string err;
+	bool ret = tinyobj::LoadObj(shapes, materials, err, objName, "./src/bsgc/prj3/3dmodel/");
+	if (err.size() > 0)
+	{
+		printf("Load Models Fail! Please check the solution path\n");
+		return;
+	}
+	QVector<QVector3D> pos;
+	for (size_t i = 0; i < shapes[0].mesh.positions.size() -2; i+=3)
+	{
+		pos << QVector3D(shapes[0].mesh.positions[i], shapes[0].mesh.positions[i+1], shapes[0].mesh.positions[i+2]);
+	}
+	for (size_t i = 0; i < shapes[0].mesh.indices.size(); i++)
+	{
+		model_vts << pos[shapes[0].mesh.indices[i]].x() << pos[shapes[0].mesh.indices[i]].y() << pos[shapes[0].mesh.indices[i]].z();	
+	}
+	//printf("Pos size:%d\n", model_vts.size());
+	pos_size = model_vts.size();
+	for (size_t i = 0; i < shapes[0].mesh.texcoords.size(); i++)
+	{
+		model_vts << shapes[0].mesh.texcoords[i];
+	}
+	//printf("Total size:%d\n",model_vts.size());
+	uv_size = model_vts.size() - pos_size;
+}
 //************************************************************************
 //
 // * This sets up both the Projection and the ModelView matrices

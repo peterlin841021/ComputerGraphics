@@ -26,8 +26,7 @@ void main(void)
 		gl_Position = pos.xyww;		
 	}
     else
-	{
-        
+	{        
 		gl_Position = pos;
 	}        
     texturecoord = uv;

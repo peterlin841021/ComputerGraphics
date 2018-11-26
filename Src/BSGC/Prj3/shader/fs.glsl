@@ -94,7 +94,7 @@ void main(void)
 			vec4 color = texture2D(tex,texturecoord);
             if(alpha !=1)
 			    color.a = alpha;
-			fragmentcolor = color;
+			fragmentcolor = color;			
             break;
         }
 		case(2)://Draw skybox

@@ -122,6 +122,7 @@ public:
 	Obj *land;
 	Obj *nendoroid_back;
 	Obj *nendoroid_front;
+	Obj * miku3d;
 	float t_temp = 0;	
 	bool trackupdate = true;
 	vector<TrackTrail> path;	
