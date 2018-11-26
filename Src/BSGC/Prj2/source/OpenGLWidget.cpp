@@ -388,7 +388,7 @@ float degree_change(float num)
 void setProjection(float mv[4][4],int max)
 {
 	float depth = (max) / ((10.f * tan(degree_change(MazeWidget::maze->viewer_fov * 0.5f))));	
-	depth /= (max /10);
+	depth /= (max / 10.f);
 	for (size_t i = 0; i < 4; i++)
 	{
 		(mv[i][0]) *= depth / mv[i][2];		

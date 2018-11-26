@@ -12,9 +12,7 @@ void TrainView::initializeGL()
 	land->Init(2);
 	
 	water = new Obj();
-	water->Init(2);
-	//grass = new Land();
-	//grass->Init();
+	water->Init(2);	
 	skybox = new Obj();
 	skybox->Init(2);
 
@@ -24,32 +22,6 @@ void TrainView::initializeGL()
 	nendoroid_front->Init(2);
 }
 
-//GLuint loadTexture(vector<QImage> faces) 
-//{
-//	GLuint id;		
-//	if (!faces[0].isNull()) {	
-//		glEnable(GL_TEXTURE_CUBE_MAP);
-//		glGenTextures(1, &id);		
-//		glBindTexture(GL_TEXTURE_CUBE_MAP, id);
-//		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-//		for (GLuint i = 0; i < 6; i++)
-//		{
-//			//printf("%d*%d\n", faces[i].width(), faces[i].height());
-//			QImage temp = QGLWidget::convertToGLFormat(faces[i]);
-//			glTexImage2D(
-//				GL_TEXTURE_CUBE_MAP + i, 0,
-//				GL_RGBA, temp.width(), temp.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, temp.bits());
-//		}
-//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);		
-//		glDisable(GL_TEXTURE_CUBE_MAP);
-//		return id;
-//	}	
-//	return -1;
-//}
 void TrainView::initializeTexture()
 {	
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/miku_transparent.png")));
@@ -60,7 +32,6 @@ void TrainView::initializeTexture()
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_left.jpg")));
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_right.jpg")));
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_top.jpg")));
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_bottom.jpg")));	
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_bottom.jpg")));
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/nendoroid_front.png")));
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/nendoroid_back.png")));	
@@ -140,15 +111,14 @@ void TrainView::paintGL()
 	Textures[0]->bind(0);//miku
 	Textures[1]->bind(1);//land
 	Textures[2]->bind(2);//water
-	Textures[3]->bind(3);//sky...
-	Textures[4]->bind(4);
-	Textures[5]->bind(5);
-	Textures[6]->bind(6);
-	Textures[7]->bind(7);
-	Textures[8]->bind(8);	
-	Textures[9]->bind(9);
-	Textures[10]->bind(10);//nendoroid f	
-	Textures[11]->bind(11);//nendoroid b
+	Textures[3]->bind(3);//sky1
+	Textures[4]->bind(4);//sky2
+	Textures[5]->bind(5);//sky3
+	Textures[6]->bind(6);//sky4
+	Textures[7]->bind(7);//sky5
+	Textures[8]->bind(8);//sky6
+	Textures[9]->bind(9);//nendoroid f
+	Textures[10]->bind(10);	//nendoroid b	
 	
 	glDisable(GL_DEPTH_TEST);
 	std::vector<int> buffer_size;
@@ -301,6 +271,7 @@ void TrainView::paintGL()
 	float old_height = 0;
 	float wy = 8.f;
 	float height = 0.f;
+
 	setupFloor();
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);		
@@ -502,21 +473,21 @@ void TrainView::drawTrack(bool doingShadows)
 	track_orient.clear();
 	Pnt3f track_start_inside, track_start_outside, track_end_inside, track_end_outside;
 	Pnt3f temp;
+	std::vector<Pnt3f> connect_head,connect_tail;
 	for (size_t i = 0; i < m_pTrack->points.size(); i++) 
 	{
 		Pnt3f points1 = m_pTrack->points[i].pos;
 		Pnt3f points2 = m_pTrack->points[(i + 1) % m_pTrack->points.size()].pos;
 		Pnt3f orient1 = m_pTrack->points[i].orient;
 		Pnt3f orient2 = m_pTrack->points[(i + 1) % m_pTrack->points.size()].orient;
-		//***********************//
+		
 		float distance = sqrt(pow(points1.x - points2.x, 2) + pow(points1.y - points2.y, 2) + pow(points1.z - points2.z, 2));
 		unsigned int divide = distance / 8.f;
 		if (divide < 4)
 		{
 			divide = 4;
 		}
-		ControlPoint q_matrix[4];
-		//ControlPoint previous, next;
+		ControlPoint q_matrix[4];		
 		
 		if (i == 0)
 		{
@@ -532,24 +503,14 @@ void TrainView::drawTrack(bool doingShadows)
 		{
 			q_matrix[0] = m_pTrack->points[i - 2];
 			q_matrix[1] = m_pTrack->points[i - 1];
-		}
-		//previous = m_pTrack->points[m_pTrack->points.size() - 1];
-		//q_matrix[0] = previous;
-		//q_matrix[1] = m_pTrack->points[i];
-		//q_matrix[2] = m_pTrack->points[(i + 1) % m_pTrack->points.size()];
+		}		
 		q_matrix[2] = m_pTrack->points[(i) % m_pTrack->points.size()];
 		q_matrix[3] = m_pTrack->points[(i + 1) % m_pTrack->points.size()];
-		//q_matrix[3] = m_pTrack->points[(i + 2) % m_pTrack->points.size()];
-
+		
 		float percent = 1.f / divide;
 		float t = 0.f - percent;
 		if (spline_type == spline_CardinalCubic) 
-		{
-			/*qt0 = Pnt3f(q_matrix[3].pos * (-1 / 2.f) + q_matrix[0].pos * (3 / 2.f) + q_matrix[1].pos * (-3 / 2.f) + q_matrix[2].pos * (1 / 2.f)) * pow(t, 3)
-				+ (q_matrix[3].pos * (2 / 2.f) + q_matrix[0].pos * (-5 / 2.f) + q_matrix[1].pos * (4 / 2.f) + q_matrix[2].pos * (-1 / 2.f)) * pow(t, 2)
-				+ (q_matrix[3].pos * (-1 / 2.f) + q_matrix[0].pos * 0 + q_matrix[1].pos * (1 / 2.f) + q_matrix[2].pos * 0) * pow(t, 1)
-				+ (q_matrix[3].pos * 0 + q_matrix[0].pos * (2 / 2.f) + q_matrix[1].pos * 0 + q_matrix[2].pos * 0) * 1;*/
-
+		{			
 			qt = Pnt3f(q_matrix[0].pos * (-1 / 2.f) + q_matrix[1].pos * (3 / 2.f) + q_matrix[2].pos * (-3 / 2.f) + q_matrix[3].pos * (1 / 2.f)) * pow(t, 3)
 				+ (q_matrix[0].pos * (2 / 2.f) + q_matrix[1].pos * (-5 / 2.f) + q_matrix[2].pos * (4 / 2.f) + q_matrix[3].pos * (-1 / 2.f)) * pow(t, 2)
 				+ (q_matrix[0].pos * (-1 / 2.f) + q_matrix[1].pos * 0 + q_matrix[2].pos * (1 / 2.f) + q_matrix[3].pos * 0) * pow(t, 1)
@@ -560,12 +521,7 @@ void TrainView::drawTrack(bool doingShadows)
 				+ (q_matrix[0].orient * 0 + q_matrix[1].orient * (2 / 2.f) + q_matrix[2].orient * 0 + q_matrix[3].orient * 0) * 1;
 		}
 		else if (spline_type == spline_CubicB_Spline) 
-		{
-			/*qt0 = (q_matrix[3].pos * (-1 / 6.f) + q_matrix[0].pos * (3 / 6.f) + q_matrix[1].pos * (-3 / 6.f) + q_matrix[2].pos * (1 / 6.f)) * pow(t, 3)
-				+ (q_matrix[3].pos * (3 / 6.f) + q_matrix[0].pos * (-6 / 6.f) + q_matrix[1].pos * (3 / 6.f) + q_matrix[2].pos * 0) * pow(t, 2)
-				+ (q_matrix[3].pos * (-3 / 6.f) + q_matrix[0].pos * 0 + q_matrix[1].pos * (3 / 6.f) + q_matrix[2].pos * 0) * pow(t, 1)
-				+ (q_matrix[3].pos * (1 / 6.f) + q_matrix[0].pos * (4 / 6.f) + q_matrix[1].pos * (1 / 6.f) + q_matrix[2].pos * 0) * 1;*/
-
+		{			
 			qt = (q_matrix[0].pos * (-1 / 6.f) + q_matrix[1].pos * (3 / 6.f) + q_matrix[2].pos * (-3 / 6.f) + q_matrix[3].pos * (1 / 6.f)) * pow(t, 3)
 				+ (q_matrix[0].pos * (3 / 6.f) + q_matrix[1].pos * (-6 / 6.f) + q_matrix[2].pos * (3 / 6.f) + q_matrix[3].pos * 0) * pow(t, 2)
 				+ (q_matrix[0].pos * (-3 / 6.f) + q_matrix[1].pos * 0 + q_matrix[2].pos * (3 / 6.f) + q_matrix[3].pos * 0) * pow(t, 1)
@@ -586,12 +542,15 @@ void TrainView::drawTrack(bool doingShadows)
 
 		Pnt3f connect_outside, connect_inside;
 		for (size_t j = 0; j <= divide; j++)
-		{
-			if(j == 0)
+		{			
+			if (j == 0)
+			{				
 				qt0 = qt0;
+			}				
 			else
+			{
 				qt0 = qt;
-
+			}
 			or0 = orient_t;
 			trainStart = qt0;
 			switch (spline_type) 
@@ -665,14 +624,7 @@ void TrainView::drawTrack(bool doingShadows)
 			cross_t1 = Pnt3f(qt.x - qt0.x, qt.y - qt0.y, qt.z - qt0.z) * or1;
 			cross_t0.normalize();
 			cross_t1.normalize();
-
 			cross_t0 = cross_t0 * track_width;//Track width
-			//cross_t1 = cross_t1 * 5.f;
-			//if (i == 0 && j == 0) 
-			//{
-			//	head_in = Pnt3f(qt1.x - cross_t0.x, qt1.y - cross_t0.y, qt1.z - cross_t0.z);
-			//	head_out = Pnt3f(qt1.x + cross_t0.x, qt1.y + cross_t0.y, qt1.z + cross_t0.z);
-			//}
 			
 			if (track == 1) 
 			{				
@@ -688,7 +640,7 @@ void TrainView::drawTrack(bool doingShadows)
 					glColor4f(0, 0, 0, alpha);
 				}
 				if (j > 1 && spline_type != spline_Linear)
-				{		
+				{						
 					glBegin(GL_LINES);
 					glVertex3f(qt.x - cross_t0.x, qt.y - cross_t0.y, qt.z - cross_t0.z);
 					glVertex3f(connect_inside.x, connect_inside.y, connect_inside.z);
@@ -714,7 +666,32 @@ void TrainView::drawTrack(bool doingShadows)
 					glVertex3f(connect_outside.x, connect_outside.y, connect_outside.z);
 					glEnd();
 				}							
-
+				if (j == 1)
+				{					
+					if (spline_type != spline_Linear)
+					{
+						connect_head.push_back(Pnt3f(qt.x - cross_t0.x, qt.y - cross_t0.y, qt.z - cross_t0.z));
+						connect_head.push_back(Pnt3f(qt.x + cross_t1.x, qt.y + cross_t1.y, qt.z + cross_t1.z));
+					}
+					else
+					{
+						connect_head.push_back(connect_inside);
+						connect_head.push_back(connect_outside);
+					}										
+				}
+				if (j == divide)
+				{
+					if (spline_type != spline_Linear)
+					{
+						connect_tail.push_back(Pnt3f(qt.x - cross_t0.x, qt.y - cross_t0.y, qt.z - cross_t0.z));
+						connect_tail.push_back(Pnt3f(qt.x + cross_t1.x, qt.y + cross_t1.y, qt.z + cross_t1.z));
+					}
+					else
+					{
+						connect_tail.push_back(connect_inside);
+						connect_tail.push_back(connect_outside);
+					}					
+				}
 				if (!doingShadows) 
 				{
 					glColor4f(255, 255, 255, 1);
@@ -734,8 +711,7 @@ void TrainView::drawTrack(bool doingShadows)
 					glVertex3f(qt.x - cross_t0.x, qt.y - cross_t0.y, qt.z - cross_t0.z);
 					glVertex3f(qt.x + cross_t1.x, qt.y + cross_t1.y, qt.z + cross_t1.z);
 					glEnd();
-				}
-				
+				}				
 				connect_inside = Pnt3f(qt.x - cross_t0.x, qt.y - cross_t0.y, qt.z - cross_t0.z);
 				connect_outside = Pnt3f(qt.x + cross_t1.x, qt.y + cross_t1.y, qt.z + cross_t1.z);
 			}
@@ -745,14 +721,23 @@ void TrainView::drawTrack(bool doingShadows)
 				track_orient_cross.push_back(cross_t0);
 				track_orient.push_back(orient_t);
 			}			
-		}//Divide
+		}//Divide			
 	}//Controlpoints
-	//Generate path
-	if (trackupdate) 
-	{
-		
-		
+	
+	glColor3f(0, 0, 0);
+	glBegin(GL_LINES);
+	for (size_t i = 0; i < connect_tail.size()-1; i+=2)
+	{		
+		glVertex3f(connect_tail[i].x, connect_tail[i].y, connect_tail[i].z);
+		glVertex3f(connect_head[(i + 2) % connect_head.size()].x, connect_head[(i + 2) % connect_head.size()].y, connect_head[(i + 2) % connect_head.size()].z);
+
+		glVertex3f(connect_tail[i + 1].x, connect_tail[i + 1].y, connect_tail[i + 1].z);
+		glVertex3f(connect_head[(i + 3) % connect_head.size()].x, connect_head[(i + 3) % connect_head.size()].y, connect_head[(i + 3) % connect_head.size()].z);
 	}
+	glEnd();
+	
+	
+	//Generate path	
 	path.clear();
 	trackupdate = false;
 	float track_distance = 0.f;
@@ -876,7 +861,8 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 
 	float w = 10 / 2, h = 10 / 2;
 
-	if (shadow) {
+	if (shadow) 
+	{
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_FRONT);
 		glFrontFace(GL_CW);
@@ -1047,7 +1033,8 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 		glColor4f(255, 0, 128, alpha);
 	//Wheels
 	float wheels_distance = 0.5f;
-	Pnt3f four_wheels[4] = { 
+	Pnt3f four_wheels[4] = 
+	{ 
 		Pnt3f(-width - wheels_distance,-height,-width),
 		Pnt3f(width + wheels_distance,-height,-width),
 		Pnt3f(width + wheels_distance,-height,width),
@@ -1063,18 +1050,21 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	glEnd();
 	float degree = 360.f / 8;
 		
-	for(Pnt3f w : four_wheels){
+	for(Pnt3f w : four_wheels)
+	{
 		vector<Pnt3f> wheel_points;
 		wheel_points.reserve(7);
 		glBegin(GL_LINE_LOOP);
-		for (size_t i = 1; i < 8; i++) {			
+		for (size_t i = 1; i < 8; i++) 
+		{			
 			glVertex3f(w.x , w.y+sin(degree), w.z+cos(degree));						
 			degree += 360.f / 8;
 			wheel_points.push_back(Pnt3f(w.x, w.y + sin(degree), w.z + cos(degree)));
 		}
 		glEnd();
 		
-		for (Pnt3f p : wheel_points) {
+		for (Pnt3f p : wheel_points) 
+		{
 			glBegin(GL_LINES);
 			glVertex3f(p.x, p.y, p.z);
 			glVertex3f(w.x, w.y, w.z);
@@ -1126,13 +1116,13 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	glCullFace(GL_FRONT);
 	glFrontFace(GL_CW);		
 	nendoroid_front->Begin();
-	nendoroid_front->shaderProgram->setUniformValue("tex", 10);
+	nendoroid_front->shaderProgram->setUniformValue("tex", 9);
 	nendoroid_front->Render(ProjectionMatrex, mv, nendoroid_vts, buffersize,1,1,0);
 	nendoroid_front->End();	
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CW);		
 	nendoroid_back->Begin();
-	nendoroid_back->shaderProgram->setUniformValue("tex", 11);
+	nendoroid_back->shaderProgram->setUniformValue("tex", 10);
 	nendoroid_back->Render(ProjectionMatrex, mv, nendoroid_vts, buffersize, 1, 1, 0);
 	nendoroid_back->End();
 	glDisable(GL_ALPHA_TEST);

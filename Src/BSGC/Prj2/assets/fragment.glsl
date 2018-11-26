@@ -39,8 +39,9 @@ void snow_texture()
 void snow_wall()
 {
    vec2 uv =  gl_FragCoord.xy  /iResolution.x;
-   vec3 color = mix(colors.rgb,texture(Texture,vUV).rgb,0.4);  
-   fColor = vec4(color, 1.0);
+   //vec3 color = mix(colors.rgb,texture(Texture,vUV).rgb,0.4);   
+   //fColor = vec4(color, 1.0);
+   fColor = colors;
    float j;   
    for (int i = 0; i < _SnowflakeAmount; i++)
    {
