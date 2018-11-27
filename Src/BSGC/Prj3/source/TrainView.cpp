@@ -13,8 +13,7 @@ struct Model
 private:
 	QVector<GLfloat> values;
 	GLuint textureid;
-	std::vector<int> bufferoffset;
-	QMatrix4x4 mv;
+	std::vector<int> bufferoffset;	
 public:
 	Model()
 	{
@@ -44,16 +43,8 @@ public:
 	{
 		return bufferoffset;
 	}
-	void setModelViewMatrix(QMatrix4x4 m)
-	{
-		mv = m;
-	}
-	QMatrix4x4 getModelViewMatrix()
-	{
-		return mv;
-	}
 };
-Model *mikuhair,*mikuface;
+std::vector<Model*> models;
 void loadmodel(string modelname, string texturename, Model *model, QVector<QOpenGLTexture*> *textures);
 char *stringToChar(string str);
 void TrainView::initializeGL()
@@ -75,13 +66,63 @@ void TrainView::initializeGL()
 	nendoroid_front->Init(2);
 	miku3d = new Obj();
 	miku3d->Init(2);
-	mikuhair = new Model();
-	mikuface = new Model();
-	QVector<QVector3D> vs, fs, vns;
-	QVector<QVector2D> vts;
-	
-	loadmodel("./src/BSGC/prj3/3dmodel/mikuhair.obj", "./src/BSGC/prj3/3dmodel/mikuhair.png", mikuhair,&Textures);
-	loadmodel("./src/BSGC/prj3/3dmodel/mikuface.obj", "./src/BSGC/prj3/3dmodel/mikuface.png", mikuface, &Textures);
+	Model *mikuhair, *mikuface,
+		*mikubody,*mikuskirt,
+		*mikuLFM,*mikuLHM,*mikuLH,
+		*mikuRFM,*mikuRHM,*mikuRH,
+		*mikuLT,*mikuLC,*mikuRT,*mikuRC,
+		*scallion;
+	{//Model init
+		mikuhair = new Model();
+		mikuface = new Model();
+		mikubody = new Model();
+		mikuskirt = new Model();
+		mikuLFM = new Model();
+		mikuLHM = new Model();
+		mikuLH = new Model();
+		mikuRFM = new Model();
+		mikuRHM = new Model();
+		mikuRH = new Model();
+		mikuLT = new Model();
+		mikuLC = new Model();
+		mikuRT = new Model();
+		mikuRC = new Model();
+		scallion = new Model();
+	}
+	{//Load models
+		loadmodel("./src/BSGC/prj3/3dmodel/mikuhair.obj", "./src/BSGC/prj3/3dmodel/mikuhair.png", mikuhair,&Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/mikuface.obj", "./src/BSGC/prj3/3dmodel/mikuface.png", mikuface, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/mikubody.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikubody, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/mikuskirt.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuskirt, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/MikuLeftForeArm.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuLFM, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/MikuLeftHindArm.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuLHM, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/MikuLeftHand.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuLH, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/MikuRightForeArm.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuRFM, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/MikuRightHindArm.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuRHM, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/MikuRightHand.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuRH, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/MikuLeftThigh.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuLT, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/MikuLeftCalf.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuLC, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/MikuRightThigh.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuRT, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/MikuRightCalf.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuRC, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/scallion.obj", "./src/BSGC/prj3/3dmodel/scallion.png", scallion, &Textures);
+	}
+	{//Model vector
+		models.push_back(mikuhair);
+		models.push_back(mikuface);
+		models.push_back(mikubody);
+		models.push_back(mikuskirt);
+		models.push_back(mikuLFM);
+		models.push_back(mikuLHM);
+		models.push_back(mikuLH);
+		models.push_back(mikuRFM);
+		models.push_back(mikuRHM);
+		models.push_back(mikuRH);
+		models.push_back(mikuLT);
+		models.push_back(mikuLC);
+		models.push_back(mikuRT);
+		models.push_back(mikuRC);
+		models.push_back(scallion);
+	}
 }
 char *stringToChar(string str)
 {
@@ -190,10 +231,7 @@ void loadmodel(string modelname,string texturename, Model *model, QVector<QOpenG
 	std::vector<int> bufferoffset;
 	bufferoffset.push_back(pos_size);
 	bufferoffset.push_back(uv_size);
-	model->setBufferOffset(bufferoffset);
-	QMatrix4x4 identity;
-	identity.setToIdentity();
-	model->setModelViewMatrix(identity);
+	model->setBufferOffset(bufferoffset);	
 }
 void TrainView::initializeTexture()
 {	
@@ -527,24 +565,9 @@ void TrainView::paintGL()
 	water->End();
 	water_vertices.clear();
 	buffer_size.clear();
-	glPushMatrix();		
-		glScalef(5, 5, 5);
-		glTranslatef(0,20,0);
-		glRotatef(angle,0,1,0);
-		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-		//Draw 3d models	
-		miku3d->Begin();
-		miku3d->shaderProgram->setUniformValue("tex", mikuhair->getTextureid());
-
-	
-		miku3d->Render(ProjectionMatrex, ModelViewMatrex, mikuhair->getValues(), mikuhair->getBufferOffset(),1,1,0,1);
-
-		miku3d->shaderProgram->setUniformValue("tex", mikuface->getTextureid());
-		miku3d->Render(ProjectionMatrex, ModelViewMatrex, mikuface->getValues(), mikuface->getBufferOffset(), 1, 1, 0, 1);
-		miku3d->End();
-	glPopMatrix();
+	glPushMatrix();
 	//Draw shadows
-	if (this->camera != 1) 
+	if (this->camera != 1)
 	{
 		glTranslatef(0, shake, 0);
 		setupShadows();
@@ -555,6 +578,109 @@ void TrainView::paintGL()
 		else
 			shake = -shake;
 	}
+	glPopMatrix();
+	float right_position[15][3]
+	{
+		{0, 0, 0},
+		{0, 2.5f, 0},
+
+		{0, 0, 0},
+		{0, -0.1f, 0},
+
+		{0.5f, 1.8f, 0},
+		{1.4f, -0.7f, 0},
+		{1.4f, -0.7f, 0},
+
+		{-0.5f, 1.8f, 0},
+		{-1.4f, -0.7f, 0},
+		{-1.4f, -0.7f, 0},
+
+		{0.5f, -0.3f, 0},
+		{-0.05f, -2.2f, 0},
+
+		{-0.5f, -0.3f, 0},
+		{0.05f, -2.2f, 0},
+
+		{0, 0, 0}
+	};
+	float sr = 20;
+	for (size_t i = 0; i < models.size(); i++)
+	{
+		right_position[i][0] *= sr;
+		right_position[i][1] *= sr;
+		right_position[i][2] *= sr;
+	}
+	glPushMatrix();
+		glTranslatef(0,120,0);
+		glRotatef(angle,0,1,0);
+		glScalef(1, 1, 1);
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		//Draw 3d models
+		miku3d->Begin();
+		for (size_t i = 0; i < models.size(); i++)
+		{
+			glPushMatrix();
+			switch (i)
+			{
+			case 0://hair
+				glTranslatef(right_position[1][0], right_position[1][1], right_position[1][2]);				
+				break;
+			case 1:
+				glTranslatef(right_position[1][0], right_position[1][1], right_position[1][2]);
+			case 3://Skirt
+				glTranslatef(right_position[3][0], right_position[3][1], right_position[3][2]);
+				break;
+			case 4:
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);				
+				break;
+			case 5:
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);				
+				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
+				break;
+			case 6:
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
+				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
+				glTranslatef(right_position[6][0], right_position[6][1], right_position[6][2]);
+				break;
+			case 7:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				break;
+			case 8:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
+				break;
+			case 9:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
+				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
+				break;
+			case 10://Thigh
+				glTranslatef(right_position[10][0], right_position[10][1], right_position[10][2]);
+				break;
+			case 11:
+				glTranslatef(right_position[10][0], right_position[10][1], right_position[10][2]);
+				glTranslatef(right_position[11][0], right_position[11][1], right_position[11][2]);
+				break;
+			case 12:				
+				glTranslatef(right_position[12][0], right_position[12][1], right_position[12][2]);
+				break;
+			case 13:
+				glTranslatef(right_position[12][0], right_position[12][1], right_position[12][2]);
+				glTranslatef(right_position[13][0], right_position[13][1], right_position[13][2]);
+				break;
+			case 14:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
+				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
+				break;
+			}						
+			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
+			miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, 1, 0, 1);
+			glPopMatrix();
+		}				
+		miku3d->End();
+	glPopMatrix();	
 }
 //************************************************************************
 //
