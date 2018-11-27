@@ -31,7 +31,7 @@ void TrainView::initializeGL()
 	
 	QVector<QVector3D> vs, fs, vns;
 	QVector<QVector2D> vts;
-	loadmodel("./src/BSGC/prj3/3dmodel/HatsuneMiku.obj", "./src/BSGC/prj3/3dmodel/body.png", &Textures);
+	loadmodel("./src/BSGC/prj3/3dmodel/mikuhair.obj", "./src/BSGC/prj3/3dmodel/mikuhair.png", &Textures);
 }
 char *stringToChar(string str)
 {
@@ -128,8 +128,12 @@ void loadmodel(string modelname,string texturename, QVector<QOpenGLTexture*> *te
 	{
 		model_vts << vt[f[i].y()-1].x() << vt[f[i].y()-1].y();
 	}
-	uv_size = model_vts.size() - pos_size;
-	textures->push_back(new QOpenGLTexture(QImage(stringToChar(texturename))));
+	uv_size = (model_vts.size() - pos_size);
+	QOpenGLTexture *tex = new QOpenGLTexture(QImage(stringToChar(texturename)));
+	tex->setMinificationFilter(QOpenGLTexture::Linear);
+	tex->setMagnificationFilter(QOpenGLTexture::Linear);
+	tex->setWrapMode(QOpenGLTexture::ClampToEdge);
+	textures->push_back(tex);
 }
 void TrainView::initializeTexture()
 {	
