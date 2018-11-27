@@ -100,6 +100,7 @@ public:
 	float track_angle = 0;
 	Pnt3f trainStart, trainEnd;
 	Obj *trackobj;
+	Obj *trainobj;
 	Obj *miku;
 	Obj *skybox;
 	Obj *water;

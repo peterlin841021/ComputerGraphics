@@ -29,7 +29,7 @@ void Obj::DimensionTransformation(GLfloat source[],GLfloat target[][4])
 			i++;
 		}
 }
-void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GLfloat> values,std::vector<int> buffersize,int mode, float alpha, float time, int drawtype)
+void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GLfloat> values, std::vector<int> buffersize, float alpha, float time, int linetype, int colorMode, int effect)
 {	
 	GLfloat P[4][4];
 	GLfloat MV[4][4];	
@@ -37,7 +37,8 @@ void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GL
 	DimensionTransformation(ModelViewMatrix, MV);	
 	shaderProgram->setUniformValue("ProjectionMatrix", P);	
 	shaderProgram->setUniformValue("ModelViewMatrix", MV);
-	shaderProgram->setUniformValue("mode", mode);
+	shaderProgram->setUniformValue("effect", effect);
+	shaderProgram->setUniformValue("colormode", colorMode);
 	shaderProgram->setUniformValue("alpha", alpha);
 	shaderProgram->setUniformValue("time", time);
 	QVector<GLfloat> positions,colors,texturecoords,indexes;
@@ -58,19 +59,19 @@ void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GL
 	vvbo.allocate(positions.constData(), (buffersize[0] + buffersize[1]) * sizeof(GLfloat));
 	shaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 3, 0);	
 	shaderProgram->enableAttributeArray(0);
-	if (mode == 0) 
+	if (colorMode == 0)
 	{
 		vvbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
 		shaderProgram->setAttributeBuffer(2, GL_FLOAT, buffersize[0] * sizeof(GLfloat),3, 0);
 		shaderProgram->enableAttributeArray(2);
 	}
-	else if(mode == 1 || mode == 2)
+	else if(colorMode == 1 || colorMode == 2)
 	{
 		vvbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
 		shaderProgram->setAttributeBuffer(1, GL_FLOAT, buffersize[0] * sizeof(GLfloat), 2, 0);
 		shaderProgram->enableAttributeArray(1);
 	}
-	switch (drawtype)
+	switch (linetype)
 	{
 	case 0:
 		glDrawArrays(GL_LINES, 0, positions.size()/2);

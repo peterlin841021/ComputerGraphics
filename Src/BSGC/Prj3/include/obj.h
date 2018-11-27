@@ -29,7 +29,7 @@ public:
 	QOpenGLBuffer indexbo;
 public:
 	Obj();
-	void Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix,QVector<GLfloat> values,std::vector<int> buffersize,int mode,float alpha,float time,int type);
+	void Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix,QVector<GLfloat> values,std::vector<int> buffersize,float alpha,float time,int linetype, int colorMode,int effect);
 	void Init(int buffers);	
 	void InitShader(QString vertexShaderPath, QString fragmentShaderPath);
 	void DimensionTransformation(GLfloat source[], GLfloat target[][4]);

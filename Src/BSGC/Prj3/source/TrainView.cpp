@@ -52,6 +52,8 @@ void TrainView::initializeGL()
 	initializeTexture();
 	trackobj = new Obj();
 	trackobj->Init(2);
+	trainobj = new Obj();
+	trainobj->Init(2);
 	miku = new Obj();
 	miku->Init(2);
 	land = new Obj();
@@ -407,13 +409,12 @@ void TrainView::paintGL()
 		buffer_size.push_back(18);
 		buffer_size.push_back(12);
 		
-		skybox->Render(ProjectionMatrex, ModelViewMatrex, skybox_vts, buffer_size,2,1.f,clock(),1);
+		skybox->Render(ProjectionMatrex, ModelViewMatrex, skybox_vts, buffer_size,1.f,clock(),1,2,1);
 		skybox_vts.clear();
 		buffer_size.clear();
 	}		
 	skybox->End();
-	glEnable(GL_DEPTH_TEST);
-	
+	glEnable(GL_DEPTH_TEST);		
 	//Draw Miku
 	QVector<GLfloat> miku_vts;
 	miku_vts
@@ -435,150 +436,175 @@ void TrainView::paintGL()
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.1);
 
-	miku->Begin();
-	miku->shaderProgram->setUniformValue("tex", 0);
-	miku->Render(ProjectionMatrex, ModelViewMatrex, miku_vts, buffer_size,1,1.f,clock(),1);
-	miku->End();
+	glPushMatrix();
+	glTranslatef(100,0,0);
+	glRotatef(90,0,1,0);
+	glScalef(5,5,5);
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		miku->Begin();
+		miku->shaderProgram->setUniformValue("tex", 0);
+		miku->Render(ProjectionMatrex, ModelViewMatrex, miku_vts, buffer_size,1.f,clock(),1,1,1);
+		miku->End();
+	glPopMatrix();
 
+	glPushMatrix();
+	glTranslatef(-100, 0, 0);
+	glRotatef(-90, 0, 1, 0);
+	glScalef(5, 5, 5);
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		miku->Begin();
+		miku->shaderProgram->setUniformValue("tex", 0);
+		miku->Render(ProjectionMatrex, ModelViewMatrex, miku_vts, buffer_size, 1.f, clock(), 1, 1, 1);
+		miku->End();
+	glPopMatrix();
 	glDisable(GL_ALPHA_TEST);
 	glDisable(GL_BLEND);
-	
-	//Draw track and train
-	drawStuff();
-	//Draw land
-	float wave_t  = 0;						
-	land->Begin();
-	land->shaderProgram->setUniformValue("tex",1);
-	QVector<GLfloat> land_vts;
-	land_vts
-		<< -boxsize << 0 << -boxsize
-		<< boxsize << 0 << -boxsize
-		<< boxsize << 0 << boxsize
-		<< boxsize << 0 << boxsize
-		<< -boxsize << 0 << boxsize
-		<< -boxsize << 0 << -boxsize;
-	for (size_t i = 0; i < 12; i++)
-	{
-		land_vts << uv[i];
-	}
-	buffer_size.clear();
-	buffer_size.push_back(18);
-	buffer_size.push_back(12);
-	land->Render(ProjectionMatrex, ModelViewMatrex, land_vts,buffer_size,1,1,0,1);
-	land->End();
-	
-	//Draw water
-	int water_size = 70;
-	float min = -boxsize;
-	float amplitude = 2.5f;
-	float speed = 0.0001f;
-	float step = boxsize / water_size * 2;
-	float old_height = 0;
-	float wy = 8.f;
-	float height = 0.f;
 
-	setupFloor();
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);		
-	water->Begin();
-	water->shaderProgram->setUniformValue("tex", 2);
-	float ratio = 25;
-	float xfrom = 0;
-	float zfrom = 0;
-	float xto = 0;
-	float zto = 0;
-	float padding = 0;
-	
-	QVector<GLfloat> water_vertices;
-	
-	if (wt == 0)
-		wt = clock();
-
-	for (int i = 0; i < water_size; i++)
-	{
-		wt = clock();		
-		for (int j = 0; j < water_size; j++)
-		{			
-			if(old_height == 0)
-				old_height = amplitude * sin(step + wt * speed / 5.f);
-			else
-				old_height = height;
-
-			height = amplitude * sin(step + wt*((water_size - i)*(j+1))/5.f* speed/5.f);
-			xfrom = min + step * j + offset;
-			xto = min + step * (j + 1) + offset;
-			zfrom = min + step * i;
-			zto = min + step * (i + 1);
-			//pos
-			water_vertices
-				<< xfrom  << wy + old_height << zto 
-				<< xto  << wy + height << zto 
-				<< xto  << wy + height << zfrom;
-			water_vertices
-				<< xto  << wy + height << zfrom 
-				<< xfrom  << wy + old_height << zfrom 
-				<< xfrom  << wy + old_height << zto ;
-		}		
-	}
-	for (int i = 0; i < water_size; i++)
-	{
-		for (int j = 0; j < water_size; j++)
-		{
-			//uvs
-			water_vertices
-				<< i / ratio << (j + 1) / ratio
-				<< (i + 1) / ratio << (j + 1) / ratio
-				<< (i + 1) / ratio << j / ratio
-
-				<< (i + 1) / ratio << j / ratio
-				<< i / ratio << j / ratio
-				<< i / ratio << (j + 1) / ratio
-
-				<< i / ratio << (j + 1) / ratio
-				<< (i + 1) / ratio << (j + 1) / ratio
-				<< (i + 1) / ratio << j / ratio
-
-				<< (i + 1) / ratio << j / ratio
-				<< i / ratio << j / ratio
-				<< i / ratio << (j + 1) / ratio;
-		}
-	}
-	
-	buffer_size.clear();
-	buffer_size.push_back(18 * water_size * water_size);
-	buffer_size.push_back(24 * water_size * water_size);
-	water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 1, 0.45f,0,1);
-
-	water_vertices.clear();
-	buffer_size.clear();
-	
-	water_vertices 
-		<< min << wy << min << -min << wy << min<< -min << wy << -min
-		<< -min << wy << -min<< min << wy << -min<< min << wy << min;
-	for (size_t i = 0; i < sizeof(uv)/sizeof(float); i++)
-	{
-		water_vertices << uv[i];
-	}
-	buffer_size.push_back(18);
-	buffer_size.push_back(12);
-	water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 1, 0.45f,0,1);
-	water->End();
-	water_vertices.clear();
-	buffer_size.clear();
 	glPushMatrix();
-	//Draw shadows
-	if (this->camera != 1)
-	{
-		glTranslatef(0, shake, 0);
-		setupShadows();
-		drawStuff(true);
-		unsetupShadows();
-		if (shake > 0)
-			shake = -shake;
-		else
-			shake = -shake;
-	}
+	//Draw track and train
+		drawStuff();
 	glPopMatrix();
+
+	glPushMatrix();
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+	//Draw land	
+		land->Begin();
+		land->shaderProgram->setUniformValue("tex",1);
+		QVector<GLfloat> land_vts;
+		land_vts
+			<< -boxsize << 0 << -boxsize
+			<< boxsize << 0 << -boxsize
+			<< boxsize << 0 << boxsize
+			<< boxsize << 0 << boxsize
+			<< -boxsize << 0 << boxsize
+			<< -boxsize << 0 << -boxsize;
+		for (size_t i = 0; i < 12; i++)
+		{
+			land_vts << uv[i];
+		}
+		buffer_size.clear();
+		buffer_size.push_back(18);
+		buffer_size.push_back(12);
+		land->Render(ProjectionMatrex, ModelViewMatrex, land_vts,buffer_size,1,0,1,1,1);
+		land->End();
+	glPopMatrix();
+
+	glPushMatrix();
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		//Draw water
+		float wave_t = 0;
+		int water_size = 70;
+		float min = -boxsize;
+		float amplitude = 2.5f;
+		float speed = 0.0001f;
+		float step = boxsize / water_size * 2;
+		float old_height = 0;
+		float wy = 8.f;
+		float height = 0.f;
+
+		setupFloor();
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);		
+		water->Begin();
+		water->shaderProgram->setUniformValue("tex", 2);
+		float ratio = 25;
+		float xfrom = 0;
+		float zfrom = 0;
+		float xto = 0;
+		float zto = 0;
+		float padding = 0;
+	
+		QVector<GLfloat> water_vertices;	
+		if (wt == 0)
+			wt = clock();
+
+		for (int i = 0; i < water_size; i++)
+		{
+			wt = clock();		
+			for (int j = 0; j < water_size; j++)
+			{			
+				if(old_height == 0)
+					old_height = amplitude * sin(step + wt * speed / 5.f);
+				else
+					old_height = height;
+
+				height = amplitude * sin(step + wt*((water_size - i)*(j+1))/5.f* speed/5.f);
+				xfrom = min + step * j + offset;
+				xto = min + step * (j + 1) + offset;
+				zfrom = min + step * i;
+				zto = min + step * (i + 1);
+				//pos
+				water_vertices
+					<< xfrom  << wy + old_height << zto 
+					<< xto  << wy + height << zto 
+					<< xto  << wy + height << zfrom;
+				water_vertices
+					<< xto  << wy + height << zfrom 
+					<< xfrom  << wy + old_height << zfrom 
+					<< xfrom  << wy + old_height << zto ;
+			}		
+		}
+		for (int i = 0; i < water_size; i++)
+		{
+			for (int j = 0; j < water_size; j++)
+			{
+				//uvs
+				water_vertices
+					<< i / ratio << (j + 1) / ratio
+					<< (i + 1) / ratio << (j + 1) / ratio
+					<< (i + 1) / ratio << j / ratio
+
+					<< (i + 1) / ratio << j / ratio
+					<< i / ratio << j / ratio
+					<< i / ratio << (j + 1) / ratio
+
+					<< i / ratio << (j + 1) / ratio
+					<< (i + 1) / ratio << (j + 1) / ratio
+					<< (i + 1) / ratio << j / ratio
+
+					<< (i + 1) / ratio << j / ratio
+					<< i / ratio << j / ratio
+					<< i / ratio << (j + 1) / ratio;
+			}
+		}
+	
+		buffer_size.clear();
+		buffer_size.push_back(18 * water_size * water_size);
+		buffer_size.push_back(24 * water_size * water_size);
+		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.45f,0,1,1,1);
+
+		water_vertices.clear();
+		buffer_size.clear();
+	
+		water_vertices 
+			<< min << wy << min << -min << wy << min<< -min << wy << -min
+			<< -min << wy << -min<< min << wy << -min<< min << wy << min;
+		for (size_t i = 0; i < sizeof(uv)/sizeof(float); i++)
+		{
+			water_vertices << uv[i];
+		}
+		buffer_size.push_back(18);
+		buffer_size.push_back(12);
+		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.45f, 0, 1, 1, 1);
+		water->End();
+		water_vertices.clear();
+		buffer_size.clear();
+	glPopMatrix();
+
+	//glPushMatrix();
+	////Draw shadows
+	//if (this->camera != 1)
+	//{
+	//	glTranslatef(0, shake, 0);
+	//	setupShadows();
+	//	drawStuff(true);
+	//	unsetupShadows();
+	//	if (shake > 0)
+	//		shake = -shake;
+	//	else
+	//		shake = -shake;
+	//}
+	//glPopMatrix();
 	float right_position[15][3]
 	{
 		{0, 0, 0},
@@ -610,12 +636,12 @@ void TrainView::paintGL()
 		right_position[i][1] *= sr;
 		right_position[i][2] *= sr;
 	}
+	{//Draw 3d models
 	glPushMatrix();
-		glTranslatef(0,120,0);
+		glTranslatef(0,120,-120);
 		glRotatef(angle,0,1,0);
 		glScalef(1, 1, 1);
-		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-		//Draw 3d models
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);		
 		miku3d->Begin();
 		for (size_t i = 0; i < models.size(); i++)
 		{
@@ -676,11 +702,91 @@ void TrainView::paintGL()
 			}						
 			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
-			miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, 1, 0, 1);
+			if (i == 0)
+				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(),1,1,4);
+			else
+				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(), 1, 1, 1);
 			glPopMatrix();
 		}				
 		miku3d->End();
-	glPopMatrix();	
+	glPopMatrix();
+	}	
+	{//Draw 3d models again
+	glPushMatrix();
+		glRotatef(180, 0, 1, 0);
+		glTranslatef(0, 120, -120);
+		glRotatef(angle, 0, 1, 0);
+		glScalef(1, 1, 1);
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		miku3d->Begin();
+		for (size_t i = 0; i < models.size(); i++)
+		{
+			glPushMatrix();
+			switch (i)
+			{
+			case 0://hair
+				glTranslatef(right_position[1][0], right_position[1][1], right_position[1][2]);
+				break;
+			case 1:
+				glTranslatef(right_position[1][0], right_position[1][1], right_position[1][2]);
+			case 3://Skirt
+				glTranslatef(right_position[3][0], right_position[3][1], right_position[3][2]);
+				break;
+			case 4:
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
+				break;
+			case 5:
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
+				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
+				break;
+			case 6:
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
+				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
+				glTranslatef(right_position[6][0], right_position[6][1], right_position[6][2]);
+				break;
+			case 7:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				break;
+			case 8:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
+				break;
+			case 9:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
+				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
+				break;
+			case 10://Thigh
+				glTranslatef(right_position[10][0], right_position[10][1], right_position[10][2]);
+				break;
+			case 11:
+				glTranslatef(right_position[10][0], right_position[10][1], right_position[10][2]);
+				glTranslatef(right_position[11][0], right_position[11][1], right_position[11][2]);
+				break;
+			case 12:
+				glTranslatef(right_position[12][0], right_position[12][1], right_position[12][2]);
+				break;
+			case 13:
+				glTranslatef(right_position[12][0], right_position[12][1], right_position[12][2]);
+				glTranslatef(right_position[13][0], right_position[13][1], right_position[13][2]);
+				break;
+			case 14:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
+				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
+				break;
+			}
+			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
+			if(i == 0)
+				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(), 1, 1, 5);
+			else
+				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(), 1, 1, 1);
+			glPopMatrix();
+		}
+		miku3d->End();
+	glPopMatrix();
+	}
 }
 //************************************************************************
 //
@@ -1017,9 +1123,9 @@ void TrainView::drawTrack(bool doingShadows)
 	buffer_size.push_back(color_counts);//Colors
 	trackobj->Begin();
 	if (!doingShadows)
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size,0,1.f,clock(),0);
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size,1.f,clock(),0,0,3);
 	else
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 0, 0.2f, clock(), 0);
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 1.f, clock(), 0, 0, 3);
 	trackobj->End();
 	buffer_size.clear();
 	tracks.clear();
@@ -1041,9 +1147,9 @@ void TrainView::drawTrack(bool doingShadows)
 	buffer_size.push_back(color_counts);
 	trackobj->Begin();
 	if (!doingShadows)
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 0, 1.f, clock(), 0);
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 1.f, clock(), 0, 0, 3);
 	else
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 0, 0.2f, clock(), 0);
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 1.f, clock(), 0, 0, 3);
 	trackobj->End();
 
 	//Draw sleepers
@@ -1057,9 +1163,9 @@ void TrainView::drawTrack(bool doingShadows)
 	buffer_size.push_back(color_counts);
 	trackobj->Begin();
 	if (!doingShadows)
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 0, 1.f, clock(), 0);
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 1.f, clock(), 0, 0, 3);
 	else
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 0, 0.2f, clock(), 0);
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 1.f, clock(), 0, 0, 3);
 	trackobj->End();
 
 	//Generate path	
@@ -1109,17 +1215,15 @@ void TrainView::drawStuff(bool doingShadows)
 			angle += 1.f;
 			path_index++;
 		}
-		glPushMatrix();
+		
 		drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients,doingShadows);		
-		glPopMatrix();
+		
 		if (path_index == path.size() - 1)
 			path_index = 0;		
 	}
 	if (!isrun && path.size() > 0) 
-	{
-		glPushMatrix();
-		drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients, doingShadows);		
-		glPopMatrix();
+	{		
+		drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients, doingShadows);				
 	}
 	
 #ifdef EXAMPLE_SOLUTION
@@ -1174,238 +1278,127 @@ void TrainView::doPick(int mx, int my)
 		selectedCube = -1;
 }
 void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow)
-{	
-	float alpha = 0.3f;
+{
 	int height = 2;
 	int width = 5;
 	int length = 3;
-	float angle = 0.f;	
-	glPushMatrix();	
+	float angle = 0.f;
+	std::vector<int> buffersize;
+	QVector<float> train_vts;
+	train_vts.clear();
+		
 	pos.y += 3;
-	glTranslatef(pos.x, pos.y, pos.z);
-
+	glTranslatef(pos.x, pos.y, pos.z);		
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 	float w = 10 / 2, h = 10 / 2;
-
 	if (shadow) 
 	{
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_FRONT);
 		glFrontFace(GL_CW);
 	}	
-	angle = -radiansToDegrees(atan2(orient_cross.z, orient_cross.x));	
+	/*angle = -radiansToDegrees(atan2(orient_cross.z, orient_cross.x));	
 	glRotatef(angle, 0, 1, 0);	
 	if(angle > 0)
 		angle = -radiansToDegrees(acos(orient.y));
 	else
 		angle = radiansToDegrees(acos(orient.y));	
-	glRotatef(-angle, 0, 0, orient.z);	
-	//Train body		
-	if (!shadow)
-		glColor4f(127, 127, 127,1.f);
-	else
-		glColor4f(127, 127, 127, alpha);
-	glBegin(GL_QUADS);
-	glVertex3f(-width+1, height, -width + 1 - length);
-	glVertex3f(width-1, height, -width + 1 - length);
-	glVertex3f(width-1, height + 3, width - 3 );
-	glVertex3f(-width+1, height + 3, width - 3 );
+	glRotatef(-angle, 0, 0, orient.z);	*/
 
-	glVertex3f(-width+1, height + 3, width - 3 );
-	glVertex3f(-width+1, height , -width + 1 - length);
-	glVertex3f(-width+1, height , width - 3);
-	glVertex3f(-width+1, height + 3, width - 3 );
-
-	glVertex3f(width-1, height + 3, width - 3 );
-	glVertex3f(width-1, height , -width + 1 - length);
-	glVertex3f(width-1, height , width - 3 );
-	glVertex3f(width-1, height + 3, width - 3 );
-	glEnd();
-	if (!shadow)
-		glColor4f(0, 0, 0,1.f);
-	else
-		glColor4f(0, 0, 0, alpha);			
-	glBegin(GL_QUADS);		
-	//Bottom	
-	glNormal3f(0, -1, 0);
-	glVertex3f(-width,-height, -width - length);
-	glVertex3f(width, -height, -width - length);
-	glVertex3f(width, -height, width + length);
-	glVertex3f(-width, -height, width + length);
+	train_vts
+		<< -width + 1 << height << -width + 1 - length
+		<< width - 1 << height << -width + 1 - length
+		<< width - 1 << height + 3 << width - 3
+		<< width - 1 << height + 3 << width - 3
+		<< -width + 1 << height + 3 << width - 3
+		<< -width + 1 << height << -width + 1 - length;
+	train_vts
+		<< -width + 1 <<  height + 3 <<  width - 3
+		<< -width + 1 <<  height <<  -width + 1 - length
+		<< -width + 1 <<  height <<  width - 3
+		<< -width + 1 <<  height <<  width - 3
+		<< -width + 1 <<  height + 3 <<  width - 3
+		<< -width + 1 <<  height + 3 <<  width - 3;
+	train_vts
+		<< width - 1 <<  height + 3 <<  width - 3
+		<< width - 1 <<  height <<  -width + 1 - length
+		<< width - 1 <<  height <<  width - 3
+		<< width - 1 <<  height <<  width - 3
+		<< width - 1 <<  height + 3 <<  width - 3
+		<< width - 1 <<  height + 3 <<  width - 3;			
+	//Bottom
+	train_vts
+		<< -width <<  -height <<  -width - length
+		<< width <<  -height <<  -width - length
+		<< width <<  -height <<  width + length
+		<< width <<  -height <<  width + length
+		<< -width <<  -height <<  width + length
+		<< -width <<  -height <<  -width - length;		
 	//Top
-	glNormal3f(0, 1, 0);
-	glVertex3f(-width,height,-width - length);
-	glVertex3f(width,height,-width - length);
-	glVertex3f(width,height,width + length);
-	glVertex3f(-width,height,width + length);
+	train_vts
+		<< -width <<  height <<  -width - length
+		<< width <<  height <<  -width - length
+		<< width <<  height <<  width + length
+		<< width <<  height <<  width + length
+		<< -width <<  height <<  width + length
+		<< -width <<  height <<  -width - length;	
 	//Right
-	glNormal3f(-1, 0, 0);
-	glVertex3f(-width,height,-width - length);
-	glVertex3f(-width,-height,-width - length);
-	glVertex3f(-width,-height,width + length);
-	glVertex3f(-width,height,width + length);
+	train_vts
+		<< -width <<  height <<  -width - length
+		<< -width <<  -height <<  -width - length
+		<< -width <<  -height <<  width + length
+		<< -width <<  -height <<  width + length
+		<< -width <<  height <<  width + length
+		<< -width <<  height <<  -width - length;	
 	//Left
-	glNormal3f(1, 0, 0);
-	glVertex3f(width,height,-width - length);
-	glVertex3f(width,-height,-width - length);
-	glVertex3f(width,-height,width + length);
-	glVertex3f(width,height,width + length);
+	train_vts
+		<< width <<  height <<  -width - length
+		<< width <<  -height <<  -width - length
+		<< width <<  -height <<  width + length
+		<< width <<  -height <<  width + length
+		<< width <<  height <<  width + length
+		<< width <<  height <<  -width - length;
 	//Front
-	glNormal3f(0, 0, 1);
-	glVertex3f(width,height,width);
-	glVertex3f(-width,height,width);
-	glVertex3f(-width,-height,width);
-	glVertex3f(+width,-height,width);
+	train_vts
+		<< width <<  height <<  width
+		<< -width <<  height <<  width
+		<< -width <<  -height <<  width
+		<< -width <<  -height <<  width
+		<< width <<  -height <<  width
+		<< width <<  height <<  width;
 	//Rear
-	glNormal3f(0, 0, -1);
-	glVertex3f(width,height,-width);
-	glVertex3f(-width,height,-width);
-	glVertex3f(-width,-height,-width);
-	glVertex3f(width,-height,-width);
-	glEnd();
-	//Strip
-	if (!shadow)
-		glColor4f(255, 0, 0,1.f);
-	else
-		glColor4f(255, 0, 0, alpha);
-	glBegin(GL_QUADS);
-	//Right
-	float space = 0.1f;
-	glNormal3f(-1, 0, 0);
-	glVertex3f(-width- space, height/2, -width);
-	glVertex3f(-width- space, -height/2, -width);
-	glVertex3f(-width- space, -height/2, width);
-	glVertex3f(-width- space, height/2, width);
-	//Left
-	glNormal3f(1, 0, 0);
-	glVertex3f(width+ space, height/2, -width);
-	glVertex3f(width+ space, -height/2, -width);
-	glVertex3f(width+ space, -height/2, width);
-	glVertex3f(width+ space, height/2, width);
-	glEnd();
-	if (!shadow)
-		glColor4f(255, 255, 0,1.f);
-	else
-		glColor4f(255, 255, 0, alpha);
-	glBegin(GL_QUADS);
-	//Bottom
-	glNormal3f(0, -1, 0);
-	glVertex3f(-2, -0.2, -width -0.5);
-	glVertex3f(-1, -0.2, -width - 0.5);
-	glVertex3f(-1, -0.2, -width);
-	glVertex3f(-2, -0.2, -width);
-	////Top
-	glNormal3f(0, 1, 0);
-	glVertex3f(-2, 0.2, -width - 0.5);
-	glVertex3f(-1, 0.2, -width - 0.5);
-	glVertex3f(-1, 0.2, -width);
-	glVertex3f(-2, 0.2, -width);
-	////Front
-	glNormal3f(0, 0, 1);
-	glVertex3f(-1,0.2, -width - 0.5);
-	glVertex3f(-2,0.2, -width - 0.5);
-	glVertex3f(-2,-0.2, -width - 0.5);
-	glVertex3f(-1,-0.2, -width - 0.5);
-	////Left
-	glNormal3f(-1, 0,0);
-	glVertex3f(-1,0.2, -width - 0.5);
-	glVertex3f(-1,-0.2, -width - 0.5);
-	glVertex3f(-1,-0.2, -width);
-	glVertex3f(-1,0.2, -width);
-	////Right
-	glNormal3f(1, 0, 0);
-	glVertex3f(-2, 0.2, -width - 0.5);
-	glVertex3f(-2, -0.2, -width - 0.5);
-	glVertex3f(-2, -0.2, -width);
-	glVertex3f(-2, 0.2, -width);
-	glEnd();
-	//Left light
-	glBegin(GL_QUADS);
-	//Bottom
-	glNormal3f(1, -1, 0);
-	glVertex3f(1, -0.2, -width - 0.5);
-	glVertex3f(2, -0.2, -width - 0.5);
-	glVertex3f(2, -0.2, -width);
-	glVertex3f(2, -0.2, -width);
-	////Top
-	glNormal3f(0, 1, 0);
-	glVertex3f(1, 0.2, -width -0.5);
-	glVertex3f(2, 0.2, -width -0.5);
-	glVertex3f(2, 0.2, -width);
-	glVertex3f(1, 0.2, -width);
-	////Front
-	glNormal3f(0, 0, 1);
-	glVertex3f(2, 0.2, -width - 0.5);
-	glVertex3f(1, 0.2, -width - 0.5);
-	glVertex3f(1, -0.2, -width - 0.5);
-	glVertex3f(2, -0.2, -width - 0.5);
-	////Left
-	glNormal3f(-1, 0, 0);
-	glVertex3f(2, 0.2, -width - 0.5);
-	glVertex3f(2, -0.2, -width - 0.5);
-	glVertex3f(2, -0.2, -width);
-	glVertex3f(2, 0.2, -width);
-	////Right
-	glNormal3f(1, 0, 0);
-	glVertex3f(1, 0.2, -width - 0.5);
-	glVertex3f(1, -0.2, -width - 0.5);
-	glVertex3f(1, -0.2, -width);
-	glVertex3f(1, 0.2, -width);
-	glEnd();
-
-	if (!shadow)
-		glColor4f(255, 0, 128,1.f);
-	else
-		glColor4f(255, 0, 128, alpha);
-	//Wheels
-	float wheels_distance = 0.5f;
-	Pnt3f four_wheels[4] = 
-	{ 
-		Pnt3f(-width - wheels_distance,-height,-width),
-		Pnt3f(width + wheels_distance,-height,-width),
-		Pnt3f(width + wheels_distance,-height,width),
-		Pnt3f(-width - wheels_distance,-height,width)
-	};
-
-	glLineWidth(5);	
-	glBegin(GL_LINES);
-	glVertex3f(-width - wheels_distance,-height,-width);
-	glVertex3f(width + wheels_distance,-height,-width);
-	glVertex3f(width + wheels_distance,-height,width);
-	glVertex3f(-width - wheels_distance,-height,width);
-	glEnd();
-	float degree = 360.f / 8;
-		
-	for(Pnt3f w : four_wheels)
+	train_vts
+		<< width <<  height <<  -width
+		<< -width <<  height <<  -width
+		<< -width <<  -height <<  -width
+		<< -width <<  -height <<  -width
+		<< width <<  -height <<  -width
+		<< width <<  height <<  -width;	
+	int p = train_vts.size();
+	buffersize.push_back(p);
+	for (size_t i = 0; i < 54; i++)
 	{
-		vector<Pnt3f> wheel_points;
-		wheel_points.reserve(7);
-		glBegin(GL_LINE_LOOP);
-		for (size_t i = 1; i < 8; i++) 
-		{			
-			glVertex3f(w.x , w.y+sin(degree), w.z+cos(degree));						
-			degree += 360.f / 8;
-			wheel_points.push_back(Pnt3f(w.x, w.y + sin(degree), w.z + cos(degree)));
-		}
-		glEnd();
-		
-		for (Pnt3f p : wheel_points) 
-		{
-			glBegin(GL_LINES);
-			glVertex3f(p.x, p.y, p.z);
-			glVertex3f(w.x, w.y, w.z);
-			glEnd();
-		}				
-	}	
+		train_vts << 127 / 255.f;
+	}
+	for (size_t i = 0; i < 108; i++)
+	{
+		train_vts << 0;
+	}
+	buffersize.push_back(train_vts.size() - p);
+	trackobj->Begin();
+	if (!shadow)
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 1.f,clock(),1,0,0);
+	else
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 0.3f, clock(), 1, 0, 0);
+	trackobj->End();
+
 	if (shadow) 
 	{
 		glDisable(GL_CULL_FACE);
-	}	
-	glPopMatrix();
-
+	}
 	//Draw nenoroid
 	h = 10.f;
-	w = 9.f;
-	
+	w = 9.f;	
 	QVector<GLfloat> nendoroid_vts;
 	nendoroid_vts
 		<< -w << h << 2
@@ -1417,22 +1410,11 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	for (size_t i = 0; i < 12; i++)
 	{
 		nendoroid_vts << uv[i];
-	}
-	std::vector<int> buffersize;
+	}	
+	buffersize.clear();
 	buffersize.push_back(18);
 	buffersize.push_back(12);
-	glPushMatrix();
-	GLfloat mv[16];
-	glTranslatef(pos.x, pos.y, pos.z);
-	angle = -radiansToDegrees(atan2(orient_cross.z, orient_cross.x));
-	glRotatef(angle, 0, 1, 0);
-	if (angle > 0)
-		angle = -radiansToDegrees(acos(orient.y));
-	else
-		angle = radiansToDegrees(acos(orient.y));
-	glRotatef(-angle, 0, 0, orient.z);
-		
-	glGetFloatv(GL_MODELVIEW_MATRIX, mv);
+	
 	glEnable(GL_BLEND);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_ALPHA_TEST);
@@ -1442,16 +1424,15 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	glFrontFace(GL_CW);		
 	nendoroid_front->Begin();
 	nendoroid_front->shaderProgram->setUniformValue("tex", 9);
-	nendoroid_front->Render(ProjectionMatrex, mv, nendoroid_vts, buffersize,1,1,0,1);
+	nendoroid_front->Render(ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize,1,0,1,1,1);
 	nendoroid_front->End();	
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CW);		
 	nendoroid_back->Begin();
 	nendoroid_back->shaderProgram->setUniformValue("tex", 10);
-	nendoroid_back->Render(ProjectionMatrex, mv, nendoroid_vts, buffersize, 1, 1, 0,1);
+	nendoroid_front->Render(ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize, 1, 0, 1, 1, 1);
 	nendoroid_back->End();
 	glDisable(GL_ALPHA_TEST);
 	glDisable(GL_BLEND);
-	glDisable(GL_CULL_FACE);
-	glPopMatrix();
+	glDisable(GL_CULL_FACE);	
 }

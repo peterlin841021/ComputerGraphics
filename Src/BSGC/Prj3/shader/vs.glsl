@@ -5,7 +5,7 @@ layout(location = 2) in vec3 color;
 layout(location = 3) in vec3 normal;
 uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewMatrix;
-uniform int mode;
+uniform int colormode;
 // out vec3 vs_worldpos;
 // out vec3 vs_normal;
 // out vec3 RefractVec;
@@ -21,7 +21,7 @@ void main(void)
     //vs_worldpos = pos.xyz;
     //vec3 p = normalize(pos.xyz);
     //vs_normal = vec3(p.x,p.y,p.z);    
-    if(mode == 2)
+    if(colormode == 2)
     {
 		gl_Position = pos.xyww;		
 	}
