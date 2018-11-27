@@ -15,8 +15,6 @@
 #include<time.h>
 #include<cmath>
 #include<fstream>
-
-
 using namespace std;
 
 class AppMain;
@@ -88,21 +86,7 @@ public:
 			orients_cross = oc;
 		}
 	};
-	struct Model{
-		std::vector<GLfloat> vs;
-		std::vector<GLfloat> vts;
-		std::vector<GLfloat> vns;
-		std::vector<GLuint> fs;
-		Model() {
-
-		}
-		Model(vector<GLfloat> v, vector<GLfloat> vt, vector<GLfloat> vn, vector<GLuint> f) {
-			vs = v;
-			vts = vt;
-			vns = vn;
-			fs = f;
-		}
-	};
+	
 			
 	GLfloat ProjectionMatrex[16];
 	GLfloat ModelViewMatrex[16];

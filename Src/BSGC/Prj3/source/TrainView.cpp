@@ -4,10 +4,57 @@
 #include <fstream>
 
 float uv[12] = { 0.f , 0.f, 1.f , 0.f, 1.f , 1.f, 1.f , 1.f, 0.f , 1.f, 0.f , 0.f };
-QVector<GLfloat> model_vts;
+
 int pos_size = 0;
 int uv_size = 0;
-void loadmodel(string modelname, string texturename, QVector<QOpenGLTexture*> *textures);
+float angle = 0;
+struct Model
+{
+private:
+	QVector<GLfloat> values;
+	GLuint textureid;
+	std::vector<int> bufferoffset;
+	QMatrix4x4 mv;
+public:
+	Model()
+	{
+	
+	}
+	void setTextureid(GLuint id)
+	{
+		textureid = id;
+	}
+	GLuint getTextureid()
+	{
+		return textureid;
+	}
+	void setValues(QVector<GLfloat> v)
+	{
+		values = v;
+	}
+	QVector<GLfloat> getValues()
+	{
+		return values;
+	}
+	void setBufferOffset(std::vector<int> b)
+	{
+		bufferoffset = b;
+	}
+	std::vector<int> getBufferOffset()
+	{
+		return bufferoffset;
+	}
+	void setModelViewMatrix(QMatrix4x4 m)
+	{
+		mv = m;
+	}
+	QMatrix4x4 getModelViewMatrix()
+	{
+		return mv;
+	}
+};
+Model *mikuhair,*mikuface;
+void loadmodel(string modelname, string texturename, Model *model, QVector<QOpenGLTexture*> *textures);
 char *stringToChar(string str);
 void TrainView::initializeGL()
 {	
@@ -28,21 +75,25 @@ void TrainView::initializeGL()
 	nendoroid_front->Init(2);
 	miku3d = new Obj();
 	miku3d->Init(2);
-	
+	mikuhair = new Model();
+	mikuface = new Model();
 	QVector<QVector3D> vs, fs, vns;
 	QVector<QVector2D> vts;
-	loadmodel("./src/BSGC/prj3/3dmodel/mikuhair.obj", "./src/BSGC/prj3/3dmodel/mikuhair.png", &Textures);
+	
+	loadmodel("./src/BSGC/prj3/3dmodel/mikuhair.obj", "./src/BSGC/prj3/3dmodel/mikuhair.png", mikuhair,&Textures);
+	loadmodel("./src/BSGC/prj3/3dmodel/mikuface.obj", "./src/BSGC/prj3/3dmodel/mikuface.png", mikuface, &Textures);
 }
 char *stringToChar(string str)
 {
 	char *c = new char[str.length() + 1];
 	return strcpy(c, str.c_str());
 }
-void loadmodel(string modelname,string texturename, QVector<QOpenGLTexture*> *textures)
+void loadmodel(string modelname,string texturename, Model *model, QVector<QOpenGLTexture*> *textures)
 {
 	ifstream in;
 	QVector<QVector3D> v,vn,f;
 	QVector<QVector2D> vt;
+	QVector<GLfloat> model_vts;
 	in.open(modelname,ios::in || ios::binary);
 	if (!in)
 	{
@@ -129,11 +180,20 @@ void loadmodel(string modelname,string texturename, QVector<QOpenGLTexture*> *te
 		model_vts << vt[f[i].y()-1].x() << vt[f[i].y()-1].y();
 	}
 	uv_size = (model_vts.size() - pos_size);
+	model->setValues(model_vts);
 	QOpenGLTexture *tex = new QOpenGLTexture(QImage(stringToChar(texturename)));
 	tex->setMinificationFilter(QOpenGLTexture::Linear);
 	tex->setMagnificationFilter(QOpenGLTexture::Linear);
 	tex->setWrapMode(QOpenGLTexture::ClampToEdge);
+	model->setTextureid(textures->size());
 	textures->push_back(tex);
+	std::vector<int> bufferoffset;
+	bufferoffset.push_back(pos_size);
+	bufferoffset.push_back(uv_size);
+	model->setBufferOffset(bufferoffset);
+	QMatrix4x4 identity;
+	identity.setToIdentity();
+	model->setModelViewMatrix(identity);
 }
 void TrainView::initializeTexture()
 {	
@@ -221,19 +281,7 @@ void TrainView::paintGL()
 	glGetFloatv(GL_PROJECTION_MATRIX, ProjectionMatrex);
 	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 	//All texture
-
-	//Textures[0]->bind(0);//miku
-	//Textures[1]->bind(1);//land
-	//Textures[2]->bind(2);//water
-	//Textures[3]->bind(3);//sky1
-	//Textures[4]->bind(4);//sky2
-	//Textures[5]->bind(5);//sky3
-	//Textures[6]->bind(6);//sky4
-	//Textures[7]->bind(7);//sky5
-	//Textures[8]->bind(8);//sky6
-	//Textures[9]->bind(9);//nendoroid f
-	//Textures[10]->bind(10);	//nendoroid b
-	//Textures[11]->bind(11);	//3D miku
+	
 	for (size_t i = 0; i < Textures.size(); i++)
 	{
 		Textures[i]->bind(i);
@@ -479,16 +527,23 @@ void TrainView::paintGL()
 	water->End();
 	water_vertices.clear();
 	buffer_size.clear();
+	glPushMatrix();		
+		glScalef(5, 5, 5);
+		glTranslatef(0,20,0);
+		glRotatef(angle,0,1,0);
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		//Draw 3d models	
+		miku3d->Begin();
+		miku3d->shaderProgram->setUniformValue("tex", mikuhair->getTextureid());
 
-	//Draw 3d models
-	buffer_size.clear();
-	buffer_size.push_back(pos_size);
-	buffer_size.push_back(uv_size);	
-	miku3d->Begin();
-	miku3d->shaderProgram->setUniformValue("tex", 11);
-	miku3d->Render(ProjectionMatrex, ModelViewMatrex, model_vts, buffer_size,1,1,0,1);
-	miku3d->End();
-	//Draw shadows			
+	
+		miku3d->Render(ProjectionMatrex, ModelViewMatrex, mikuhair->getValues(), mikuhair->getBufferOffset(),1,1,0,1);
+
+		miku3d->shaderProgram->setUniformValue("tex", mikuface->getTextureid());
+		miku3d->Render(ProjectionMatrex, ModelViewMatrex, mikuface->getValues(), mikuface->getBufferOffset(), 1, 1, 0, 1);
+		miku3d->End();
+	glPopMatrix();
+	//Draw shadows
 	if (this->camera != 1) 
 	{
 		glTranslatef(0, shake, 0);
@@ -918,14 +973,14 @@ void TrainView::drawStuff(bool doingShadows)
 #ifdef EXAMPLE_SOLUTION
 	//drawTrack(this, doingShadows);
 	
-#endif
-	
+#endif	
 	t_temp = clock();
 	if (isrun && path.size() > 0) 
 	{		
 		if ((t_temp - current_time) > 1000.f/(train_speed*2)) 
 		{
 			current_time = t_temp;
+			angle += 1.f;
 			path_index++;
 		}
 		glPushMatrix();
