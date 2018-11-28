@@ -54,7 +54,9 @@ int index = 0;
 void My_Init()
 {
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	davis_uv = generate_ani_uv(400,400,72,1);
+	//davis_uv = generate_ani_uv(400,400,72,1);//miku
+	//davis_uv = generate_ani_uv(800, 340, 10, 4);//davis
+	davis_uv = generate_ani_uv(221, 395, 24, 1);//kizuna
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	uniform = new Uniform();
@@ -85,7 +87,7 @@ void My_Init()
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
 	//printf("Uniform:%d,%d,%d,%d\n", uniform->mv, uniform->pm, uniform->time, uniform->effect);
-	TextureData *tdata = &(Load_png("dancingmiku.png"));
+	TextureData *tdata = &(Load_png("kizuna_24.png"));
 	
 	if (!tdata->data)
 	{
@@ -173,7 +175,7 @@ void Render(glm::mat4 pm, glm::mat4 mm, vector<vec3> pos, vector<vec2> uv, vecto
 void My_Display()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClearColor(0, 0, 0, 0);
+	glClearColor(1, 1, 1, 1);
 	
 	glUseProgram(sp);
 	vector<vec3> pos;
