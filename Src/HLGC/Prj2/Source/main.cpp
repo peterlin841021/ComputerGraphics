@@ -54,7 +54,7 @@ int index = 0;
 void My_Init()
 {
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	davis_uv = generate_ani_uv(800,340,10,4.2);
+	davis_uv = generate_ani_uv(400,400,72,1);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	uniform = new Uniform();
@@ -85,7 +85,7 @@ void My_Init()
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
 	//printf("Uniform:%d,%d,%d,%d\n", uniform->mv, uniform->pm, uniform->time, uniform->effect);
-	TextureData *tdata = &(Load_png("davis.png"));
+	TextureData *tdata = &(Load_png("dancingmiku.png"));
 	
 	if (!tdata->data)
 	{
