@@ -5,6 +5,7 @@ using namespace glm;
 using namespace std;
 
 GLuint sp;
+float interval = 100;
 int shader_now = 0;
 GLuint hawk_texture;
 GLint Shader_now_Loc;
@@ -21,9 +22,39 @@ struct Uniform
 	GLuint effect;
 };
 Uniform *uniform;
+vector<vector<vec2>> generate_ani_uv(float origin_w, float origin_h,size_t wpart, size_t hpart)
+{
+	vector<vector<vec2>> output;
+	float xstart = 0.0,ystart = 1.0;
+	float xoffset = (origin_w / wpart) / origin_w;
+	float yoffset = (origin_h / hpart) / origin_h;
+	for (size_t i = 0; i < hpart; i++)
+	{
+		float x = 0;		
+		for (size_t j = 0; j < wpart; j++)
+		{
+			vector<vec2> v;
+			xstart += xoffset;
+			v.push_back(vec2(x, ystart));
+			v.push_back(vec2(xstart, ystart));
+			v.push_back(vec2(xstart, ystart - yoffset));
+			v.push_back(vec2(xstart, ystart - yoffset));
+			v.push_back(vec2(x, ystart - yoffset));
+			v.push_back(vec2(x, ystart));
+			x = xstart;
+			output.push_back(v);
+		}
+		ystart -= yoffset;
+		xstart = 0;	
+	}
+	return output;
+}
+vector<vector<vec2>> davis_uv;
+int index = 0;
 void My_Init()
 {
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	davis_uv = generate_ani_uv(800,340,10,4.2);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	uniform = new Uniform();
@@ -54,7 +85,7 @@ void My_Init()
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
 	//printf("Uniform:%d,%d,%d,%d\n", uniform->mv, uniform->pm, uniform->time, uniform->effect);
-	TextureData *tdata = &(Load_png("davis.jpg"));
+	TextureData *tdata = &(Load_png("davis.png"));
 	
 	if (!tdata->data)
 	{
@@ -155,13 +186,17 @@ void My_Display()
 	pos.push_back(vec3(-1, 1, 0));
 
 	vector<vec2> uv;
-	uv.push_back(vec2(0,1));
+	/*uv.push_back(vec2(0,1));
 	uv.push_back(vec2(1, 1));
 	uv.push_back(vec2(1, 0));
 
 	uv.push_back(vec2(1, 0));
 	uv.push_back(vec2(0,0));
-	uv.push_back(vec2(0,1));
+	uv.push_back(vec2(0,1));*/
+	for (size_t i = 0; i < davis_uv[index].size(); i++)
+	{
+		uv.push_back(davis_uv[index][i]);
+	}
 
 	vector<int> buffer_size;
 	buffer_size.push_back(6);
@@ -182,8 +217,11 @@ void My_Reshape(int width, int height)
 //Timer event
 void My_Timer(int val)
 {
+	index++;
+	if (index == davis_uv.size())
+		index = 0;
 	glutPostRedisplay();
-	glutTimerFunc(16, My_Timer, val);
+	glutTimerFunc(interval, My_Timer, val);
 }
 
 //Menu event
@@ -231,7 +269,7 @@ int main(int argc, char *argv[])
 	//Register GLUT callback functions
 	glutDisplayFunc(My_Display);
 	glutReshapeFunc(My_Reshape);
-	glutTimerFunc(16, My_Timer, 0);	
+	glutTimerFunc(interval, My_Timer, 0);
 	// Enter main event loop.
 	glutMainLoop();
 	return 0;
