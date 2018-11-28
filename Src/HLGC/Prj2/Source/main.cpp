@@ -5,7 +5,7 @@ using namespace glm;
 using namespace std;
 
 GLuint sp;
-float interval = 100;
+float interval = 200;
 int shader_now = 0;
 GLuint hawk_texture;
 GLint Shader_now_Loc;
@@ -87,7 +87,7 @@ void My_Init()
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
 	//printf("Uniform:%d,%d,%d,%d\n", uniform->mv, uniform->pm, uniform->time, uniform->effect);
-	TextureData *tdata = &(Load_png("kizuna_24.png"));
+	TextureData *tdata = &(Load_png("kizuna.png"));
 	
 	if (!tdata->data)
 	{
