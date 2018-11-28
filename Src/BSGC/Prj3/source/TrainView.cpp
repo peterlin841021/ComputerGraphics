@@ -1,5 +1,4 @@
-﻿#include <glew.h>
-#include <time.h>
+﻿#include <time.h>
 #include"TrainView.h"
 #include <fstream>
 
@@ -1123,9 +1122,9 @@ void TrainView::drawTrack(bool doingShadows)
 	buffer_size.push_back(color_counts);//Colors
 	trackobj->Begin();
 	if (!doingShadows)
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size,1.f,clock(),0,0,3);
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size,1.f,clock(),1,0,3);
 	else
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 1.f, clock(), 0, 0, 3);
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 1.f, clock(),1, 0, 3);
 	trackobj->End();
 	buffer_size.clear();
 	tracks.clear();
@@ -1146,10 +1145,10 @@ void TrainView::drawTrack(bool doingShadows)
 	}
 	buffer_size.push_back(color_counts);
 	trackobj->Begin();
-	if (!doingShadows)
+	/*if (!doingShadows)
 		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 1.f, clock(), 0, 0, 3);
 	else
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 1.f, clock(), 0, 0, 3);
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 1.f, clock(), 0, 0, 3);*/
 	trackobj->End();
 
 	//Draw sleepers
@@ -1162,10 +1161,10 @@ void TrainView::drawTrack(bool doingShadows)
 	}	
 	buffer_size.push_back(color_counts);
 	trackobj->Begin();
-	if (!doingShadows)
+	/*if (!doingShadows)
 		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 1.f, clock(), 0, 0, 3);
 	else
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 1.f, clock(), 0, 0, 3);
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 1.f, clock(), 0, 0, 3);*/
 	trackobj->End();
 
 	//Generate path	
