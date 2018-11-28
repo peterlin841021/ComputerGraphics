@@ -606,7 +606,7 @@ void TrainView::paintGL()
 	//glPopMatrix();
 	float right_position[15][3]
 	{
-		{0, 0, 0},
+		{0, 2.3f, 0},
 		{0, 2.5f, 0},
 
 		{0, 0, 0},
@@ -648,7 +648,7 @@ void TrainView::paintGL()
 			switch (i)
 			{
 			case 0://hair
-				glTranslatef(right_position[1][0], right_position[1][1], right_position[1][2]);				
+				glTranslatef(right_position[0][0], right_position[0][1], right_position[0][2]);
 				break;
 			case 1:
 				glTranslatef(right_position[1][0], right_position[1][1], right_position[1][2]);
@@ -724,7 +724,7 @@ void TrainView::paintGL()
 			switch (i)
 			{
 			case 0://hair
-				glTranslatef(right_position[1][0], right_position[1][1], right_position[1][2]);
+				glTranslatef(right_position[0][0], right_position[0][1], right_position[0][2]);
 				break;
 			case 1:
 				glTranslatef(right_position[1][0], right_position[1][1], right_position[1][2]);
@@ -846,12 +846,20 @@ void TrainView::setProjection()
 		Pnt3f p1 = path[path_index].points;
 		Pnt3f p2 = path[(path_index + 1) % path.size()].points;
 		Pnt3f dec = trainEnd - trainStart;
-		dec.normalize();		
+		dec.normalize();
+		
+		float angle = -radiansToDegrees(atan2(path[(path_index)].orients.z, path[(path_index)].orients.x));
+		//glRotatef(angle, 0, 1, 0);
+		if (angle > 0)
+			angle = -radiansToDegrees(acos(path[(path_index)].orients.y));
+		else
+			angle = radiansToDegrees(acos(path[(path_index)].orients.y));
+		glRotatef(-angle, 0, 0, path[(path_index)].orients.z);
 		gluLookAt
 		(
 			p1.x, p1.y + 20.0, p1.z,//camera coordinates
-			p2.x + dec.x, p2.y + 20.0, p2.z + dec.z,//look for
-			path[(path_index)].orients.x, path[(path_index)].orients.y, path[(path_index)].orients.z
+			p2.x + dec.x, p2.y + 20, p2.z + dec.z,//look for
+			0, 1, 0
 		);		
 		glPopMatrix();
 		update();
@@ -1287,7 +1295,14 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	train_vts.clear();
 		
 	pos.y += 3;
-	glTranslatef(pos.x, pos.y, pos.z);		
+	glTranslatef(pos.x, pos.y, pos.z);
+	angle = -radiansToDegrees(atan2(orient_cross.z, orient_cross.x));
+	glRotatef(angle, 0, 1, 0);
+	if(angle > 0)
+		angle = -radiansToDegrees(acos(orient.y));
+	else
+		angle = radiansToDegrees(acos(orient.y));
+	glRotatef(-angle, 0, 0, orient.z);
 	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 	float w = 10 / 2, h = 10 / 2;
 	if (shadow) 
@@ -1296,13 +1311,7 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 		glCullFace(GL_FRONT);
 		glFrontFace(GL_CW);
 	}	
-	/*angle = -radiansToDegrees(atan2(orient_cross.z, orient_cross.x));	
-	glRotatef(angle, 0, 1, 0);	
-	if(angle > 0)
-		angle = -radiansToDegrees(acos(orient.y));
-	else
-		angle = radiansToDegrees(acos(orient.y));	
-	glRotatef(-angle, 0, 0, orient.z);	*/
+	
 
 	train_vts
 		<< -width + 1 << height << -width + 1 - length
