@@ -316,104 +316,108 @@ void TrainView::paintGL()
 	glEnable(GL_LIGHTING);
 	setupObjects();
 
-	//Get modelview matrix	
-	glGetFloatv(GL_PROJECTION_MATRIX, ProjectionMatrex);
-	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-	//All texture
-	
-	for (size_t i = 0; i < Textures.size(); i++)
-	{
-		Textures[i]->bind(i);
-	}
-	
+	//Get modelview matrix
 	glDisable(GL_DEPTH_TEST);
-	std::vector<int> buffer_size;
-	float box_width = 1.f;
-	float box_offset = /*0.7f*/1.f;
-	float skyboxVertices[] = 
-	{		
-		/*//////positions//////*/		
-		//front
-		box_width,box_width + box_offset,box_width,
-		-box_width,box_width + box_offset,box_width,
-		-box_width,-box_width + box_offset,box_width,
-
-		-box_width,-box_width + box_offset,box_width,
-		box_width,-box_width + box_offset,box_width,
-		box_width,box_width + box_offset,box_width,
-
-		//back
-		-box_width,box_width + box_offset,-box_width,
-		box_width,box_width + box_offset,-box_width,
-		box_width,-box_width + box_offset,-box_width,
-
-		box_width,-box_width + box_offset,-box_width,
-		-box_width,-box_width + box_offset,-box_width,
-		-box_width,box_width + box_offset,-box_width,
-
-		//left
-		-box_width,box_width + box_offset,box_width,
-		-box_width,box_width + box_offset,-box_width,
-		-box_width,-box_width + box_offset,-box_width,
-
-		-box_width,-box_width + box_offset,-box_width,
-		-box_width,-box_width + box_offset,box_width,
-		-box_width,box_width + box_offset,box_width,
-
-		//right
-		box_width,box_width + box_offset,-box_width,
-		box_width,box_width + box_offset,box_width,
-		box_width,-box_width + box_offset,box_width,
-
-		box_width,-box_width + box_offset,box_width,
-		box_width,-box_width + box_offset,-box_width,
-		box_width,box_width + box_offset,-box_width,
-
-		//top
-		-box_width,box_width + box_offset,-box_width,
-		-box_width,box_width + box_offset,box_width,
-		box_width,box_width + box_offset,box_width,
-
-		box_width,box_width + box_offset,box_width,
-		box_width,box_width + box_offset,-box_width,
-		-box_width,box_width + box_offset,-box_width,
-
-		//bottom
-		box_width,-box_width + box_offset,-box_width,
-		box_width,-box_width + box_offset,box_width,
-		-box_width,-box_width + box_offset,box_width,
-
-		-box_width,-box_width + box_offset,box_width,
-		-box_width,-box_width + box_offset,-box_width,
-		box_width,-box_width + box_offset,-box_width
-	};
-	float boxsize = 1000.f;
-		
-	int vt_size = sizeof(skyboxVertices)/sizeof(float)/6;
-	int start = 0;
-	QVector<GLfloat> skybox_vts;
-	skybox->Begin();	
-	for (size_t i = 0; i < 6; i++)
-	{		
-		skybox->shaderProgram->setUniformValue("tex", 3+i);
-		start = i * vt_size;
-		for (size_t j = 0; j < vt_size; j++)
+	glPushMatrix();
+		glGetFloatv(GL_PROJECTION_MATRIX, ProjectionMatrex);
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		ModelViewMatrex[3] = 0;
+		ModelViewMatrex[7] = 0;
+		ModelViewMatrex[11] = 0;
+		//All texture
+	
+		for (size_t i = 0; i < Textures.size(); i++)
 		{
-			skybox_vts << skyboxVertices[start+j] * boxsize;
-		}
-		for (size_t j = 0; j < 12; j++)
-		{
-			skybox_vts << uv[j];
-		}
-		buffer_size.push_back(18);
-		buffer_size.push_back(12);
+			Textures[i]->bind(i);
+		}					
+		std::vector<int> buffer_size;
+		float box_width = 1.f;
+		float box_offset = /*0.7f*/1.f;
+		float skyboxVertices[] = 
+		{		
+			/*//////positions//////*/		
+			//front
+			box_width,box_width + box_offset,box_width,
+			-box_width,box_width + box_offset,box_width,
+			-box_width,-box_width + box_offset,box_width,
+
+			-box_width,-box_width + box_offset,box_width,
+			box_width,-box_width + box_offset,box_width,
+			box_width,box_width + box_offset,box_width,
+
+			//back
+			-box_width,box_width + box_offset,-box_width,
+			box_width,box_width + box_offset,-box_width,
+			box_width,-box_width + box_offset,-box_width,
+
+			box_width,-box_width + box_offset,-box_width,
+			-box_width,-box_width + box_offset,-box_width,
+			-box_width,box_width + box_offset,-box_width,
+
+			//left
+			-box_width,box_width + box_offset,box_width,
+			-box_width,box_width + box_offset,-box_width,
+			-box_width,-box_width + box_offset,-box_width,
+
+			-box_width,-box_width + box_offset,-box_width,
+			-box_width,-box_width + box_offset,box_width,
+			-box_width,box_width + box_offset,box_width,
+
+			//right
+			box_width,box_width + box_offset,-box_width,
+			box_width,box_width + box_offset,box_width,
+			box_width,-box_width + box_offset,box_width,
+
+			box_width,-box_width + box_offset,box_width,
+			box_width,-box_width + box_offset,-box_width,
+			box_width,box_width + box_offset,-box_width,
+
+			//top
+			-box_width,box_width + box_offset,-box_width,
+			-box_width,box_width + box_offset,box_width,
+			box_width,box_width + box_offset,box_width,
+
+			box_width,box_width + box_offset,box_width,
+			box_width,box_width + box_offset,-box_width,
+			-box_width,box_width + box_offset,-box_width,
+
+			//bottom
+			box_width,-box_width + box_offset,-box_width,
+			box_width,-box_width + box_offset,box_width,
+			-box_width,-box_width + box_offset,box_width,
+
+			-box_width,-box_width + box_offset,box_width,
+			-box_width,-box_width + box_offset,-box_width,
+			box_width,-box_width + box_offset,-box_width
+		};
+		float boxsize = 1000.f;
 		
-		skybox->Render(ProjectionMatrex, ModelViewMatrex, skybox_vts, buffer_size,1.f,clock(),1,2,1);
-		skybox_vts.clear();
-		buffer_size.clear();
-	}		
-	skybox->End();
-	glEnable(GL_DEPTH_TEST);		
+		int vt_size = sizeof(skyboxVertices)/sizeof(float)/6;
+		int start = 0;
+		QVector<GLfloat> skybox_vts;
+		skybox->Begin();	
+		for (size_t i = 0; i < 6; i++)
+		{		
+			skybox->shaderProgram->setUniformValue("tex", 3+i);
+			start = i * vt_size;
+			for (size_t j = 0; j < vt_size; j++)
+			{
+				skybox_vts << skyboxVertices[start+j] * boxsize;
+			}
+			for (size_t j = 0; j < 12; j++)
+			{
+				skybox_vts << uv[j];
+			}
+			buffer_size.push_back(18);
+			buffer_size.push_back(12);
+		
+			skybox->Render(ProjectionMatrex, ModelViewMatrex, skybox_vts, buffer_size,1.f,clock(),1,2,1);
+			skybox_vts.clear();
+			buffer_size.clear();
+		}		
+		skybox->End();
+	glPopMatrix();
+	glEnable(GL_DEPTH_TEST);
 	//Draw Miku
 	QVector<GLfloat> miku_vts;
 	miku_vts

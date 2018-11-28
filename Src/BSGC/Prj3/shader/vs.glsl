@@ -23,7 +23,8 @@ void main(void)
     //vs_normal = vec3(p.x,p.y,p.z);    
     if(colormode == 2)
     {
-		gl_Position = pos.xyww;		
+		//gl_Position = pos.xyww;
+		gl_Position = pos;
 	}
     else
 	{        
