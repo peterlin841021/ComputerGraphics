@@ -46,9 +46,40 @@ public:
 std::vector<Model*> models;
 void loadmodel(string modelname, string texturename, Model *model, QVector<QOpenGLTexture*> *textures);
 char *stringToChar(string str);
+void generateTextureCube(std::vector<QImage> images, QVector<QOpenGLTexture*> *textures)
+{
+	/*GLuint id;
+	glGenTextures(1,&id);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+	size_t w = images->at(0).width(),h = images->at(0).height();
+	
+	for (int i = 0; i < 6; i++) 
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, (void *)images->at(i).bits());
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	return id;*/
+	QOpenGLTexture *t = new QOpenGLTexture(QOpenGLTexture::TargetCubeMap);
+	t->create();
+	t->setSize(images.at(0).width(), images.at(0).height());
+	t->setFormat(QOpenGLTexture::RGBAFormat);
+	t->allocateStorage();
+	t->setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
+	t->setData(0, 0, QOpenGLTexture::CubeMapNegativeZ, QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, (void*)images.at(0).bits());
+	t->setData(0, 0, QOpenGLTexture::CubeMapPositiveZ, QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, (void*)images.at(1).bits());
+	t->setData(0, 0, QOpenGLTexture::CubeMapNegativeX, QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, (void*)images.at(2).bits());
+	t->setData(0, 0, QOpenGLTexture::CubeMapPositiveX, QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, (void*)images.at(3).bits());
+	t->setData(0, 0, QOpenGLTexture::CubeMapPositiveY, QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, (void*)images.at(4).bits());
+	t->setData(0, 0, QOpenGLTexture::CubeMapNegativeY, QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, (void*)images.at(5).bits());
+	t->setWrapMode(QOpenGLTexture::ClampToEdge);
+	textures->push_back(t);
+}
 void TrainView::initializeGL()
-{	
-	initializeTexture();
+{		
 	trackobj = new Obj();
 	trackobj->Init(2);
 	trainobj = new Obj();
@@ -61,12 +92,11 @@ void TrainView::initializeGL()
 	water->Init(2);	
 	skybox = new Obj();
 	skybox->Init(2);
-	nendoroid_back = new Obj();
-	nendoroid_back->Init(2);
-	nendoroid_front = new Obj();
-	nendoroid_front->Init(2);
+	nendoroid = new Obj();
+	nendoroid->Init(2);		
 	miku3d = new Obj();
 	miku3d->Init(2);
+	initializeTexture();
 	Model *mikuhair, *mikuface,
 		*mikubody,*mikuskirt,
 		*mikuLFM,*mikuLHM,*mikuLH,
@@ -236,15 +266,22 @@ void loadmodel(string modelname,string texturename, Model *model, QVector<QOpenG
 }
 void TrainView::initializeTexture()
 {	
+	miku->textureId = Textures.size();
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/miku_transparent.png")));
+	land->textureId = Textures.size();
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/underwater.jpg")));
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/water_texture.png")));
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_front.jpg")));
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_back.jpg")));
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_left.jpg")));
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_right.jpg")));
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_top.jpg")));
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/hangingstone_bottom.jpg")));
+	water->textureId = Textures.size();
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/water_texture.png")));	
+	std::vector<QImage> skybox_imgs;
+	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_front.jpg"));
+	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_back.jpg"));
+	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_left.jpg"));
+	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_right.jpg"));
+	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_top.jpg"));
+	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_bottom.jpg"));
+	generateTextureCube(skybox_imgs,&Textures);
+	skybox->textureId = Textures.size()-1;	
+	nendoroid->textureId = Textures.size();
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/nendoroid_front.png")));
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/nendoroid_back.png")));		
 }
@@ -276,7 +313,8 @@ void TrainView::paintGL()
 	glClearColor(0,0,0,0);
 	glClearStencil(0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	glEnable(GL_DEPTH);	
+	glEnable(GL_DEPTH);
+	
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -315,109 +353,88 @@ void TrainView::paintGL()
 
 	glEnable(GL_LIGHTING);
 	setupObjects();
-
-	//Get modelview matrix
+	//All texture	
+	for (size_t i = 0; i < Textures.size(); i++)
+	{
+		Textures[i]->bind(i);
+	}
 	glDisable(GL_DEPTH_TEST);
 	glPushMatrix();
+	glTranslatef(0, 700, 0);
 		glGetFloatv(GL_PROJECTION_MATRIX, ProjectionMatrex);
-		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-		ModelViewMatrex[3] = 0;
-		ModelViewMatrex[7] = 0;
-		ModelViewMatrex[11] = 0;
-		//All texture
-	
-		for (size_t i = 0; i < Textures.size(); i++)
-		{
-			Textures[i]->bind(i);
-		}					
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);								
 		std::vector<int> buffer_size;
 		float box_width = 1.f;
-		float box_offset = /*0.7f*/1.f;
+		float box_offset = 1.f;
 		float skyboxVertices[] = 
 		{		
-			/*//////positions//////*/		
-			//front
-			box_width,box_width + box_offset,box_width,
-			-box_width,box_width + box_offset,box_width,
-			-box_width,-box_width + box_offset,box_width,
+			/*//////positions//////*/
+			-1.0f,  1.0f, -1.0f,
+			-1.0f, -1.0f, -1.0f,
+			1.0f, -1.0f, -1.0f,
+			1.0f, -1.0f, -1.0f,
+			1.0f,  1.0f, -1.0f,
+			-1.0f,  1.0f, -1.0f,
 
-			-box_width,-box_width + box_offset,box_width,
-			box_width,-box_width + box_offset,box_width,
-			box_width,box_width + box_offset,box_width,
+			-1.0f, -1.0f,  1.0f,
+			-1.0f, -1.0f, -1.0f,
+			-1.0f,  1.0f, -1.0f,
+			-1.0f,  1.0f, -1.0f,
+			-1.0f,  1.0f,  1.0f,
+			-1.0f, -1.0f,  1.0f,
 
-			//back
-			-box_width,box_width + box_offset,-box_width,
-			box_width,box_width + box_offset,-box_width,
-			box_width,-box_width + box_offset,-box_width,
+			1.0f, -1.0f, -1.0f,
+			1.0f, -1.0f,  1.0f,
+			1.0f,  1.0f,  1.0f,
+			1.0f,  1.0f,  1.0f,
+			1.0f,  1.0f, -1.0f,
+			1.0f, -1.0f, -1.0f,
 
-			box_width,-box_width + box_offset,-box_width,
-			-box_width,-box_width + box_offset,-box_width,
-			-box_width,box_width + box_offset,-box_width,
+			-1.0f, -1.0f,  1.0f,
+			-1.0f,  1.0f,  1.0f,
+			1.0f,  1.0f,  1.0f,
+			1.0f,  1.0f,  1.0f,
+			1.0f, -1.0f,  1.0f,
+			-1.0f, -1.0f,  1.0f,
 
-			//left
-			-box_width,box_width + box_offset,box_width,
-			-box_width,box_width + box_offset,-box_width,
-			-box_width,-box_width + box_offset,-box_width,
+			-1.0f,  1.0f, -1.0f,
+			1.0f,  1.0f, -1.0f,
+			1.0f,  1.0f,  1.0f,
+			1.0f,  1.0f,  1.0f,
+			-1.0f,  1.0f,  1.0f,
+			-1.0f,  1.0f, -1.0f,
 
-			-box_width,-box_width + box_offset,-box_width,
-			-box_width,-box_width + box_offset,box_width,
-			-box_width,box_width + box_offset,box_width,
-
-			//right
-			box_width,box_width + box_offset,-box_width,
-			box_width,box_width + box_offset,box_width,
-			box_width,-box_width + box_offset,box_width,
-
-			box_width,-box_width + box_offset,box_width,
-			box_width,-box_width + box_offset,-box_width,
-			box_width,box_width + box_offset,-box_width,
-
-			//top
-			-box_width,box_width + box_offset,-box_width,
-			-box_width,box_width + box_offset,box_width,
-			box_width,box_width + box_offset,box_width,
-
-			box_width,box_width + box_offset,box_width,
-			box_width,box_width + box_offset,-box_width,
-			-box_width,box_width + box_offset,-box_width,
-
-			//bottom
-			box_width,-box_width + box_offset,-box_width,
-			box_width,-box_width + box_offset,box_width,
-			-box_width,-box_width + box_offset,box_width,
-
-			-box_width,-box_width + box_offset,box_width,
-			-box_width,-box_width + box_offset,-box_width,
-			box_width,-box_width + box_offset,-box_width
-		};
-		float boxsize = 1000.f;
-		
-		int vt_size = sizeof(skyboxVertices)/sizeof(float)/6;
-		int start = 0;
+			-1.0f, -1.0f, -1.0f,
+			-1.0f, -1.0f,  1.0f,
+			1.0f, -1.0f, -1.0f,
+			1.0f, -1.0f, -1.0f,
+			-1.0f, -1.0f,  1.0f,
+			1.0f, -1.0f,  1.0f
+		};		
+		float boxsize = 1000;
+		for (size_t i = 0; i < sizeof(skyboxVertices)/ sizeof(float); i++)
+		{
+			skyboxVertices[i] *= boxsize;
+		}
+		int vt_size = sizeof(skyboxVertices)/sizeof(float);
 		QVector<GLfloat> skybox_vts;
 		skybox->Begin();	
-		for (size_t i = 0; i < 6; i++)
-		{		
-			skybox->shaderProgram->setUniformValue("tex", 3+i);
-			start = i * vt_size;
-			for (size_t j = 0; j < vt_size; j++)
-			{
-				skybox_vts << skyboxVertices[start+j] * boxsize;
-			}
-			for (size_t j = 0; j < 12; j++)
-			{
-				skybox_vts << uv[j];
-			}
-			buffer_size.push_back(18);
-			buffer_size.push_back(12);
 		
-			skybox->Render(ProjectionMatrex, ModelViewMatrex, skybox_vts, buffer_size,1.f,clock(),1,2,1);
-			skybox_vts.clear();
-			buffer_size.clear();
-		}		
+		skybox->shaderProgram->setUniformValue("texcube", skybox->textureId);
+		
+		for (size_t i = 0; i < vt_size; i++)
+		{
+			skybox_vts << skyboxVertices[i];
+		}
+		
+		buffer_size.push_back(vt_size);
+		buffer_size.push_back(0);
+		skybox->Render(ProjectionMatrex, ModelViewMatrex, skybox_vts, buffer_size, 0.5, clock(), 1, 1, 2);
+		skybox_vts.clear();
+		buffer_size.clear();
 		skybox->End();
 	glPopMatrix();
-	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);		
 	//Draw Miku
 	QVector<GLfloat> miku_vts;
 	miku_vts
@@ -445,7 +462,7 @@ void TrainView::paintGL()
 	glScalef(5,5,5);
 	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		miku->Begin();
-		miku->shaderProgram->setUniformValue("tex", 0);
+		miku->shaderProgram->setUniformValue("tex", miku->textureId);
 		miku->Render(ProjectionMatrex, ModelViewMatrex, miku_vts, buffer_size,1.f,clock(),1,1,1);
 		miku->End();
 	glPopMatrix();
@@ -456,7 +473,7 @@ void TrainView::paintGL()
 	glScalef(5, 5, 5);
 	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		miku->Begin();
-		miku->shaderProgram->setUniformValue("tex", 0);
+		miku->shaderProgram->setUniformValue("tex", miku->textureId);
 		miku->Render(ProjectionMatrex, ModelViewMatrex, miku_vts, buffer_size, 1.f, clock(), 1, 1, 1);
 		miku->End();
 	glPopMatrix();
@@ -472,7 +489,7 @@ void TrainView::paintGL()
 	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 	//Draw land	
 		land->Begin();
-		land->shaderProgram->setUniformValue("tex",1);
+		land->shaderProgram->setUniformValue("tex", land->textureId);
 		QVector<GLfloat> land_vts;
 		land_vts
 			<< -boxsize << 0 << -boxsize
@@ -509,7 +526,7 @@ void TrainView::paintGL()
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);		
 		water->Begin();
-		water->shaderProgram->setUniformValue("tex", 2);
+		water->shaderProgram->setUniformValue("tex", water->textureId);
 		float ratio = 25;
 		float xfrom = 0;
 		float zfrom = 0;
@@ -1434,16 +1451,16 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	glAlphaFunc(GL_GREATER, 0.1);	
 	glCullFace(GL_FRONT);
 	glFrontFace(GL_CW);		
-	nendoroid_front->Begin();
-	nendoroid_front->shaderProgram->setUniformValue("tex", 9);
-	nendoroid_front->Render(ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize,1,0,1,1,1);
-	nendoroid_front->End();	
+	nendoroid->Begin();
+	nendoroid->shaderProgram->setUniformValue("tex", nendoroid->textureId);
+	nendoroid->Render(ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize,1,0,1,1,1);
+	nendoroid->End();
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CW);		
-	nendoroid_back->Begin();
-	nendoroid_back->shaderProgram->setUniformValue("tex", 10);
-	nendoroid_front->Render(ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize, 1, 0, 1, 1, 1);
-	nendoroid_back->End();
+	nendoroid->Begin();
+	nendoroid->shaderProgram->setUniformValue("tex", nendoroid->textureId + 1);
+	nendoroid->Render(ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize, 1, 0, 1, 1, 1);
+	nendoroid->End();
 	glDisable(GL_ALPHA_TEST);
 	glDisable(GL_BLEND);
 	glDisable(GL_CULL_FACE);	

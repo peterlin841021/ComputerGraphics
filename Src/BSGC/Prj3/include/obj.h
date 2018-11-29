@@ -20,13 +20,13 @@ public:
 	QOpenGLShaderProgram * shaderProgram;
 	QOpenGLShader* vertexShader;
 	QOpenGLShader* fragmentShader;
-
 	QOpenGLVertexArrayObject vao;
 	QOpenGLBuffer vvbo;
 	QOpenGLBuffer uvbo;
 	QOpenGLBuffer cvbo;
 	QOpenGLBuffer fbo;
 	QOpenGLBuffer indexbo;
+	GLuint textureId;
 public:
 	Obj();
 	void Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix,QVector<GLfloat> values,std::vector<int> buffersize,float alpha,float time,int linetype, int colorMode,int effect);

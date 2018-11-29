@@ -3,6 +3,7 @@ const vec2 iResolution = vec2(800., 800.);
 // in vec3 vs_worldpos;
 // in vec3 vs_normal;
 in vec2 texturecoord;
+in vec3 texturecoord3d;
 in vec3 fcolor;
 // in vec3 RefractVec;
 // in vec3 ReflectVec;
@@ -16,6 +17,7 @@ out vec4 fragmentcolor;
 uniform int effect;
 uniform float alpha;
 uniform sampler2D tex;
+uniform samplerCube texcube;
 uniform float time;
 /***********Nebula smoke**************/
 #define HASHSCALE1 443.8975
@@ -119,7 +121,7 @@ float drawCircle(vec2 uv, vec2 center, float radius)
 void snow()
 {
    vec2 uv =  gl_FragCoord.xy  / iResolution.x;
-   vec3 color = texture(tex,texturecoord).rgb;  
+   vec3 color = texture(texcube,texturecoord3d).rgb;  
    fragmentcolor = vec4(color, 1.0);  
    
    float j;   
@@ -267,6 +269,8 @@ void main(void)
 		case(2)://Draw skybox
 		{
 			snow();
+			//fragmentcolor = texture(texcube,texturecoord3d);
+			//fragmentcolor = vec4(vec3(0,0,1),alpha);
             break;
 		}
         case(3)://Nebula smoke

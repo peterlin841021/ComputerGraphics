@@ -65,11 +65,14 @@ void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GL
 		shaderProgram->setAttributeBuffer(2, GL_FLOAT, buffersize[0] * sizeof(GLfloat),3, 0);
 		shaderProgram->enableAttributeArray(2);
 	}
-	else if(colorMode == 1 || colorMode == 2)
+	else if(colorMode == 1)
 	{
-		vvbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
-		shaderProgram->setAttributeBuffer(1, GL_FLOAT, buffersize[0] * sizeof(GLfloat), 2, 0);
-		shaderProgram->enableAttributeArray(1);
+		if (buffersize[1] != 0)
+		{
+			vvbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
+			shaderProgram->setAttributeBuffer(1, GL_FLOAT, buffersize[0] * sizeof(GLfloat), 2, 0);
+			shaderProgram->enableAttributeArray(1);
+		}		
 	}
 	switch (linetype)
 	{

@@ -105,8 +105,7 @@ public:
 	Obj *skybox;
 	Obj *water;
 	Obj *land;
-	Obj *nendoroid_back;
-	Obj *nendoroid_front;
+	Obj *nendoroid;
 	Obj * miku3d;
 	float t_temp = 0;	
 	bool trackupdate = true;
