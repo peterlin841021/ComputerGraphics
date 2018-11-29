@@ -5,7 +5,7 @@ using namespace glm;
 using namespace std;
 
 GLuint sp;
-float interval = 200;
+float interval = 100;
 int shader_now = 0;
 GLuint hawk_texture;
 GLint Shader_now_Loc;
@@ -87,11 +87,11 @@ void My_Init()
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
 	//printf("Uniform:%d,%d,%d,%d\n", uniform->mv, uniform->pm, uniform->time, uniform->effect);
-	TextureData *tdata = &(Load_png("t.png"));
+	TextureData *tdata = &(Load_png("miku_75.png"));
 	
 	if (!tdata->data)
 	{
-		printf("Read image fail!");
+		printf("Read image fail!\n");
 		system("pause");
 	}
 	else
