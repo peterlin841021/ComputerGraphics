@@ -57,6 +57,15 @@ void My_Init()
 	davis_uv = generate_ani_uv(15000,200,75,1);//miku
 	//davis_uv = generate_ani_uv(800, 340, 10, 4);//davis
 	//davis_uv = generate_ani_uv(5304, 395, 24, 1);//kizuna
+	/*vector<vec2> temp;
+	temp.push_back(vec2(0, 1));
+	temp.push_back(vec2(1, 1));	
+	temp.push_back(vec2(1, 0));
+	temp.push_back(vec2(1, 0));
+	temp.push_back(vec2(0, 0));
+	temp.push_back(vec2(0, 1));*/	
+	//davis_uv.push_back(temp);
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	uniform = new Uniform();
