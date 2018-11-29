@@ -54,9 +54,9 @@ int index = 0;
 void My_Init()
 {
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	//davis_uv = generate_ani_uv(400,400,72,1);//miku
+	davis_uv = generate_ani_uv(15000,200,75,1);//miku
 	//davis_uv = generate_ani_uv(800, 340, 10, 4);//davis
-	davis_uv = generate_ani_uv(221, 395, 24, 1);//kizuna
+	//davis_uv = generate_ani_uv(5304, 395, 24, 1);//kizuna
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	uniform = new Uniform();
@@ -87,7 +87,7 @@ void My_Init()
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
 	//printf("Uniform:%d,%d,%d,%d\n", uniform->mv, uniform->pm, uniform->time, uniform->effect);
-	TextureData *tdata = &(Load_png("kizuna.png"));
+	TextureData *tdata = &(Load_png("t.png"));
 	
 	if (!tdata->data)
 	{
@@ -187,14 +187,7 @@ void My_Display()
 	pos.push_back(vec3(-1, -1, 0));
 	pos.push_back(vec3(-1, 1, 0));
 
-	vector<vec2> uv;
-	/*uv.push_back(vec2(0,1));
-	uv.push_back(vec2(1, 1));
-	uv.push_back(vec2(1, 0));
-
-	uv.push_back(vec2(1, 0));
-	uv.push_back(vec2(0,0));
-	uv.push_back(vec2(0,1));*/
+	vector<vec2> uv;	
 	for (size_t i = 0; i < davis_uv[index].size(); i++)
 	{
 		uv.push_back(davis_uv[index][i]);
