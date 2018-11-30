@@ -4,10 +4,17 @@
 
 #define VT_WATER false
 
+bool trackupdate = true;
+int train_speed = 5;
+int uv_size = 0;
+float t_temp = 0;
 float uv[12] = { 0.f , 0.f, 1.f , 0.f, 1.f , 1.f, 1.f , 1.f, 0.f , 1.f, 0.f , 0.f };
 int pos_size = 0;
-int uv_size = 0;
 float angle = 0;
+float offset = 0.f;
+float wt = 0;
+float shake = 0.5f;
+GLuint highmap_textureid = 0;
 struct Model
 {
 private:
@@ -90,7 +97,10 @@ void TrainView::initializeGL()
 	land = new Obj();
 	land->Init(2);	
 	water = new Obj();
-	water->Init(2);	
+	if(VT_WATER)
+		water->Init(2);
+	else
+		water->Init(4);
 	skybox = new Obj();
 	skybox->Init(2);
 	nendoroid = new Obj();
@@ -284,7 +294,10 @@ void TrainView::initializeTexture()
 	skybox->textureId = Textures.size()-1;	
 	nendoroid->textureId = Textures.size();
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/nendoroid_front.png")));
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/nendoroid_back.png")));		
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/nendoroid_back.png")));
+	//Highmap
+	highmap_textureid = Textures.size();
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/heightmap.png")));
 }
 TrainView::TrainView(QWidget *parent) :  
 QGLWidget(parent)  
@@ -306,7 +319,7 @@ void TrainView::changeSpeed(int speed)
 	train_speed = speed;		
 }
 void TrainView::paintGL()
-{		
+{
 	glViewport(0,0,width(),height());
 	glClearColor(0,0,0,0);
 	glClearStencil(0);
@@ -337,6 +350,8 @@ void TrainView::paintGL()
 	GLfloat whiteLight[]		= {1.0f, 1.0f, 1.0f, 1.0};
 	GLfloat blueLight[]			= {.1f,.1f,.3f,1.0};
 	GLfloat grayLight[]			= {.3f, .3f, .3f, 1.0};
+	std::vector<int> buffer_size;
+	float boxsize = 1000;
 
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition1);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteLight);
@@ -356,14 +371,12 @@ void TrainView::paintGL()
 	{
 		Textures[i]->bind(i);
 	}
+	//Draw skybox
 	glDisable(GL_DEPTH_TEST);
 	glPushMatrix();
 	glTranslatef(0, 700, 0);
 		glGetFloatv(GL_PROJECTION_MATRIX, ProjectionMatrex);
-		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);								
-		std::vector<int> buffer_size;
-		float box_width = 1.f;
-		float box_offset = 1.f;
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		float skyboxVertices[] = 
 		{		
 			/*//////positions//////*/
@@ -409,7 +422,7 @@ void TrainView::paintGL()
 			-1.0f, -1.0f,  1.0f,
 			1.0f, -1.0f,  1.0f
 		};		
-		float boxsize = 1000;
+		
 		for (size_t i = 0; i < sizeof(skyboxVertices)/ sizeof(float); i++)
 		{
 			skyboxVertices[i] *= boxsize;
@@ -432,8 +445,9 @@ void TrainView::paintGL()
 		buffer_size.clear();
 		skybox->End();
 	glPopMatrix();
-	glEnable(GL_DEPTH_TEST);		
-	//Draw Miku
+	glEnable(GL_DEPTH_TEST);
+
+	//Draw Miku 2D
 	QVector<GLfloat> miku_vts;
 	miku_vts
 		<< -15.1f << 40.8f << 0.f
@@ -478,14 +492,14 @@ void TrainView::paintGL()
 	glDisable(GL_ALPHA_TEST);
 	glDisable(GL_BLEND);
 
-	glPushMatrix();
 	//Draw track and train
+	glPushMatrix();	
 		drawStuff();
 	glPopMatrix();
 
-	glPushMatrix();
-	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 	//Draw land	
+	glPushMatrix();
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);	
 		land->Begin();
 		land->shaderProgram->setUniformValue("tex", land->textureId);
 		QVector<GLfloat> land_vts;
@@ -507,24 +521,25 @@ void TrainView::paintGL()
 		land->End();
 	glPopMatrix();
 
+	//Draw water
 	glPushMatrix();
-	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-		//Draw water
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);		
 		float wave_t = 0;
 		int water_size = 70;
 		float min = -boxsize;
 		float amplitude = 2.5f;
 		float speed = 0.0001f;
 		float step = boxsize / water_size * 2;
-		float old_height = 0;
+		float old_wave_height = 0;
 		float wy = 8.f;
-		float height = 0.f;
+		float wave_height = 0.f;
 
 		setupFloor();
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);		
 		water->Begin();
 		water->shaderProgram->setUniformValue("tex", water->textureId);
+		water->shaderProgram->setUniformValue("heightmap", highmap_textureid);
 		float ratio = 25;
 		float xfrom = 0;
 		float zfrom = 0;
@@ -541,25 +556,25 @@ void TrainView::paintGL()
 			wt = clock();		
 			for (int j = 0; j < water_size; j++)
 			{			
-				if(old_height == 0)
-					old_height = amplitude * sin(step + wt * speed / 5.f);
+				if(old_wave_height == 0)
+					old_wave_height = amplitude * sin(step + wt * speed / 5.f);
 				else
-					old_height = height;
+					old_wave_height = wave_height;
 
-				height = amplitude * sin(step + wt*((water_size - i)*(j+1))/5.f* speed/5.f);
+				wave_height = amplitude * sin(step + wt*((water_size - i)*(j+1))/5.f* speed/5.f);
 				xfrom = min + step * j + offset;
 				xto = min + step * (j + 1) + offset;
 				zfrom = min + step * i;
 				zto = min + step * (i + 1);
 				//pos
 				water_vertices
-					<< xfrom  << wy + old_height << zto 
-					<< xto  << wy + height << zto 
-					<< xto  << wy + height << zfrom;
+					<< xfrom  << wy + old_wave_height << zto 
+					<< xto  << wy + wave_height << zto 
+					<< xto  << wy + wave_height << zfrom;
 				water_vertices
-					<< xto  << wy + height << zfrom 
-					<< xfrom  << wy + old_height << zfrom 
-					<< xfrom  << wy + old_height << zto ;
+					<< xto  << wy + wave_height << zfrom 
+					<< xfrom  << wy + old_wave_height << zfrom 
+					<< xfrom  << wy + old_wave_height << zto ;
 			}		
 		}
 		for (int i = 0; i < water_size; i++)
@@ -589,20 +604,18 @@ void TrainView::paintGL()
 		buffer_size.push_back(18 * water_size * water_size);
 		buffer_size.push_back(24 * water_size * water_size);
 		if(VT_WATER)
-			water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.45f,0,1,1,1);
-
+			water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.4f,0,1,1,1);
+				
 		water_vertices.clear();
-		buffer_size.clear();	
+		buffer_size.clear();
 		water_vertices 
-			<< min << wy << min << -min << wy << min<< -min << wy << -min
-			<< -min << wy << -min<< min << wy << -min<< min << wy << min;
-		for (size_t i = 0; i < sizeof(uv)/sizeof(float); i++)
-		{
-			water_vertices << uv[i];
-		}
-		buffer_size.push_back(18);
+			<< min << wy << min 
+			<< -min << wy << min
+			<< -min << wy << -min		
+			<< min << wy << -min;
 		buffer_size.push_back(12);
-		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.45f, 0, 1, 1, 1);
+		buffer_size.push_back(0);
+		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.4,current_time, 7);
 		water->End();
 		water_vertices.clear();
 		buffer_size.clear();
@@ -653,7 +666,8 @@ void TrainView::paintGL()
 		right_position[i][1] *= sr;
 		right_position[i][2] *= sr;
 	}
-	{//Draw 3d models
+	//Draw 3d models
+	{
 	glPushMatrix();
 		glTranslatef(0,120,-120);
 		glRotatef(angle,0,1,0);
@@ -727,8 +741,9 @@ void TrainView::paintGL()
 		}				
 		miku3d->End();
 	glPopMatrix();
-	}	
-	{//Draw 3d models again
+	}
+	//Draw 3d models again
+	{
 	glPushMatrix();
 		glRotatef(180, 0, 1, 0);
 		glTranslatef(0, 120, -120);
@@ -822,7 +837,7 @@ void TrainView::setProjection()
 	{						
 		glMatrixMode(GL_MODELVIEW);		
 		glLoadIdentity();
-		arcball.setProjection(false);
+		arcball.setProjection(false);		
 		update();
 	// Or we use the top cam
 	}else if (this->camera == 1) 

@@ -81,13 +81,51 @@ void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GL
 		break;
 	case 1:
 		glDrawArrays(GL_TRIANGLES, 0, positions.size() / 3);
-		break;
+		break;			
 	default:
 		break;
 	}	
 	vbo.release();
 }
+void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GLfloat> values, std::vector<int> buffersize, float alpha, float time, int effect)
+{
+	GLfloat P[4][4];
+	GLfloat MV[4][4];
+	DimensionTransformation(ProjectionMatrix, P);
+	DimensionTransformation(ModelViewMatrix, MV);
+	shaderProgram->setUniformValue("ProjectionMatrix", P);
+	shaderProgram->setUniformValue("ModelViewMatrix", MV);
+	shaderProgram->setUniformValue("effect", effect);	
+	shaderProgram->setUniformValue("alpha", alpha);
+	shaderProgram->setUniformValue("time", time);	
+	QVector<GLfloat> positions, colors, texturecoords, indexes;
 
+	for (size_t i = 0; i < buffersize[0] + buffersize[1]; i++)
+	{
+		if (i < buffersize[0])
+			positions << values[i];
+		else
+			positions << 0;
+	}
+	for (size_t i = buffersize[0]; i < buffersize[0] + buffersize[1]; i++)
+	{
+		colors << values[i];
+	}
+
+	vbo.bind();
+	vbo.allocate(positions.constData(), (buffersize[0] + buffersize[1]) * sizeof(GLfloat));
+	shaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 3, 0);
+	shaderProgram->enableAttributeArray(0);
+	if (buffersize[1] != 0)
+	{
+		vbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
+		shaderProgram->setAttributeBuffer(1, GL_FLOAT, buffersize[0] * sizeof(GLfloat), 2, 0);
+		shaderProgram->enableAttributeArray(1);
+	}
+	shaderProgram->setPatchVertexCount(4);
+	glDrawArrays(GL_PATCHES, 0, 4);
+	vbo.release();
+}
 void Obj::Init(int shaders)
 {
 	InitShader(shaders);
@@ -106,6 +144,7 @@ void Obj::InitShader(size_t shaders)
 	QString fragmentShaderPath = "./src/BSGC/prj3/Shader/fs.glsl";
 	QString tessellationControlShaderPath = "./src/BSGC/prj3/Shader/tcs.glsl";
 	QString tessellationEvalutionShaderPath = "./src/BSGC/prj3/Shader/tes.glsl";
+	QString geometryShaderPath = "./src/BSGC/prj3/Shader/gs.glsl";
 	shaderProgram = new QOpenGLShaderProgram();
 
 	if (shaders >= 2)
@@ -159,6 +198,18 @@ void Obj::InitShader(size_t shaders)
 		}
 		else
 			qDebug() << tessellationEvalutionShaderFile.filePath() << " can't be found";
+
+		/*QFileInfo  geometryShaderFile(geometryShaderPath);
+		if (geometryShaderFile.exists())
+		{
+			geometryShader = new QOpenGLShader(QOpenGLShader::Geometry);
+			if (geometryShader->compileSourceFile(geometryShaderPath))
+				shaderProgram->addShader(geometryShader);
+			else
+				qWarning() << "Geometry shader error " << geometryShader->log();
+		}
+		else
+			qDebug() << geometryShaderFile.filePath() << " can't be found";*/
 	}			
 	shaderProgram->link();
 }

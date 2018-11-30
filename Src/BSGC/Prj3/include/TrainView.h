@@ -68,36 +68,36 @@ public:
 	int curve;
 	int track;
 	bool isrun;
-	typedef enum {
+	typedef enum 
+	{
 		spline_Linear = 0,
 		spline_CardinalCubic = 1,
 		spline_CubicB_Spline = 2
 	} spline_t;
-	struct TrackTrail {
+	struct TrackTrail 
+	{
 		Pnt3f points;
 		Pnt3f orients;
 		Pnt3f orients_cross;
-		TrackTrail() {
+		TrackTrail() 
+		{
 
 		}
-		TrackTrail(Pnt3f p, Pnt3f o, Pnt3f oc) {
+		TrackTrail(Pnt3f p, Pnt3f o, Pnt3f oc) 
+		{
 			points = p;
 			orients = o;
 			orients_cross = oc;
 		}
-	};
-	
-			
+	};				
 	GLfloat ProjectionMatrex[16];
 	GLfloat ModelViewMatrex[16];
 	QVector<QOpenGLTexture*> Textures;
 	vector<Pnt3f> track_path;
 	vector<Pnt3f> track_orient_cross;
-	vector<Pnt3f> track_orient;
-	int cp_size = 4;
+	vector<Pnt3f> track_orient;	
 	int path_index = 0;	
-	float current_time = 0;
-	float track_angle = 0;
+	float current_time = 0;	
 	Pnt3f trainStart, trainEnd;
 	Obj *trackobj;
 	Obj *trainobj;
@@ -107,12 +107,6 @@ public:
 	Obj *land;
 	Obj *nendoroid;
 	Obj * miku3d;
-	float t_temp = 0;	
-	bool trackupdate = true;
-	vector<TrackTrail> path;	
-	int train_speed = 5;
-	float offset = 0.f;
-	float wt = 0;
-	float shake = 0.5f;		
+	vector<TrackTrail> path;
 };  
 #endif // TRAINVIEW_H  

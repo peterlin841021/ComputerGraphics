@@ -207,8 +207,7 @@ void AppMain::LoadTrackPath()
 	const char* fname = byteArray.data();
 	if ( !fileName.isEmpty() )
 	{
-		this->m_Track.readPoints(fname);
-		this->trainview->trackupdate = true;
+		this->m_Track.readPoints(fname);		
 		this->trainview->path_index = 0;
 	}
 }

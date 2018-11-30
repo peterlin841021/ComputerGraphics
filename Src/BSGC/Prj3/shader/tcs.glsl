@@ -1,27 +1,25 @@
 #version 430 core
-#define ID gl_InvocationID
 
-layout(vertices = 3) out;
-in vec3 vposition[];
-out vec3 tcposition[];
+layout(vertices = 4) out;
+in vec2 tc[];
+out vec2 tc_out[];
 
-uniform bool usetessle;
 uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewMatrix;
-uniform float zoom;
-uniform float tesslevelInner;
-uniform float tesslevelOuter;
+
 void main()
 {
-    tcposition[ID] = vposition[ID];
-    vec4 p1 = ProjectionMatrix * ModelViewMatrix * vec4(vposition[0],1.0);
-    vec4 p2 = ProjectionMatrix * ModelViewMatrix * vec4(vposition[1],1.0);
-    vec4 p3 = ProjectionMatrix * ModelViewMatrix * vec4(vposition[2],1.0);
-    if(usetessle)
-    {
+    int part = 64;
+    if(gl_InvocationID == 0)
+    {        
+        gl_TessLevelInner[0] = part;
+        gl_TessLevelInner[1] = part;
 
-    }else
-    {
-        
+		gl_TessLevelOuter[0] = part;
+		gl_TessLevelOuter[1] = part;
+		gl_TessLevelOuter[2] = part;
+        gl_TessLevelOuter[3] = part;
     }
+    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+	tc_out[gl_InvocationID] = tc[gl_InvocationID];
 }

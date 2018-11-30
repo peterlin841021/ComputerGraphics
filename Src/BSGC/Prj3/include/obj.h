@@ -22,12 +22,14 @@ public:
 	QOpenGLShader* fragmentShader;
 	QOpenGLShader* tessellationControlShader;
 	QOpenGLShader* tessellationEvalutionShader;
+	QOpenGLShader* geometryShader;
 	QOpenGLVertexArrayObject vao;
 	QOpenGLBuffer vbo;	
 	GLuint textureId;
 public:
 	Obj();
-	void Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix,QVector<GLfloat> values,std::vector<int> buffersize,float alpha,float time,int linetype, int colorMode,int effect);
+	void Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix,QVector<GLfloat> values,std::vector<int> buffersize,float alpha,float time,int linetype, int colorMode, int effect);
+	void Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GLfloat> values, std::vector<int> buffersize, float alpha, float time,int effect);
 	void Init(int shaders);	
 	void InitShader(size_t shaders);
 	void DimensionTransformation(GLfloat source[], GLfloat target[][4]);

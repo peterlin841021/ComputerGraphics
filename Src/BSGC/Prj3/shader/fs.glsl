@@ -5,6 +5,7 @@ const vec2 iResolution = vec2(800., 800.);
 in vec2 texturecoord;
 in vec3 texturecoord3d;
 in vec3 fcolor;
+in vec2 tc;
 // in vec3 RefractVec;
 // in vec3 ReflectVec;
 out vec4 fragmentcolor;
@@ -254,8 +255,7 @@ void main(void)
             if(alpha !=1)			    
 				fragmentcolor = vec4(fcolor,alpha);
 			else
-				fragmentcolor = vec4(fcolor,1.0);			
-			//gold_particle();
+				fragmentcolor = vec4(fcolor,1.0);
             break;
         }
         case(1)://Draw texture        
@@ -291,6 +291,14 @@ void main(void)
         case(6)://Dance floor
 		{
 		    DanceFloor();
+            break;
+		}
+		case(7)://Tessellation
+		{			
+		    vec4 color = texture2D(tex,tc);
+            if(alpha !=1)
+			    color.a = alpha;
+			fragmentcolor = color;	
             break;
 		}
     }			
