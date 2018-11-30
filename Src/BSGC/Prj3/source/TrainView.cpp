@@ -535,11 +535,15 @@ void TrainView::paintGL()
 		float wave_height = 0.f;
 
 		setupFloor();
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);		
+		glEnable(GL_BLEND);		
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		water->Begin();
 		water->shaderProgram->setUniformValue("tex", water->textureId);
 		water->shaderProgram->setUniformValue("heightmap", highmap_textureid);
+		water->shaderProgram->setUniformValue("texcube", skybox->textureId);		
+		
+		water->shaderProgram->setUniformValue("camerapos",QVector3D(arcball.eyeX, arcball.eyeY, arcball.eyeZ));
+		//printf("Camera pos:(%f,%f,%f)\n", arcball.eyeX, arcball.eyeY, arcball.eyeZ);
 		float ratio = 25;
 		float xfrom = 0;
 		float zfrom = 0;
@@ -547,65 +551,66 @@ void TrainView::paintGL()
 		float zto = 0;
 		float padding = 0;
 	
-		QVector<GLfloat> water_vertices;	
-		if (wt == 0)
-			wt = clock();
-
-		for (int i = 0; i < water_size; i++)
+		QVector<GLfloat> water_vertices;
 		{
-			wt = clock();		
-			for (int j = 0; j < water_size; j++)
-			{			
-				if(old_wave_height == 0)
-					old_wave_height = amplitude * sin(step + wt * speed / 5.f);
-				else
-					old_wave_height = wave_height;
+			if (wt == 0)
+				wt = clock();
 
-				wave_height = amplitude * sin(step + wt*((water_size - i)*(j+1))/5.f* speed/5.f);
-				xfrom = min + step * j + offset;
-				xto = min + step * (j + 1) + offset;
-				zfrom = min + step * i;
-				zto = min + step * (i + 1);
-				//pos
-				water_vertices
-					<< xfrom  << wy + old_wave_height << zto 
-					<< xto  << wy + wave_height << zto 
-					<< xto  << wy + wave_height << zfrom;
-				water_vertices
-					<< xto  << wy + wave_height << zfrom 
-					<< xfrom  << wy + old_wave_height << zfrom 
-					<< xfrom  << wy + old_wave_height << zto ;
-			}		
-		}
-		for (int i = 0; i < water_size; i++)
-		{
-			for (int j = 0; j < water_size; j++)
+			for (int i = 0; i < water_size; i++)
 			{
-				//uvs
-				water_vertices
-					<< i / ratio << (j + 1) / ratio
-					<< (i + 1) / ratio << (j + 1) / ratio
-					<< (i + 1) / ratio << j / ratio
+				wt = clock();		
+				for (int j = 0; j < water_size; j++)
+				{			
+					if(old_wave_height == 0)
+						old_wave_height = amplitude * sin(step + wt * speed / 5.f);
+					else
+						old_wave_height = wave_height;
 
-					<< (i + 1) / ratio << j / ratio
-					<< i / ratio << j / ratio
-					<< i / ratio << (j + 1) / ratio
-
-					<< i / ratio << (j + 1) / ratio
-					<< (i + 1) / ratio << (j + 1) / ratio
-					<< (i + 1) / ratio << j / ratio
-
-					<< (i + 1) / ratio << j / ratio
-					<< i / ratio << j / ratio
-					<< i / ratio << (j + 1) / ratio;
+					wave_height = amplitude * sin(step + wt*((water_size - i)*(j+1))/5.f* speed/5.f);
+					xfrom = min + step * j + offset;
+					xto = min + step * (j + 1) + offset;
+					zfrom = min + step * i;
+					zto = min + step * (i + 1);
+					//pos
+					water_vertices
+						<< xfrom  << wy + old_wave_height << zto 
+						<< xto  << wy + wave_height << zto 
+						<< xto  << wy + wave_height << zfrom;
+					water_vertices
+						<< xto  << wy + wave_height << zfrom 
+						<< xfrom  << wy + old_wave_height << zfrom 
+						<< xfrom  << wy + old_wave_height << zto ;
+				}		
 			}
-		}	
-		buffer_size.clear();
-		buffer_size.push_back(18 * water_size * water_size);
-		buffer_size.push_back(24 * water_size * water_size);
-		if(VT_WATER)
-			water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.4f,0,1,1,1);
-				
+			for (int i = 0; i < water_size; i++)
+			{
+				for (int j = 0; j < water_size; j++)
+				{
+					//uvs
+					water_vertices
+						<< i / ratio << (j + 1) / ratio
+						<< (i + 1) / ratio << (j + 1) / ratio
+						<< (i + 1) / ratio << j / ratio
+
+						<< (i + 1) / ratio << j / ratio
+						<< i / ratio << j / ratio
+						<< i / ratio << (j + 1) / ratio
+
+						<< i / ratio << (j + 1) / ratio
+						<< (i + 1) / ratio << (j + 1) / ratio
+						<< (i + 1) / ratio << j / ratio
+
+						<< (i + 1) / ratio << j / ratio
+						<< i / ratio << j / ratio
+						<< i / ratio << (j + 1) / ratio;
+				}
+			}	
+			buffer_size.clear();
+			buffer_size.push_back(18 * water_size * water_size);
+			buffer_size.push_back(24 * water_size * water_size);
+			if(VT_WATER)
+				water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.4f,0,1,1,1);
+		}
 		water_vertices.clear();
 		buffer_size.clear();
 		water_vertices 
@@ -620,12 +625,13 @@ void TrainView::paintGL()
 		water_vertices.clear();
 		buffer_size.clear();
 	glPopMatrix();
-
+	
 	//Draw shadows
 	glPushMatrix();	
 		if (this->camera != 1)
 		{
-			glTranslatef(0, shake, 0);
+			if(isrun)
+				glTranslatef(0, shake, 0);
 			setupShadows();
 			drawStuff(true);
 			unsetupShadows();

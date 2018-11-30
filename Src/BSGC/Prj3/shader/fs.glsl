@@ -6,8 +6,8 @@ in vec2 texturecoord;
 in vec3 texturecoord3d;
 in vec3 fcolor;
 in vec2 tc;
-// in vec3 RefractVec;
-// in vec3 ReflectVec;
+in vec3 RefractVec;
+in vec3 ReflectVec;
 out vec4 fragmentcolor;
 // uniform vec4 color_ambient = vec4(0.1,0.2,0.5,1.0);
 // uniform vec4 color_diffuse = vec4(0.2,0.3,0.6,1.0);
@@ -294,16 +294,17 @@ void main(void)
             break;
 		}
 		case(7)://Tessellation
-		{			
+		{	
+			// vec4 RefractColor = texture(texcube,RefractVec);
+			vec4 ReflectColor = texture(texcube,ReflectVec);		
 		    vec4 color = texture2D(tex,tc);
-            if(alpha !=1)
+			if(alpha !=1)
 			    color.a = alpha;
+			//color = mix(color,ReflectColor,0.6);
+			//color = mix(water,light_color,0.2);
+            
 			fragmentcolor = color;	
             break;
 		}
-    }			
-	// vec4 RefractColor = textureCube(box,RefractVec);
-	// vec4 ReflectColor = textureCube(box,ReflectVec);
-	//color = mix(mix(water,light_color,0.2),sky,0.4);
-	//color = mix(water,light_color,0.2);
+    }
 }

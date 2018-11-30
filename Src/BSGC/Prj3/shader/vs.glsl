@@ -8,10 +8,11 @@ uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewMatrix;
 uniform int colormode;
 uniform int effect;
+uniform vec3 camerapos;
 // out vec3 vs_worldpos;
 // out vec3 vs_normal;
-// out vec3 RefractVec;
-// out vec3 ReflectVec;
+out vec3 RefractVec;
+out vec3 ReflectVec;
 out vec2 texturecoord;
 out vec3 fcolor;
 out vec3 texturecoord3d;
@@ -20,9 +21,9 @@ void main(void)
 {
     tc = position.xz;
     vec4 pos = ProjectionMatrix * ModelViewMatrix * vec4(position,1.0); 
-    //vec3 InVec = normalize(pos.xyz);
-    //RefractVec = refract(InVec, normal, 0.66);
-    //ReflectVec = reflect(InVec, normal);
+    vec3 InVec = normalize(pos.xyz - camerapos);
+    RefractVec = refract(InVec, normalize(vec3(0,1,0)), 0.66);
+    ReflectVec = reflect(InVec, normalize(vec3(0,1,0)));
     //vs_worldpos = pos.xyz;
     //vec3 p = normalize(pos.xyz);
     //vs_normal = vec3(p.x,p.y,p.z); 
