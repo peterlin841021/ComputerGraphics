@@ -15,8 +15,10 @@ uniform int effect;
 out vec2 texturecoord;
 out vec3 fcolor;
 out vec3 texturecoord3d;
+out vec3 vposition;
 void main(void)
 {
+    vposition = position;
     vec4 pos = ProjectionMatrix * ModelViewMatrix * vec4(position,1.0); 
     //vec3 InVec = normalize(pos.xyz);
     //RefractVec = refract(InVec, normal, 0.66);

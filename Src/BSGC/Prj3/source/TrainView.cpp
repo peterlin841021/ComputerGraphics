@@ -2,8 +2,9 @@
 #include"TrainView.h"
 #include <fstream>
 
-float uv[12] = { 0.f , 0.f, 1.f , 0.f, 1.f , 1.f, 1.f , 1.f, 0.f , 1.f, 0.f , 0.f };
+#define VT_WATER false
 
+float uv[12] = { 0.f , 0.f, 1.f , 0.f, 1.f , 1.f, 1.f , 1.f, 0.f , 1.f, 0.f , 0.f };
 int pos_size = 0;
 int uv_size = 0;
 float angle = 0;
@@ -292,7 +293,6 @@ QGLWidget(parent)
 }  
 TrainView::~TrainView()  
 {}  
-
 void TrainView:: resetArcball()
 	//========================================================================
 {
@@ -301,12 +301,10 @@ void TrainView:: resetArcball()
 	// a little trial and error goes a long way
 	arcball.setup(this, 40, 250, .2f, .4f, 0);
 }
-
 void TrainView::changeSpeed(int speed) 
 {
 	train_speed = speed;		
 }
-
 void TrainView::paintGL()
 {		
 	glViewport(0,0,width(),height());
@@ -586,16 +584,15 @@ void TrainView::paintGL()
 					<< i / ratio << j / ratio
 					<< i / ratio << (j + 1) / ratio;
 			}
-		}
-	
+		}	
 		buffer_size.clear();
 		buffer_size.push_back(18 * water_size * water_size);
 		buffer_size.push_back(24 * water_size * water_size);
-		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.45f,0,1,1,1);
+		if(VT_WATER)
+			water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.45f,0,1,1,1);
 
 		water_vertices.clear();
-		buffer_size.clear();
-	
+		buffer_size.clear();	
 		water_vertices 
 			<< min << wy << min << -min << wy << min<< -min << wy << -min
 			<< -min << wy << -min<< min << wy << -min<< min << wy << min;
@@ -611,20 +608,20 @@ void TrainView::paintGL()
 		buffer_size.clear();
 	glPopMatrix();
 
-	//glPushMatrix();
-	////Draw shadows
-	//if (this->camera != 1)
-	//{
-	//	glTranslatef(0, shake, 0);
-	//	setupShadows();
-	//	drawStuff(true);
-	//	unsetupShadows();
-	//	if (shake > 0)
-	//		shake = -shake;
-	//	else
-	//		shake = -shake;
-	//}
-	//glPopMatrix();
+	//Draw shadows
+	glPushMatrix();	
+		if (this->camera != 1)
+		{
+			glTranslatef(0, shake, 0);
+			setupShadows();
+			drawStuff(true);
+			unsetupShadows();
+			if (shake > 0)
+				shake = -shake;
+			else
+				shake = -shake;
+		}
+	glPopMatrix();
 	float right_position[15][3]
 	{
 		{0, 2.3f, 0},
@@ -892,18 +889,6 @@ void TrainView::setProjection()
 		
 	}
 }
-//************************************************************************
-//
-// * this draws all of the stuff in the world
-//
-//	NOTE: if you're drawing shadows, DO NOT set colors (otherwise, you get 
-//       colored shadows). this gets called twice per draw 
-//       -- once for the objects, once for the shadows
-//########################################################################
-// TODO: 
-// if you have other objects in the world, make sure to draw them
-//########################################################################
-//========================================================================
 void TrainView::drawTrack(bool doingShadows) 
 {
 	float alpha = 0.3f;
@@ -1153,7 +1138,7 @@ void TrainView::drawTrack(bool doingShadows)
 	if (!doingShadows)
 		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size,1.f,clock(),1,0,3);
 	else
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 1.f, clock(),1, 0, 3);
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 0.4f, clock(),1, 0, 0);
 	trackobj->End();
 	buffer_size.clear();
 	tracks.clear();
@@ -1174,10 +1159,10 @@ void TrainView::drawTrack(bool doingShadows)
 	}
 	buffer_size.push_back(color_counts);
 	trackobj->Begin();
-	/*if (!doingShadows)
+	if (!doingShadows)
 		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 1.f, clock(), 0, 0, 3);
 	else
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 1.f, clock(), 0, 0, 3);*/
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 0.4f, clock(), 0, 0, 0);
 	trackobj->End();
 
 	//Draw sleepers
@@ -1190,10 +1175,10 @@ void TrainView::drawTrack(bool doingShadows)
 	}	
 	buffer_size.push_back(color_counts);
 	trackobj->Begin();
-	/*if (!doingShadows)
+	if (!doingShadows)
 		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 1.f, clock(), 0, 0, 3);
 	else
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 1.f, clock(), 0, 0, 3);*/
+		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 0.4f, clock(), 0, 0, 0);
 	trackobj->End();
 
 	//Generate path	
@@ -1208,11 +1193,7 @@ void TrainView::drawTrack(bool doingShadows)
 	}	
 }
 void TrainView::drawStuff(bool doingShadows)
-{
-	//glTranslatef(0, 8, 0);
-	// Draw the control points
-	// don't draw the control points if you're driving 
-	// (otherwise you get sea-sick as you drive through them)
+{	
 	if (this->camera != 2) 
 	{
 		for (size_t i = 0; i < this->m_pTrack->points.size(); ++i) 

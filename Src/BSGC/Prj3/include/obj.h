@@ -20,18 +20,16 @@ public:
 	QOpenGLShaderProgram * shaderProgram;
 	QOpenGLShader* vertexShader;
 	QOpenGLShader* fragmentShader;
+	QOpenGLShader* tessellationControlShader;
+	QOpenGLShader* tessellationEvalutionShader;
 	QOpenGLVertexArrayObject vao;
-	QOpenGLBuffer vvbo;
-	QOpenGLBuffer uvbo;
-	QOpenGLBuffer cvbo;
-	QOpenGLBuffer fbo;
-	QOpenGLBuffer indexbo;
+	QOpenGLBuffer vbo;	
 	GLuint textureId;
 public:
 	Obj();
 	void Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix,QVector<GLfloat> values,std::vector<int> buffersize,float alpha,float time,int linetype, int colorMode,int effect);
-	void Init(int buffers);	
-	void InitShader(QString vertexShaderPath, QString fragmentShaderPath);
+	void Init(int shaders);	
+	void InitShader(size_t shaders);
 	void DimensionTransformation(GLfloat source[], GLfloat target[][4]);
 	void Begin();	
 	void End();	

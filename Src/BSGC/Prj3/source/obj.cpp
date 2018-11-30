@@ -55,13 +55,13 @@ void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GL
 		colors << values[i];		
 	}
 	
-	vvbo.bind();
-	vvbo.allocate(positions.constData(), (buffersize[0] + buffersize[1]) * sizeof(GLfloat));
+	vbo.bind();
+	vbo.allocate(positions.constData(), (buffersize[0] + buffersize[1]) * sizeof(GLfloat));
 	shaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 3, 0);	
 	shaderProgram->enableAttributeArray(0);
 	if (colorMode == 0)
 	{
-		vvbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
+		vbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
 		shaderProgram->setAttributeBuffer(2, GL_FLOAT, buffersize[0] * sizeof(GLfloat),3, 0);
 		shaderProgram->enableAttributeArray(2);
 	}
@@ -69,7 +69,7 @@ void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GL
 	{
 		if (buffersize[1] != 0)
 		{
-			vvbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
+			vbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
 			shaderProgram->setAttributeBuffer(1, GL_FLOAT, buffersize[0] * sizeof(GLfloat), 2, 0);
 			shaderProgram->enableAttributeArray(1);
 		}		
@@ -84,89 +84,81 @@ void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GL
 		break;
 	default:
 		break;
-	}
-	
-	vvbo.release();	
+	}	
+	vbo.release();
 }
 
-void Obj::Init(int buffers)
+void Obj::Init(int shaders)
 {
-	InitShader("./src/BSGC/prj3/Shader/vs.glsl", "./src/BSGC/prj3/Shader/fs.glsl");
+	InitShader(shaders);
 	
 	vao.create();
 	vao.bind();
-	switch (buffers)
-	{
-	case 2:
-		vvbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-		vvbo.create();
-		vvbo.bind();
-		vvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-
-		/*uvbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-		uvbo.create();
-		uvbo.bind();
-		uvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-
-		cvbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-		cvbo.create();
-		cvbo.bind();
-		cvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);*/
-		break;
-	case 4:
-		vvbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-		vvbo.create();
-		vvbo.bind();
-		vvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-
-		uvbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-		uvbo.create();
-		uvbo.bind();
-		uvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-
-		cvbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-		cvbo.create();
-		cvbo.bind();
-		cvbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-
-		fbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-		fbo.create();
-		fbo.bind();
-		fbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-
-		indexbo = QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
-		indexbo.create();
-		indexbo.bind();
-		indexbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-		break;
-	}	
+	vbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+	vbo.create();
+	vbo.bind();
+	vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
 }
-void Obj::InitShader(QString vertexShaderPath,QString fragmentShaderPath)
+void Obj::InitShader(size_t shaders)
 {
-	// Create Shader
+	// Create Shader	
+	QString vertexShaderPath = "./src/BSGC/prj3/Shader/vs.glsl";
+	QString fragmentShaderPath = "./src/BSGC/prj3/Shader/fs.glsl";
+	QString tessellationControlShaderPath = "./src/BSGC/prj3/Shader/tcs.glsl";
+	QString tessellationEvalutionShaderPath = "./src/BSGC/prj3/Shader/tes.glsl";
 	shaderProgram = new QOpenGLShaderProgram();
-	QFileInfo  vertexShaderFile(vertexShaderPath);
-	if(vertexShaderFile.exists())
-	{
-		vertexShader = new QOpenGLShader(QOpenGLShader::Vertex);
- 		if(vertexShader->compileSourceFile(vertexShaderPath))
- 			shaderProgram->addShader(vertexShader);
- 		else
- 			qWarning() << "Vertex Shader Error " << vertexShader->log();
-	}
-	else
-		qDebug()<<vertexShaderFile.filePath()<<" can't be found";
 
-	QFileInfo  fragmentShaderFile(fragmentShaderPath);
-	if(fragmentShaderFile.exists())
+	if (shaders >= 2)
 	{
-		fragmentShader = new QOpenGLShader(QOpenGLShader::Fragment);
-		if(fragmentShader->compileSourceFile(fragmentShaderPath))
-			shaderProgram->addShader(fragmentShader);
+		QFileInfo  vertexShaderFile(vertexShaderPath);
+		if (vertexShaderFile.exists())
+		{
+			vertexShader = new QOpenGLShader(QOpenGLShader::Vertex);
+			if (vertexShader->compileSourceFile(vertexShaderPath))
+				shaderProgram->addShader(vertexShader);
+			else
+				qWarning() << "Vertex Shader Error " << vertexShader->log();
+		}
 		else
-			qWarning() << "fragment Shader Error " << fragmentShader->log();
+			qDebug() << vertexShaderFile.filePath() << " can't be found";
+
+		QFileInfo  fragmentShaderFile(fragmentShaderPath);
+		if (fragmentShaderFile.exists())
+		{
+			fragmentShader = new QOpenGLShader(QOpenGLShader::Fragment);
+			if (fragmentShader->compileSourceFile(fragmentShaderPath))
+				shaderProgram->addShader(fragmentShader);
+			else
+				qWarning() << "fragment Shader Error " << fragmentShader->log();
+		}
+		else
+			qDebug() << fragmentShaderFile.filePath() << " can't be found";
 	}
-	else
-		qDebug()<<fragmentShaderFile.filePath()<<" can't be found";
+	if (shaders > 2)
+	{
+		QFileInfo  tessellationControlShaderFile(tessellationControlShaderPath);
+		if (tessellationControlShaderFile.exists())
+		{
+			tessellationControlShader = new QOpenGLShader(QOpenGLShader::TessellationControl);
+			if (tessellationControlShader->compileSourceFile(tessellationControlShaderPath))
+				shaderProgram->addShader(tessellationControlShader);
+			else
+				qWarning() << "Tessellation control shader error " << tessellationControlShader->log();
+		}
+		else
+			qDebug() << tessellationControlShaderFile.filePath() << " can't be found";
+
+		QFileInfo  tessellationEvalutionShaderFile(tessellationEvalutionShaderPath);
+		if (tessellationEvalutionShaderFile.exists())
+		{
+			tessellationEvalutionShader = new QOpenGLShader(QOpenGLShader::TessellationEvaluation);
+			if (tessellationEvalutionShader->compileSourceFile(tessellationEvalutionShaderPath))
+				shaderProgram->addShader(tessellationEvalutionShader);
+			else
+				qWarning() << "Tessellation evalution shader error " << tessellationEvalutionShader->log();
+		}
+		else
+			qDebug() << tessellationEvalutionShaderFile.filePath() << " can't be found";
+	}			
 	shaderProgram->link();
 }
