@@ -50,11 +50,14 @@ void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GL
 		else
 			positions << 0;
 	}
-	for (size_t i = buffersize[0]; i < buffersize[0] + buffersize[1]; i++)
+	if (buffersize.size() == 2)
 	{
-		colors << values[i];		
+		for (size_t i = buffersize[0]; i < buffersize[0] + buffersize[1]; i++)
+		{
+			colors << values[i];
+		}
 	}
-	
+		
 	vbo.bind();
 	vbo.allocate(positions.constData(), (buffersize[0] + buffersize[1]) * sizeof(GLfloat));
 	shaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 3, 0);	

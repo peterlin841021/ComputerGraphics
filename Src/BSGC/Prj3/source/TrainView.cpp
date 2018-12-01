@@ -3,6 +3,7 @@
 #include <fstream>
 
 #define VT_WATER false
+#define SLEEPER false
 
 bool trackupdate = true;
 int train_speed = 5;
@@ -879,7 +880,7 @@ void TrainView::setProjection()
 	else if (this->camera == 2) 
 	{		
 		if (path.size() > 0) 
-		{
+		{		
 		glPushMatrix();
 		glMatrixMode(GL_PROJECTION);				
 		gluPerspective(120, 1, 1, 200);
@@ -899,8 +900,8 @@ void TrainView::setProjection()
 		glRotatef(-angle, 0, 0, path[(path_index)].orients.z);
 		gluLookAt
 		(
-			p1.x, p1.y + 20.0, p1.z,//camera coordinates
-			p2.x + dec.x, p2.y + 20, p2.z + dec.z,//look for
+			p1.x, p1.y + 30.0, p1.z,//camera coordinates
+			p2.x + dec.x, p2.y + 30, p2.z + dec.z,//look for
 			0, 1, 0
 		);		
 		glPopMatrix();
@@ -1199,12 +1200,14 @@ void TrainView::drawTrack(bool doingShadows)
 	}	
 	buffer_size.push_back(color_counts);
 	trackobj->Begin();
-	if (!doingShadows)
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 1.f, clock(), 0, 0, 3);
-	else
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 0.4f, clock(), 0, 0, 0);
-	trackobj->End();
-
+	if (SLEEPER)
+	{
+		if (!doingShadows)
+			trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 1.f, clock(), 0, 0, 3);
+		else
+			trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 0.4f, clock(), 0, 0, 0);
+		trackobj->End();
+	}	
 	//Generate path	
 	path.clear();
 	trackupdate = false;
@@ -1218,6 +1221,7 @@ void TrainView::drawTrack(bool doingShadows)
 }
 void TrainView::drawStuff(bool doingShadows)
 {	
+	glTranslatef(0,10,0);
 	if (this->camera != 2) 
 	{
 		for (size_t i = 0; i < this->m_pTrack->points.size(); ++i) 
@@ -1254,7 +1258,7 @@ void TrainView::drawStuff(bool doingShadows)
 		if (path_index == path.size() - 1)
 			path_index = 0;		
 	}
-	if (!isrun && path.size() > 0) 
+	else if (!isrun && path.size() > 0) 
 	{		
 		drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients, doingShadows);				
 	}
@@ -1291,7 +1295,7 @@ void TrainView::doPick(int mx, int my)
 	glInitNames();
 	glPushName(0);
 
-
+	glTranslatef(0, 10, 0);
 	// draw the cubes, loading the names as we go
 	for(size_t i=0; i<m_pTrack->points.size(); ++i) 
 	{
