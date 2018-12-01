@@ -3,7 +3,6 @@
 layout(vertices = 4) out;
 in vec2 tc[];
 out vec2 tc_out[];
-
 uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewMatrix;
 

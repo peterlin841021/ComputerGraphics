@@ -170,7 +170,7 @@ class ArcBallCam {
 		} mode;	
 
 			
-		
+		float posx,posy,posz;
 		float				panX;		// this keeps track of the panning - the current pan is 
 		float				panY;		
 

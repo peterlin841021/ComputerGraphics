@@ -2,22 +2,26 @@
 const vec2 iResolution = vec2(800., 800.);
 // in vec3 vs_worldpos;
 // in vec3 vs_normal;
+uniform vec3 camerapos;
 in vec2 texturecoord;
 in vec3 texturecoord3d;
 in vec3 fcolor;
 in vec2 tc;
-in vec3 RefractVec;
-in vec3 ReflectVec;
+in vec3 vpos;
 out vec4 fragmentcolor;
-// uniform vec4 color_ambient = vec4(0.1,0.2,0.5,1.0);
-// uniform vec4 color_diffuse = vec4(0.2,0.3,0.6,1.0);
-// uniform vec4 color_specular = vec4(1.0,1.0,1.0,1.0);
-// uniform vec4 Color = vec4(0.6,0.6,0.6,0.1);
-// uniform float shininess = 77.f;
-// uniform vec3 light_position = vec3(30.f,50.f,560.f);
+vec3 color_diffuse = vec3(0.3,0.3,0.3);
+vec3 color_specular = vec3(1.0,1.0,1.0);
+//vec3 color_ambient = vec3(0.5,0.5,1.0);
+vec3 color_ambient = vec3(1.0,1.0,1.0);
+vec3 light_position = vec3(30.f,50.f,560.f);
+vec3 c = vec3(0.6,0.6,0.6);
+float shininess = 20.f;
+float reflectivity = 0.6f;
+float eta = 0.66;
 uniform int effect;
 uniform float alpha;
 uniform sampler2D tex;
+uniform sampler2D normalmap;
 uniform samplerCube texcube;
 uniform float time;
 /***********Nebula smoke**************/
@@ -239,15 +243,7 @@ void DanceFloor()
 }
 /************Dance floor**************/
 void main(void)
-{	
-	// vec3 light_direction = normalize(light_position - vs_worldpos);
-	// vec3 normal = normalize(vs_normal);
-	// vec3 half_vector = normalize(normalize(light_direction)+normalize(vs_worldpos));
-	// float dv = normal.x*light_direction.x+normal.y*light_direction.y+normal.z*light_direction.z;
-	// float diffuse = max(0.0,dv);
-	// float sv = vs_normal.x*half_vector.x+vs_normal.y*half_vector.y+vs_normal.z*half_vector.z;
-	// float specular = pow(max(0.0,sv),shininess);
-	// vec4 light_color = min(Color * color_ambient,vec4(1.0))+diffuse*color_diffuse+specular*color_specular;	
+{
 	switch(effect)
     {
         case(0)://Origin color
@@ -295,15 +291,34 @@ void main(void)
 		}
 		case(7)://Tessellation
 		{	
-			// vec4 RefractColor = texture(texcube,RefractVec);
-			vec4 ReflectColor = texture(texcube,ReflectVec);		
-		    vec4 color = texture2D(tex,tc);
+			//vec3 normal = normalize(vs_normal);
+			vec3 light_direction = normalize(vpos.xyz - light_position);
+			vec4 normalmapcolor = texture(normalmap,tc*2);
+			vec3 normal = vec3(normalmapcolor.r * 2 - 1,normalmapcolor.b,normalmapcolor.g * 2 - 1);
+			normal = normalize(normal);
+
+			vec3 viewvector = normalize(camerapos - vpos.xyz);
+			//vec3 half_vector = normalize(light_direction + normalize(vpos));
+			float dv = dot(light_direction,normal);
+			float diffuse = max(0.0,dv);
+			float sv = dot(normal,viewvector);
+			float specular = pow(max(0.0,sv),shininess);
+			vec3 light_color = min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular;			
+						
+			vec3 RefractVec = refract(viewvector,normal, eta);
+    		vec3 ReflectVec = reflect(viewvector, normal);			
+			vec4 RefractColor = texture(texcube,RefractVec);
+			vec4 ReflectColor = texture(texcube,ReflectVec);			
+			vec4 re = mix(RefractColor,ReflectColor,0.5);
+
+			vec4 color = texture2D(tex,tc*2);			
+						
+			color = mix(color,vec4(light_color,1.0),0.5);
+			color = mix(color,re,0.6);
 			if(alpha !=1)
-			    color.a = alpha;
-			//color = mix(color,ReflectColor,0.6);
-			//color = mix(water,light_color,0.2);
-            
-			fragmentcolor = color;	
+				color.a = alpha;
+			
+			fragmentcolor = color;
             break;
 		}
     }

@@ -2,7 +2,7 @@
 layout(quads, equal_spacing,cw) in;
 in vec2 tc_out[];
 out vec2 tc;
-
+out vec3 vpos;
 uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewMatrix;
 uniform sampler2D heightmap;
@@ -19,5 +19,6 @@ void main()
 	tc = tc3 /(sin(time)* 100);
     p.y += texture(heightmap,tc).r * 40 ;
 	tc = tc3 / 1000;
-	gl_Position = ProjectionMatrix * ModelViewMatrix * p;	    
+	gl_Position = ProjectionMatrix * ModelViewMatrix * p;
+	vpos = vec3(ProjectionMatrix * ModelViewMatrix * p);
 }

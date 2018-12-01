@@ -67,8 +67,7 @@
 //
 // * Constructor
 //==========================================================================
-ArcBallCam::
-ArcBallCam() 
+ArcBallCam::ArcBallCam() 
 	:	wind(),
 		fieldOfView(40),
 		eyeX(0), eyeY(0), eyeZ(20),
@@ -99,8 +98,7 @@ setup(QWidget* _wind, float _fieldOfView, float _eyeZ,
 	isx			= _isx;
 	isy			= _isy;
 	isz			= _isz;
-
-
+	
 	reset();
 	spin(isx,isy,isz);
 }
@@ -264,8 +262,7 @@ static void onUnitSphere(const float mx, const float my,
 //
 // * 
 //==========================================================================
-void ArcBallCam::
-computeNow(const float nowX, const float nowY)
+void ArcBallCam::computeNow(const float nowX, const float nowY)
 //==========================================================================
 {
 	if (mode==Rotate) {
@@ -279,7 +276,9 @@ computeNow(const float nowX, const float nowY)
 		now.y = dz*mx - dx*mz;
 		now.z = dx*my - dy*mx;
 		now.w = dx*mx + dy*my + dz*mz;
-
+		this->posx = now.x;
+		this->posy = now.y;
+		this->posz = now.z;
 		now.renorm();		// just in case...
 	}
 	else if (mode==Pan) {

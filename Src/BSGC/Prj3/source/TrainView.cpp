@@ -15,6 +15,7 @@ float offset = 0.f;
 float wt = 0;
 float shake = 0.5f;
 GLuint highmap_textureid = 0;
+GLuint normalmap_textureid = 0;
 struct Model
 {
 private:
@@ -298,6 +299,8 @@ void TrainView::initializeTexture()
 	//Highmap
 	highmap_textureid = Textures.size();
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/heightmap.png")));
+	normalmap_textureid = Textures.size();
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/water_normal.jpg")));
 }
 TrainView::TrainView(QWidget *parent) :  
 QGLWidget(parent)  
@@ -540,10 +543,10 @@ void TrainView::paintGL()
 		water->Begin();
 		water->shaderProgram->setUniformValue("tex", water->textureId);
 		water->shaderProgram->setUniformValue("heightmap", highmap_textureid);
-		water->shaderProgram->setUniformValue("texcube", skybox->textureId);		
+		water->shaderProgram->setUniformValue("normalmap", normalmap_textureid);
+		water->shaderProgram->setUniformValue("texcube", skybox->textureId);				
+		water->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.eyeX, arcball.eyeY,arcball.eyeZ));
 		
-		water->shaderProgram->setUniformValue("camerapos",QVector3D(arcball.eyeX, arcball.eyeY, arcball.eyeZ));
-		//printf("Camera pos:(%f,%f,%f)\n", arcball.eyeX, arcball.eyeY, arcball.eyeZ);
 		float ratio = 25;
 		float xfrom = 0;
 		float zfrom = 0;
@@ -620,7 +623,7 @@ void TrainView::paintGL()
 			<< min << wy << -min;
 		buffer_size.push_back(12);
 		buffer_size.push_back(0);
-		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.4,current_time, 7);
+		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7,current_time, 7);
 		water->End();
 		water_vertices.clear();
 		buffer_size.clear();
