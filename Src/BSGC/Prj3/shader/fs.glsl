@@ -2,7 +2,7 @@
 const vec2 iResolution = vec2(800., 800.);
 // in vec3 vs_worldpos;
 // in vec3 vs_normal;
-uniform vec3 camerapos;
+//uniform vec3 camerapos;
 in vec2 texturecoord;
 in vec3 texturecoord3d;
 in vec3 fcolor;
@@ -12,7 +12,7 @@ out vec4 fragmentcolor;
 vec3 color_diffuse = vec3(0.3,0.3,0.3);
 vec3 color_specular = vec3(1.0,1.0,1.0);
 //vec3 color_ambient = vec3(0.5,0.5,1.0);
-vec3 color_ambient = vec3(1.0,1.0,1.0);
+vec3 color_ambient = vec3(0.7,0.7,1.0);
 vec3 light_position = vec3(30.f,50.f,560.f);
 vec3 c = vec3(0.6,0.6,0.6);
 float shininess = 20.f;
@@ -23,7 +23,10 @@ uniform float alpha;
 uniform sampler2D tex;
 uniform sampler2D normalmap;
 uniform samplerCube texcube;
+uniform mat4 ProjectionMatrix;
+uniform mat4 ModelViewMatrix;
 uniform float time;
+
 /***********Nebula smoke**************/
 #define HASHSCALE1 443.8975
 #define HASHSCALE3 vec3(.1031, .1030, .0973)
@@ -264,9 +267,7 @@ void main(void)
         }
 		case(2)://Draw skybox
 		{
-			snow();
-			//fragmentcolor = texture(texcube,texturecoord3d);
-			//fragmentcolor = vec4(vec3(0,0,1),alpha);
+			snow();			
             break;
 		}
         case(3)://Nebula smoke
@@ -290,34 +291,34 @@ void main(void)
             break;
 		}
 		case(7)://Tessellation
-		{	
-			//vec3 normal = normalize(vs_normal);
-			vec3 light_direction = normalize(vpos.xyz - light_position);
+		{
+			vec3 light_direction = normalize(vpos.xyz - vec3(ModelViewMatrix * vec4(light_position,1.0)));
 			vec4 normalmapcolor = texture(normalmap,tc*2);
-			vec3 normal = vec3(normalmapcolor.r * 2 - 1,normalmapcolor.b,normalmapcolor.g * 2 - 1);
-			normal = normalize(normal);
+			vec3 normal = vec3(normalmapcolor.r * 2 - 1,normalmapcolor.b,normalmapcolor.g * 2 - 1);			
+			mat3 normalmatrix = transpose(inverse(mat3(ModelViewMatrix)));
+			normal = normalize(normalmatrix * normal);
 
-			vec3 viewvector = normalize(camerapos - vpos.xyz);
-			//vec3 half_vector = normalize(light_direction + normalize(vpos));
+			vec3 camera = -vec3(ProjectionMatrix * ModelViewMatrix * vec4(vpos,1.0));
+			vec3 viewvector = normalize(camera);			
 			float dv = dot(light_direction,normal);
 			float diffuse = max(0.0,dv);
-			float sv = dot(normal,viewvector);
+			float sv = dot(viewvector,normal);
 			float specular = pow(max(0.0,sv),shininess);
 			vec3 light_color = min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular;			
 						
-			vec3 RefractVec = refract(viewvector,normal, eta);
-    		vec3 ReflectVec = reflect(viewvector, normal);			
+			vec3 RefractVec = refract(viewvector,normalize(normal), eta);
+    		vec3 ReflectVec = reflect(viewvector, normalize(normal));	
+			
 			vec4 RefractColor = texture(texcube,RefractVec);
 			vec4 ReflectColor = texture(texcube,ReflectVec);			
-			vec4 re = mix(RefractColor,ReflectColor,0.5);
+			ReflectColor = mix(RefractColor,ReflectColor,0.5);
 
 			vec4 color = texture2D(tex,tc*2);			
 						
 			color = mix(color,vec4(light_color,1.0),0.5);
-			color = mix(color,re,0.6);
+			color = mix(color,ReflectColor,0.6);
 			if(alpha !=1)
-				color.a = alpha;
-			
+				color.a = alpha;			
 			fragmentcolor = color;
             break;
 		}

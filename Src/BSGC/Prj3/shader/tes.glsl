@@ -20,5 +20,5 @@ void main()
     p.y += texture(heightmap,tc).r * 40 ;
 	tc = tc3 / 1000;
 	gl_Position = ProjectionMatrix * ModelViewMatrix * p;
-	vpos = vec3(ProjectionMatrix * ModelViewMatrix * p);
+	vpos = vec3(ModelViewMatrix * p);
 }

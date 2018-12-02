@@ -546,8 +546,7 @@ void TrainView::paintGL()
 		water->shaderProgram->setUniformValue("heightmap", highmap_textureid);
 		water->shaderProgram->setUniformValue("normalmap", normalmap_textureid);
 		water->shaderProgram->setUniformValue("texcube", skybox->textureId);				
-		water->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.eyeX, arcball.eyeY,arcball.eyeZ));
-		
+		//water->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.eyeX, arcball.eyeY,arcball.eyeZ));		
 		float ratio = 25;
 		float xfrom = 0;
 		float zfrom = 0;
@@ -613,7 +612,7 @@ void TrainView::paintGL()
 			buffer_size.push_back(18 * water_size * water_size);
 			buffer_size.push_back(24 * water_size * water_size);
 			if(VT_WATER)
-				water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.4f,0,1,1,1);
+				water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.7f,0,1,1,1);
 		}
 		water_vertices.clear();
 		buffer_size.clear();
