@@ -7,7 +7,7 @@ uniform mat4 mm;
 out vec2 coord;
 void main()
 {
-	//gl_Position = pm * mm * vec4(position, 1.0);
-	gl_Position = vec4(position, 1.0);
+	gl_Position = pm * mm * vec4(position, 1.0);
+	//gl_Position = vec4(position, 1.0);
 	coord = texcoord;
 }

@@ -17,7 +17,8 @@ void main()
 	vec4 p2 = mix(gl_in[1].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);    	
 	vec4 p = mix(p2, p1, gl_TessCoord.y);
 	tc = tc3 /(sin(time)* 100);
-    p.y += texture(heightmap,tc).r * 40 ;
+	//tc = tc3 / 1000;
+    p.y += texture(heightmap,tc).r * 40;
 	tc = tc3 / 1000;
 	gl_Position = ProjectionMatrix * ModelViewMatrix * p;
 	vpos = vec3(ModelViewMatrix * p);

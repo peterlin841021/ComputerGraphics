@@ -5,23 +5,44 @@ using namespace glm;
 using namespace std;
 
 GLuint sp;
-float interval = 100;
-int shader_now = 0;
-GLuint hawk_texture;
-GLint Shader_now_Loc;
+const unsigned int interval = 100;
 GLuint vao, vvbo;
-int defalut_w = 800;
-int defalut_h = 600;
-vector<TextureData*>textures;
-void Render(glm::mat4 pm, glm::mat4 mm,vector<vec3> pos,vector<vec2> uv, vector<int> buffersize,float time, int drawtype, int effect);
+const size_t defalut_w = 800;
+const size_t defalut_h = 600;
+
+void Render(glm::mat4 pm, glm::mat4 mm,vector<vec3> pos,vector<vec2> uv, vector<int> buffersize, clock_t time, int effect);
+GLuint generateTexture(const char *image);
+
 struct Uniform
 {
 	GLuint mv;
 	GLuint pm;
 	GLuint time;
 	GLuint effect;
+	GLuint tex;
+};
+struct Character 
+{
+	string charactername;
+	mat4 modelview;
+	mat4 projection;
+	vector<vector<vec2>> action;	
+	GLuint textureid;
+	float xpos, ypos;
+	float angley;
+	Character(string name,mat4 mv,mat4 pm, vector<vector<vec2>> uvs)
+	{
+		charactername = name;
+		modelview = mv;
+		projection = pm;
+		action = uvs;
+		xpos = 0;
+		ypos = 0;
+		angley = 0;
+	}
 };
 Uniform *uniform;
+vector<Character*> characters;
 vector<vector<vec2>> generate_ani_uv(float origin_w, float origin_h,size_t wpart, size_t hpart)
 {
 	vector<vector<vec2>> output;
@@ -49,27 +70,12 @@ vector<vector<vec2>> generate_ani_uv(float origin_w, float origin_h,size_t wpart
 	}
 	return output;
 }
-vector<vector<vec2>> davis_uv;
 int index = 0;
-void My_Init()
+int max_index = 0;
+float movex = 0;
+float enemyx = 0.1f;
+void init_shader()
 {
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	davis_uv = generate_ani_uv(15000,200,75,1);//miku
-	//davis_uv = generate_ani_uv(800, 340, 10, 4);//davis
-	//davis_uv = generate_ani_uv(5304, 395, 24, 1);//kizuna
-	/*vector<vec2> temp;
-	temp.push_back(vec2(0, 1));
-	temp.push_back(vec2(1, 1));	
-	temp.push_back(vec2(1, 0));
-	temp.push_back(vec2(1, 0));
-	temp.push_back(vec2(0, 0));
-	temp.push_back(vec2(0, 1));*/	
-	//davis_uv.push_back(temp);
-
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
-	uniform = new Uniform();
-	//Initialize shaders	
 	sp = glCreateProgram();
 	GLuint vs = glCreateShader(GL_VERTEX_SHADER);
 	GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
@@ -86,39 +92,62 @@ void My_Init()
 	glAttachShader(sp, vs);
 	glAttachShader(sp, fs);
 	glLinkProgram(sp);
-	
-	glGenBuffers(1, &vvbo);	
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
 
+	glGenBuffers(1, &vvbo);
+	glGenVertexArrays(1, &vao);
+}
+void My_Init()
+{
+	vector<vector<vec2>> m_uv, k_uv;
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	m_uv = generate_ani_uv(14400, 200, 72, 1);//miku	
+	k_uv = generate_ani_uv(5304, 395, 24, 1);//kizuna
+	init_shader();
+	//Uniform variables
+	uniform = new Uniform();
 	uniform->pm = glGetUniformLocation(sp, "pm");
 	uniform->mv = glGetUniformLocation(sp, "mm");
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
-	//printf("Uniform:%d,%d,%d,%d\n", uniform->mv, uniform->pm, uniform->time, uniform->effect);
-	TextureData *tdata = &(Load_png("miku_75.png"));
-	
-	if (!tdata->data)
+	mat4 pm(1.0);
+	mat4 identity(1.0);
+	//float size = 1.5f * 1;
+	//float aspect = 800 / 600.f;
+	//pm = ortho(aspect* size, aspect * size, -size, size, 0.1f, 15.f);
+
+	Character* cs[2] = { new Character("Miku",mat4(1.0)*scale(identity,vec3(0.5,0.5,0.5)),pm,m_uv),new Character("Kizuna",mat4(1.0)*scale(identity,vec3(0.1,0.1,0.1)),pm,k_uv) };
+
+	cs[0]->textureid = generateTexture("miku_75.png");
+	characters.push_back(cs[0]);
+	cs[1]->textureid = generateTexture("kizuna_24.png");
+	characters.push_back(cs[1]);
+	for (size_t i = 0; i < characters.size(); i++)
+	{
+		if (max_index < characters[i]->action.size())
+			max_index = characters[i]->action.size();
+	}
+}
+GLuint generateTexture(const char *image)
+{
+	GLuint id = characters.size();
+	TextureData *image_data = &(Load_png(image));
+	if (!image_data->data)
 	{
 		printf("Read image fail!\n");
 		system("pause");
+		return 0;
 	}
-	else
-	{
-		textures.push_back(tdata);
-	}
-	for (size_t i = 0; i < textures.size(); i++)
-	{
-		glGenTextures(1, &i);
-		glBindTexture(GL_TEXTURE_2D, i);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tdata->width, tdata->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tdata->data);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	}
+	glGenTextures(1, &id);
+	glBindTexture(GL_TEXTURE_2D, id);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, image_data->width, image_data->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data->data);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	return id;
 }
-void Render(glm::mat4 pm, glm::mat4 mm, vector<vec3> pos, vector<vec2> uv, vector<int> buffersize,float time,int drawtype,int effect)
+
+void Render(glm::mat4 pm, glm::mat4 mm, vector<vec3> pos, vector<vec2> uv, vector<int> buffersize, clock_t time,int effect)
 {	
 	glUseProgram(sp);
 	glBindVertexArray(vao);	
@@ -164,8 +193,7 @@ void Render(glm::mat4 pm, glm::mat4 mm, vector<vec3> pos, vector<vec2> uv, vecto
 		vec_index++;
 		v[vec_index] = uv[i].y;
 		vec_index++;
-	}
-	//printf("Uniform:%d,%d,%d,%d\n", uniform->mv, uniform->pm, uniform->time, uniform->effect);
+	}	
 	glUniformMatrix4fv(uniform->mv,1, GL_FALSE, mv_matrix);
 	glUniformMatrix4fv(uniform->pm, 1, GL_FALSE, pm_matrix);
 	glUniform1i(uniform->effect, effect);
@@ -187,6 +215,7 @@ void My_Display()
 	glClearColor(1, 1, 1, 1);
 	
 	glUseProgram(sp);
+	//Two triangles
 	vector<vec3> pos;
 	pos.push_back(vec3(-1,1,0));
 	pos.push_back(vec3(1, 1, 0));
@@ -195,39 +224,77 @@ void My_Display()
 	pos.push_back(vec3(1, -1, 0));
 	pos.push_back(vec3(-1, -1, 0));
 	pos.push_back(vec3(-1, 1, 0));
-
-	vector<vec2> uv;	
-	for (size_t i = 0; i < davis_uv[index].size(); i++)
-	{
-		uv.push_back(davis_uv[index][i]);
-	}
-
 	vector<int> buffer_size;
 	buffer_size.push_back(6);
 	buffer_size.push_back(6);
-	float t = clock();
+	//Time
+	clock_t time = clock();
 	
-	Render(mat4(1.0), mat4(1.0), pos,uv,buffer_size,(t),1,0);
-	
+	if (characters[1]->xpos > 5.0f)
+	{
+		enemyx = -0.1f;
+		
+	}		
+	else if (characters[1]->xpos < -5.0)
+	{
+		enemyx = 0.1f;
+	}
+	characters[1]->xpos += enemyx;
+	characters[1]->modelview *= translate(mat4(1.0), vec3(enemyx, 0, 0));
+
+	for (size_t i = 0; i < 2; i++)
+	{
+		glActiveTexture(characters[i]->textureid);
+		glBindTexture(GL_TEXTURE_2D, characters[i]->textureid);		
+		Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[index % characters[i]->action.size()], buffer_size, time, 0);
+	}
 	glutSwapBuffers();
 }
-
 //Call to resize the window
 void My_Reshape(int width, int height)
 {
 	glViewport(0, 0, width, height);
 }
-
+//Kayboard input
+void keyboardevent(unsigned char key,int x,int y) 
+{	
+	switch (key)
+	{
+	case 'w':
+	case 'W':		
+		break;
+	case 'a':
+	case 'A':
+		movex = -0.1f;
+		//characters[0]->xpos -= movex;
+		characters[0]->modelview *= translate(mat4(1.0), vec3(movex, 0, 0));
+		break;
+	case 's':
+	case 'S':		
+		break;
+	case 'd':
+	case 'D':
+		movex = 0.1f;
+		//characters[0]->xpos += movex;
+		characters[0]->modelview *= translate(mat4(1.0), vec3(movex, 0, 0));
+		break;
+	case '+':
+		
+		break;
+	case '-':
+		
+		break;
+	default:
+		break;
+	}
+}
 //Timer event
 void My_Timer(int val)
 {
-	index++;
-	if (index == davis_uv.size())
-		index = 0;
+	index++;	
 	glutPostRedisplay();
 	glutTimerFunc(interval, My_Timer, val);
 }
-
 //Menu event
 void My_Menu(int id)
 {
@@ -273,6 +340,7 @@ int main(int argc, char *argv[])
 	//Register GLUT callback functions
 	glutDisplayFunc(My_Display);
 	glutReshapeFunc(My_Reshape);
+	glutKeyboardFunc(keyboardevent);
 	glutTimerFunc(interval, My_Timer, 0);
 	// Enter main event loop.
 	glutMainLoop();

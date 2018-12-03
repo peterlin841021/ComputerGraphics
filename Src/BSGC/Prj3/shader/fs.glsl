@@ -315,7 +315,7 @@ void main(void)
 
 			vec4 color = texture2D(tex,tc*2);			
 						
-			color = mix(color,vec4(light_color,1.0),0.5);
+			//color = mix(color,vec4(light_color,1.0),0.5);
 			color = mix(color,ReflectColor,0.6);
 			if(alpha !=1)
 				color.a = alpha;			

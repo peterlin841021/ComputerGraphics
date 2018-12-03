@@ -12,7 +12,8 @@ ViewManager::ViewManager()
 	viewVector = normalize(viewVector);
 }
 
-mat4 ViewManager::GetModelMatrix() {
+mat4 ViewManager::GetModelMatrix() 
+{
 	return translationMatrix * rotationMatrix;
 }
 
@@ -48,17 +49,20 @@ mat4 ViewManager::GetModelViewProjectionMatrix(float aspect)
     return GetViewProjectionMatrix(aspect) * GetModelMatrix();
 }
 
-vec3 ViewManager::GetWorldEyePosition() {
+vec3 ViewManager::GetWorldEyePosition() 
+{
 	vec4 wordEyePosition = vec4(eyePosition, 0) * GetModelMatrix();
 	return wordEyePosition.xyz;
 }
 
-vec3 ViewManager::GetWorldViewVector() {
+vec3 ViewManager::GetWorldViewVector() 
+{
 	vec4 wordLookVector = vec4(-viewVector, 0) * GetModelMatrix();
 	return wordLookVector.xyz;
 }
 
-void ViewManager::keyEvents(unsigned char key) {
+void ViewManager::keyEvents(unsigned char key) 
+{
 	switch (key)
 	{
 	case 'w': 
@@ -88,7 +92,8 @@ void ViewManager::keyEvents(unsigned char key) {
 	}
 }
 
-void ViewManager::mouseEvents(int button, int state, int x, int y) {
+void ViewManager::mouseEvents(int button, int state, int x, int y) 
+{
 
 	if (state == GLUT_UP)
 	{
@@ -175,7 +180,8 @@ void ViewManager::Zoom(float distance)
     zoom = clamp(0.1f, zoom, 3.0f);
 }
 
-void ViewManager::SetWindowSize(int width,int height) {
+void ViewManager::SetWindowSize(int width,int height) 
+{
 	w_width = width;
 	w_height = height;
 }
@@ -205,7 +211,8 @@ void ViewManager::Reset()
     rotationMatrix = mat4(1.0);
 }
 
-void ViewManager::Translate(vec2 vec) {
+void ViewManager::Translate(vec2 vec) 
+{
 	vec2 diff = vec;
 
 	vec4 up = vec4(0, 1, 0, 0);
