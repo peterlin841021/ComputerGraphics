@@ -4,12 +4,17 @@
 using namespace glm;
 using namespace std;
 
+#define ACTION_STATE_MOVE 1
+#define ACTION_STATE_JUMP 2
+#define ACTION_STATE_ATTACK 3
+#define ACTION_STATE_DIE 4
+
 GLuint sp;
-const unsigned int interval = 10;
+const unsigned int interval = 100;
 GLuint vao, vvbo;
 const size_t defalut_w = 800;
 const size_t defalut_h = 600;
-
+size_t character_state = 0;
 void Render(glm::mat4 pm, glm::mat4 mm,vector<vec3> pos,vector<vec2> uv, vector<int> buffersize, clock_t time, int effect);
 GLuint generateTexture(const char *image);
 
@@ -26,16 +31,21 @@ struct Character
 	string charactername;
 	mat4 modelview;
 	mat4 projection;
-	vector<vector<vec2>> action;	
+	vector<vector<vec2>> action;
+	pair<int, int> idle;	
+	pair<int, int> move;
+	pair<int, int> attack;
+	pair<int, int> die;
+
 	GLuint textureid;
 	float xpos, ypos;
 	float angley;
-	Character(string name,mat4 mv,mat4 pm, vector<vector<vec2>> uvs)
+	Character(string name,mat4 mv,mat4 pm)
 	{
 		charactername = name;
 		modelview = mv;
 		projection = pm;
-		action = uvs;
+		
 		xpos = 0;
 		ypos = 0;
 		angley = 0;
@@ -70,10 +80,10 @@ vector<vector<vec2>> generate_ani_uv(float origin_w, float origin_h,size_t wpart
 	}
 	return output;
 }
+
 int index = 0;
-int max_index = 0;
 float movex = 0;
-float enemyx = 0.1f;
+
 void init_shader()
 {
 	sp = glCreateProgram();
@@ -98,12 +108,8 @@ void init_shader()
 }
 void My_Init()
 {
-	vector<vector<vec2>> m_uv, k_uv,castle_uv,p_uv;
+	vector<vector<vec2>> miku_uv, scene_uv;
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	m_uv = generate_ani_uv(14400, 200, 72, 1);//miku	
-	k_uv = generate_ani_uv(5304, 395, 24, 1);//kizuna
-	castle_uv = generate_ani_uv(679, 376, 4, 1);
-	p_uv = generate_ani_uv(384, 384, 4, 4);
 	init_shader();
 	//Uniform variables
 	uniform = new Uniform();
@@ -111,35 +117,44 @@ void My_Init()
 	uniform->mv = glGetUniformLocation(sp, "mm");
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
-	float sc = 0.2;
+
+	float character_scale = 0.5f;
+	float scene_scale = 1.f;
+	const size_t count = 2;
 	mat4 pm(1.0);
 	mat4 identity(1.0);
-	mat4 mv(1.0);
-	mv * translate(identity, vec3(0,2,0));
-	mv *= scale(identity, vec3(sc, sc, 1));
-	Character* cs[4] = 
-	{ 
-		new Character("Castle",mat4(1.0)*scale(identity,vec3(1,1,1)),pm,castle_uv),
-		new Character("Miku",mv,pm,m_uv),
-		new Character("Kizuna",mv,pm,k_uv),
-		new Character("Princess",mv,pm,p_uv)
-	};
+	mat4 character_mv(1.0);
+	mat4 scene_mv(1.0);
+	character_mv * translate(identity, vec3(0, 2, 0));
+	character_mv *= scale(identity, vec3(character_scale, character_scale, 1));
 
-	cs[0]->textureid = generateTexture("castleL.png");
-	characters.push_back(cs[0]);
-	cs[1]->textureid = generateTexture("miku_75.png");
-	characters.push_back(cs[1]);
-	cs[2]->textureid = generateTexture("kizuna_24.png");
-	characters.push_back(cs[2]);
-	cs[3]->textureid = generateTexture("princess.png");
-	characters.push_back(cs[3]);
-
-	for (size_t i = 0; i < characters.size(); i++)
+	scene_mv *= scale(identity, vec3(scene_scale, scene_scale, 1));
+	Character* cs[count] =
 	{
-		if (max_index < characters[i]->action.size())
-			max_index = characters[i]->action.size();
+		new Character("Background",scene_mv,pm),
+		new Character("Miku",character_mv,pm)
+	};
+	const char* texture_images[count] = { "background.png" ,"miku_9.png" };
+	for (size_t i = 0; i < count; i++)
+	{
+		cs[i]->textureid = generateTexture(texture_images[i]);
+		if (i == 0)//Scene
+		{
+			cs[i]->action = generate_ani_uv(558, 299, 1, 1);
+			cs[i]->idle = pair<int, int>(0, 1);
+		}
+		else if (i == 1)
+		{
+			cs[i]->action = generate_ani_uv(900, 100, 9, 1);
+			cs[i]->idle = pair<int, int>(0, 2);
+			cs[i]->move = pair<int, int>(2, 2);
+			cs[i]->attack = pair<int, int>(6, 3);
+			cs[i]->die = pair<int, int>(5, 1);
+		}
+		characters.push_back(cs[i]);
 	}
 }
+
 GLuint generateTexture(const char *image)
 {
 	GLuint id = characters.size();
@@ -228,14 +243,25 @@ void resetaction(unsigned char key,int x,int y)
 	{
 	case 'a':
 	case 'A':
-		//index = 0;
+		character_state = 0;
+		index = 0;
 		break;
 	case 'd':
 	case 'D':
-		//index = 0;
+		character_state = 0;
+		index = 0;
 		break;
-	default:
-		
+	case 's':
+	case 'S':
+		character_state = 0;
+		index = 0;
+		break;
+	case 'z':
+	case 'Z':
+		character_state = 0;
+		index = 0;
+		break;
+	default:		
 		break;
 	}
 }
@@ -259,26 +285,36 @@ void My_Display()
 	buffer_size.push_back(6);
 	//Time
 	clock_t time = clock();
-	
-	if (characters[2]->xpos > 5.0f)
-	{
-		enemyx = -0.1f;		
-	}		
-	else if (characters[2]->xpos < -5.0)
-	{
-		enemyx = 0.1f;
-	}
-	characters[2]->xpos += enemyx;
-	characters[2]->modelview *= translate(mat4(1.0), vec3(enemyx, 0, 0));
+		
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//glDepthFunc(GL_LEQUAL);
 	for (size_t i = 0; i < characters.size(); i++)
 	{		
-		glActiveTexture(characters[i]->textureid);
-		glBindTexture(GL_TEXTURE_2D, characters[i]->textureid);
-		if (i == 0 || i == characters.size() - 1)
-			Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[index % characters[i]->action.size()], buffer_size, time, 0);
+		glActiveTexture(characters[i]->textureid);		
+		glBindTexture(GL_TEXTURE_2D, characters[i]->textureid);		
+		if (i == 0)
+		{
+			Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->idle.first +(index % characters[i]->idle.second)], buffer_size, time, 0);
+		}			
+		else
+		{
+			switch (character_state)
+			{
+			case ACTION_STATE_MOVE:				
+				Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->move.first + (index % (characters[i]->move.second))], buffer_size, time, 0);
+				break;
+			case ACTION_STATE_ATTACK:				
+				Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->attack.first + (index % characters[i]->attack.second)], buffer_size, time, 0);
+				break;
+			case ACTION_STATE_DIE:			
+				Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->die.first + (index % characters[i]->die.second)], buffer_size, time, 0);
+				break;
+			default:				
+				Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->idle.first + (index % characters[i]->idle.second)], buffer_size, time, 0);
+				break;
+			}
+		}			
 	}
 	
 	glDisable(GL_BLEND);
@@ -292,7 +328,7 @@ void My_Reshape(int width, int height)
 //Kayboard input
 void keyboardevent(unsigned char key,int x,int y) 
 {	
-	
+	float setps = 0.05f;
 	switch (key)
 	{
 	case 'w':
@@ -300,26 +336,31 @@ void keyboardevent(unsigned char key,int x,int y)
 		break;
 	case 'a':
 	case 'A':
-		movex = -0.1f;
+		character_state = ACTION_STATE_MOVE;
+		movex = -setps;
 		//characters[0]->xpos -= movex;
-		characters[2]->modelview *= translate(mat4(1.0), vec3(movex, 0, 0));
+		characters[1]->modelview *= translate(mat4(1.0), vec3(movex, 0, 0));
 		index++;
 		break;
 	case 's':
-	case 'S':		
+	case 'S':
+		character_state = ACTION_STATE_DIE;
 		break;
 	case 'd':
 	case 'D':
-		movex = 0.1f;
+		character_state = ACTION_STATE_MOVE;
+		movex = setps;
 		//characters[0]->xpos += movex;
-		characters[2]->modelview *= translate(mat4(1.0), vec3(movex, 0, 0));
+		characters[1]->modelview *= translate(mat4(1.0), vec3(movex, 0, 0));
 		index++;
 		break;
-	case '+':
-		
+	case 'z':
+	case 'Z':
+		character_state = ACTION_STATE_ATTACK;
+		index++;
+	case '+':		
 		break;
-	case '-':
-		
+	case '-':		
 		break;
 	default:		
 		break;
