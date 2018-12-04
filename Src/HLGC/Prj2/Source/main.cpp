@@ -5,7 +5,7 @@ using namespace glm;
 using namespace std;
 
 GLuint sp;
-const unsigned int interval = 100;
+const unsigned int interval = 10;
 GLuint vao, vvbo;
 const size_t defalut_w = 800;
 const size_t defalut_h = 600;
@@ -98,10 +98,12 @@ void init_shader()
 }
 void My_Init()
 {
-	vector<vector<vec2>> m_uv, k_uv;
+	vector<vector<vec2>> m_uv, k_uv,castle_uv,p_uv;
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	m_uv = generate_ani_uv(14400, 200, 72, 1);//miku	
 	k_uv = generate_ani_uv(5304, 395, 24, 1);//kizuna
+	castle_uv = generate_ani_uv(679, 376, 4, 1);
+	p_uv = generate_ani_uv(384, 384, 4, 4);
 	init_shader();
 	//Uniform variables
 	uniform = new Uniform();
@@ -109,18 +111,29 @@ void My_Init()
 	uniform->mv = glGetUniformLocation(sp, "mm");
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
+	float sc = 0.2;
 	mat4 pm(1.0);
 	mat4 identity(1.0);
-	//float size = 1.5f * 1;
-	//float aspect = 800 / 600.f;
-	//pm = ortho(aspect* size, aspect * size, -size, size, 0.1f, 15.f);
+	mat4 mv(1.0);
+	mv * translate(identity, vec3(0,2,0));
+	mv *= scale(identity, vec3(sc, sc, 1));
+	Character* cs[4] = 
+	{ 
+		new Character("Castle",mat4(1.0)*scale(identity,vec3(1,1,1)),pm,castle_uv),
+		new Character("Miku",mv,pm,m_uv),
+		new Character("Kizuna",mv,pm,k_uv),
+		new Character("Princess",mv,pm,p_uv)
+	};
 
-	Character* cs[2] = { new Character("Miku",mat4(1.0)*scale(identity,vec3(0.5,0.5,0.5)),pm,m_uv),new Character("Kizuna",mat4(1.0)*scale(identity,vec3(0.1,0.1,0.1)),pm,k_uv) };
-
-	cs[0]->textureid = generateTexture("miku_75.png");
+	cs[0]->textureid = generateTexture("castleL.png");
 	characters.push_back(cs[0]);
-	cs[1]->textureid = generateTexture("kizuna_24.png");
+	cs[1]->textureid = generateTexture("miku_75.png");
 	characters.push_back(cs[1]);
+	cs[2]->textureid = generateTexture("kizuna_24.png");
+	characters.push_back(cs[2]);
+	cs[3]->textureid = generateTexture("princess.png");
+	characters.push_back(cs[3]);
+
 	for (size_t i = 0; i < characters.size(); i++)
 	{
 		if (max_index < characters[i]->action.size())
@@ -209,6 +222,23 @@ void Render(glm::mat4 pm, glm::mat4 mm, vector<vec3> pos, vector<vec2> uv, vecto
 	glDrawArrays(GL_TRIANGLES, 0,pos.size());
 }
 // GLUT callback. Called to draw the scene.
+void resetaction(unsigned char key,int x,int y)
+{
+	switch (key)
+	{
+	case 'a':
+	case 'A':
+		//index = 0;
+		break;
+	case 'd':
+	case 'D':
+		//index = 0;
+		break;
+	default:
+		
+		break;
+	}
+}
 void My_Display()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -230,24 +260,28 @@ void My_Display()
 	//Time
 	clock_t time = clock();
 	
-	if (characters[1]->xpos > 5.0f)
+	if (characters[2]->xpos > 5.0f)
 	{
-		enemyx = -0.1f;
-		
+		enemyx = -0.1f;		
 	}		
-	else if (characters[1]->xpos < -5.0)
+	else if (characters[2]->xpos < -5.0)
 	{
 		enemyx = 0.1f;
 	}
-	characters[1]->xpos += enemyx;
-	characters[1]->modelview *= translate(mat4(1.0), vec3(enemyx, 0, 0));
-
-	for (size_t i = 0; i < 2; i++)
-	{
+	characters[2]->xpos += enemyx;
+	characters[2]->modelview *= translate(mat4(1.0), vec3(enemyx, 0, 0));
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glDepthFunc(GL_LEQUAL);
+	for (size_t i = 0; i < characters.size(); i++)
+	{		
 		glActiveTexture(characters[i]->textureid);
-		glBindTexture(GL_TEXTURE_2D, characters[i]->textureid);		
-		Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[index % characters[i]->action.size()], buffer_size, time, 0);
+		glBindTexture(GL_TEXTURE_2D, characters[i]->textureid);
+		if (i == 0 || i == characters.size() - 1)
+			Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[index % characters[i]->action.size()], buffer_size, time, 0);
 	}
+	
+	glDisable(GL_BLEND);
 	glutSwapBuffers();
 }
 //Call to resize the window
@@ -258,6 +292,7 @@ void My_Reshape(int width, int height)
 //Kayboard input
 void keyboardevent(unsigned char key,int x,int y) 
 {	
+	
 	switch (key)
 	{
 	case 'w':
@@ -267,7 +302,8 @@ void keyboardevent(unsigned char key,int x,int y)
 	case 'A':
 		movex = -0.1f;
 		//characters[0]->xpos -= movex;
-		characters[0]->modelview *= translate(mat4(1.0), vec3(movex, 0, 0));
+		characters[2]->modelview *= translate(mat4(1.0), vec3(movex, 0, 0));
+		index++;
 		break;
 	case 's':
 	case 'S':		
@@ -276,7 +312,8 @@ void keyboardevent(unsigned char key,int x,int y)
 	case 'D':
 		movex = 0.1f;
 		//characters[0]->xpos += movex;
-		characters[0]->modelview *= translate(mat4(1.0), vec3(movex, 0, 0));
+		characters[2]->modelview *= translate(mat4(1.0), vec3(movex, 0, 0));
+		index++;
 		break;
 	case '+':
 		
@@ -284,14 +321,14 @@ void keyboardevent(unsigned char key,int x,int y)
 	case '-':
 		
 		break;
-	default:
+	default:		
 		break;
 	}
+	
 }
 //Timer event
 void My_Timer(int val)
-{
-	index++;	
+{	
 	glutPostRedisplay();
 	glutTimerFunc(interval, My_Timer, val);
 }
@@ -341,6 +378,8 @@ int main(int argc, char *argv[])
 	glutDisplayFunc(My_Display);
 	glutReshapeFunc(My_Reshape);
 	glutKeyboardFunc(keyboardevent);
+	glutKeyboardUpFunc(resetaction);
+	
 	glutTimerFunc(interval, My_Timer, 0);
 	// Enter main event loop.
 	glutMainLoop();
