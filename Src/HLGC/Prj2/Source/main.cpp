@@ -10,7 +10,7 @@ using namespace std;
 #define ACTION_STATE_DIE 4
 
 GLuint sp;
-const unsigned int interval = 350;
+const unsigned int interval = 250;
 GLuint vao, vvbo;
 const size_t defalut_w = 800;
 const size_t defalut_h = 600;
@@ -207,7 +207,7 @@ void My_Init()
 	{
 		new Character("Background",identity,pm,0,0,0,0,0,scene_scale,0,0,0,0),
 		new Character("Miku",character_mv,pm,100,1,0,0,0,character_scale,leftboundry,ground,0.4f,0.2f),
-		new Character("Origin marhroom",monster_mv,pm,5,10,1,0,0,character_scale,0.7f,ground,0.3f,0.2f)
+		new Character("Origin marhroom",monster_mv,pm,5,10,1,0,0,character_scale,-leftboundry,ground,0.2f,0.2f)
 	};
 	const char* texture_images[4] = { "background.png" ,"mikuL.png","mikuR.png","origin_mashroom.png" };
 	cs[0]->textureidL = generateTexture(texture_images[0]);
@@ -386,8 +386,8 @@ void My_Display()
 			}			
 		}
 	}
-	printf("Xpos:%f\n", characters[1]->xpos);
-	for (size_t i = 0; i < characters.size()-1; i++)
+	//printf("Xpos:%f\n", characters[1]->xpos);
+	for (size_t i = 0; i < characters.size(); i++)
 	{
 		if (i == 0)
 		{
@@ -610,13 +610,13 @@ void keyboardevent(unsigned char key,int x,int y)
 		break;
 	case 'd':
 	case 'D':
-		
+		characters[1]->left = false;
 		if ((characters[1]->jumpcounter < 3 && characters[1]->isjump || !characters[1]->isjump && characters[1]->jumpcounter == 0) && !characters[1]->isdied)
 		{
 			characters[1]->state = ACTION_STATE_MOVE;
 			if (characters[1]->xpos <= 0.9f)
 			{											
-				characters[1]->xpos += steps;
+				characters[1]->xpos += 0.01f;
 				characters[1]->modelview *= translate(mat4(1.0), vec3(steps, 0, 0));
 			}							
 			if (characters[1]->isjump)
@@ -628,6 +628,7 @@ void keyboardevent(unsigned char key,int x,int y)
 		break;
 	case 'a':
 	case 'A':
+		characters[1]->left = true;
 		if ((characters[1]->jumpcounter < 3 && characters[1]->isjump) ||
 			(!characters[1]->isjump && characters[1]->jumpcounter == 0))
 		{
@@ -637,7 +638,7 @@ void keyboardevent(unsigned char key,int x,int y)
 				if (characters[1]->xpos >= -0.9f)
 				{					
 					characters[1]->modelview *= translate(mat4(1.0), vec3(-steps, 0, 0));
-					characters[1]->xpos -= steps;
+					characters[1]->xpos -= 0.01f;
 				}
 				if (characters[1]->isjump)
 					characters[1]->state = ACTION_STATE_JUMP;
