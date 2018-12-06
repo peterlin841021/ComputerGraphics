@@ -10,7 +10,7 @@ using namespace std;
 #define ACTION_STATE_DIE 4
 
 GLuint sp;
-const unsigned int interval = 250;
+const unsigned int interval = 100;
 GLuint vao, vvbo;
 const size_t defalut_w = 800;
 const size_t defalut_h = 600;
@@ -47,7 +47,7 @@ struct Character
 	size_t jumpcounter = 0;
 	size_t attackcounter = 0;
 
-	bool beattack;
+	bool isinjured;
 	bool left;
 	bool isjump;
 	bool isdied;
@@ -76,7 +76,7 @@ struct Character
 		jump_distance = jd;
 
 		left = false;
-		beattack = false;
+		isinjured = false;
 		isjump = false;
 		isdied = false;
 	}
@@ -196,8 +196,7 @@ void My_Init()
 	mat4 scene_mv(1.0);
 	mat4 monster_mv(1.0);
 
-	character_mv *= translate(identity, vec3(leftboundry, ground, 0));
-	//character_mv *= rotate(identity,180.f,vec3(0,1,0));
+	character_mv *= translate(identity, vec3(leftboundry, ground, 0));	
 	character_mv *= scale(identity, vec3(character_scale, character_scale, character_scale));
 	scene_mv *= scale(identity, vec3(scene_scale, scene_scale, character_scale));
 	monster_mv *= translate(identity, vec3(0.7f, ground, 0));	
@@ -209,11 +208,11 @@ void My_Init()
 		new Character("Miku",character_mv,pm,100,1,0,0,0,character_scale,leftboundry,ground,0.4f,0.2f),
 		new Character("Origin marhroom",monster_mv,pm,5,10,1,0,0,character_scale,-leftboundry,ground,0.2f,0.2f)
 	};
-	const char* texture_images[4] = { "background.png" ,"mikuL.png","mikuR.png","origin_mashroom.png" };
+	const char* texture_images[3] = { "background.png" ,"miku.png","miku.png"};
 	cs[0]->textureidL = generateTexture(texture_images[0]);
 	cs[1]->textureidL = generateTexture(texture_images[1]);
 	cs[1]->textureidR = generateTexture(texture_images[2]);
-	cs[2]->textureidL = generateTexture(texture_images[3]);
+	cs[2]->textureidL = generateTexture(texture_images[2]);
 	for (size_t i = 0; i < count; i++)
 	{		
 		if (i == 0)//Scene
@@ -226,11 +225,11 @@ void My_Init()
 		{			
 			cs[i]->action = generate_ani_uv(1000, 100, 10, 1);
 			cs[i]->idle = pair<int, int>(0, 1);
-			cs[i]->move = pair<int, int>(2, 2);
-			cs[i]->jump = pair<int, int>(4, 1);
-			cs[i]->attack = pair<int, int>(6, 3);
-			cs[i]->die = pair<int, int>(5, 1);
-			cs[i]->injured = pair<int, int>(9, 1);
+			cs[i]->move = pair<int, int>(1, 3);
+			cs[i]->jump = pair<int, int>(5, 1);
+			cs[i]->attack = pair<int, int>(7, 3);
+			cs[i]->die = pair<int, int>(6, 1);
+			cs[i]->injured = pair<int, int>(0, 1);
 			cs[i]->left = false;
 		}
 		else
@@ -351,15 +350,15 @@ void My_Display()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//glDepthFunc(GL_LEQUAL);
 
-	//Damage detect
-	if (!characters[1]->beattack)
+	//Injure detect
+	if (!characters[1]->isinjured)
 	{
 		for (size_t i = 2; i < characters.size(); i++)
 		{
 			size_t amount = collisiondetect(vec3(characters[1]->xpos, characters[1]->ypos, 0), vec3(characters[i]->xpos, characters[i]->ypos, 0), characters[i]->damage, characters[i]->attack_distance);
 			if (amount > 0 && characters[i] ->state != ACTION_STATE_DIE)
 			{
-				characters[1]->beattack = true;
+				characters[1]->isinjured = true;
 				if (characters[1]->hp > 0)
 					characters[1]->hp -= amount;
 				if (characters[1]->hp == 0)
@@ -507,10 +506,10 @@ void My_Display()
 				Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->idle.first + (characters[i]->nextframe % characters[i]->idle.second)], buffer_size, time, 0);
 				break;
 			}
-			if (characters[i]->beattack && !characters[1]->isdied)
+			if (characters[i]->isinjured && !characters[1]->isdied)
 			{
 				Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->injured.first], buffer_size, time, 0);
-				characters[i]->beattack = false;
+				characters[i]->isinjured = false;
 			}				
 		}
 		else 
@@ -582,7 +581,7 @@ void My_Reshape(int width, int height)
 //Kayboard input
 void keyboardevent(unsigned char key,int x,int y) 
 {	
-	float steps = 0.03f;
+	float steps = 0.3f;
 	float sc = 0.2f, ground =-0.7f;
 	switch (key)
 	{

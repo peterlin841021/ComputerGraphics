@@ -143,6 +143,8 @@ TextureData Load_png(const char* path)
 char** LoadShaderSource(const char* file)
 {
 	FILE* fp = fopen(file, "rb");
+
+	
 	fseek(fp, 0, SEEK_END);
 	long sz = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
