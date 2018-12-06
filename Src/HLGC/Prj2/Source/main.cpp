@@ -39,38 +39,64 @@ struct Character
 	pair<int, int> attack;
 	pair<int, int> injured;
 	pair<int, int> die;
+	size_t nextframe = 0;
+
 	size_t hp;
 	size_t damage;
-	size_t nextframe = 0;
-	bool beattack;
 	size_t state = 0;
-	GLuint textureid;
+	size_t jumpcounter = 0;
+	size_t attackcounter = 0;
+
+	bool beattack;
+	bool left;
+	bool isjump;
+	bool isdied;
+
+	GLuint textureidL;
+	GLuint textureidR;
 	float xpos, ypos;
 	float attack_distance;
 	float jump_distance;	
-	int dir;
+	float scale_ratio;
 
-	Character(string name,mat4 mv,mat4 pm)
+	Character(string name,mat4 mv,mat4 pm, size_t h, size_t dam, size_t st, size_t ac, size_t jc,float sc,float x,float y,float ad,float jd)
 	{
 		charactername = name;
 		modelview = mv;
 		projection = pm;
-		
-		xpos = 0;
-		ypos = 0;
-		dir = 1;
+		hp = h;
+		damage = dam;
+		state = st;
+		attackcounter = ac;
+		jumpcounter = jc;
+		scale_ratio = sc;
+		xpos = x;
+		ypos = y;
+		attack_distance = ad;
+		jump_distance = jd;
+
+		left = false;
+		beattack = false;
+		isjump = false;
+		isdied = false;
 	}
-	void reset()
-	{
-		hp = 100;
-		state = 0;
-		xpos = -0.9f;
-		ypos = -0.7f;
-		dir = 1;
+	void reset(size_t h, size_t dam, size_t st,size_t ac, size_t jc, float sc, float x, float y, float ad, float jd)
+	{		
 		modelview = mat4(1.0);
-		modelview *= translate(mat4(1.0), vec3(xpos, ypos, 0));
-		modelview *= rotate(mat4(1.0), 180.f, vec3(0, 1, 0));		
-		modelview *= scale(mat4(1.0), vec3(0.25f, 0.25f, 0.25f));
+		hp = h;
+		damage = dam;
+		state = st;
+		attackcounter = ac;
+		jumpcounter = jc;
+		scale_ratio = sc;
+		xpos = x;
+		ypos = y;
+		attack_distance = ad;
+		jump_distance = jd;
+		left = false;
+		//
+		modelview *= translate(mat4(1.0),vec3(x, y,0));
+		modelview *= scale(mat4(1.0),vec3(sc, sc, sc));
 	}
 };
 Uniform *uniform;
@@ -102,12 +128,6 @@ vector<vector<vec2>> generate_ani_uv(float origin_w, float origin_h,size_t wpart
 	}
 	return output;
 }
-
-int index = 0;
-bool isjump = false;
-bool isdied = false;
-size_t jumpcounter = 0;
-size_t attackcounter = 0;
 
 void init_shader()
 {
@@ -169,6 +189,7 @@ void My_Init()
 	const size_t count = 3;
 	float ground = -0.7f;
 	float leftboundry = -0.9f;
+
 	mat4 pm(1.0);
 	mat4 identity(1.0);
 	mat4 character_mv(1.0);
@@ -176,24 +197,25 @@ void My_Init()
 	mat4 monster_mv(1.0);
 
 	character_mv *= translate(identity, vec3(leftboundry, ground, 0));
-	character_mv *= rotate(identity,180.f,vec3(0,1,0));
+	//character_mv *= rotate(identity,180.f,vec3(0,1,0));
 	character_mv *= scale(identity, vec3(character_scale, character_scale, character_scale));
 	scene_mv *= scale(identity, vec3(scene_scale, scene_scale, character_scale));
-	monster_mv *= translate(identity, vec3(0.7f, ground, 0));
-	//monster_mv *= rotate(identity, -180.f, vec3(0, 1, 0));
+	monster_mv *= translate(identity, vec3(0.7f, ground, 0));	
 	monster_mv *= scale(identity, vec3(character_scale, character_scale, character_scale));
 
 	Character* cs[count] =
 	{
-		new Character("Background",identity,pm),
-		new Character("Miku",identity,pm),
-		new Character("Origin marhroom",identity,pm)
+		new Character("Background",identity,pm,0,0,0,0,0,scene_scale,0,0,0,0),
+		new Character("Miku",character_mv,pm,100,1,0,0,0,character_scale,leftboundry,ground,0.4f,0.2f),
+		new Character("Origin marhroom",monster_mv,pm,5,10,1,0,0,character_scale,0.7f,ground,0.3f,0.2f)
 	};
-	const char* texture_images[count] = { "background.png" ,"mikuR.png","origin_mashroom.png" };
+	const char* texture_images[4] = { "background.png" ,"mikuL.png","mikuR.png","origin_mashroom.png" };
+	cs[0]->textureidL = generateTexture(texture_images[0]);
+	cs[1]->textureidL = generateTexture(texture_images[1]);
+	cs[1]->textureidR = generateTexture(texture_images[2]);
+	cs[2]->textureidL = generateTexture(texture_images[3]);
 	for (size_t i = 0; i < count; i++)
-	{
-		cs[i]->textureid = generateTexture(texture_images[i]);
-
+	{		
 		if (i == 0)//Scene
 		{
 			cs[i]->modelview = scene_mv;
@@ -201,8 +223,7 @@ void My_Init()
 			cs[i]->idle = pair<int, int>(0, 1);
 		}
 		else if (i == 1)
-		{
-			cs[i]->modelview = character_mv;
+		{			
 			cs[i]->action = generate_ani_uv(1000, 100, 10, 1);
 			cs[i]->idle = pair<int, int>(0, 1);
 			cs[i]->move = pair<int, int>(2, 2);
@@ -210,27 +231,14 @@ void My_Init()
 			cs[i]->attack = pair<int, int>(6, 3);
 			cs[i]->die = pair<int, int>(5, 1);
 			cs[i]->injured = pair<int, int>(9, 1);
-			cs[i]->xpos = leftboundry;
-			cs[i]->ypos = ground;
-			cs[i]->state = 0;
-			cs[i]->beattack = false;
-			cs[i]->hp = 100;
-			cs[i]->jump_distance = 0.2f;
-			cs[i]->attack_distance = 0.4f;
-			cs[i]->damage = 1;
+			cs[i]->left = false;
 		}
 		else
-		{
-			cs[i]->modelview = monster_mv;
-			cs[i]->action = generate_ani_uv(611, 100, 6, 1);			
-			cs[i]->move = pair<int, int>(0, 3);			
-			cs[i]->die = pair<int, int>(3, 3);		
-			cs[i]->xpos = 0.7f;
-			cs[i]->ypos = ground;
-			cs[i]->state = ACTION_STATE_MOVE;
-			cs[i]->hp = 5;
-			cs[i]->attack_distance = 0.3f;
-			cs[i]->damage = 10;
+		{	
+			cs[i]->action = generate_ani_uv(611, 100, 6, 1);
+			cs[i]->move = pair<int, int>(0, 3);
+			cs[i]->die = pair<int, int>(3, 3);
+			cs[i]->left = true;
 		}
 		characters.push_back(cs[i]);
 	}
@@ -317,7 +325,6 @@ void Render(glm::mat4 pm, glm::mat4 mm, vector<vec3> pos, vector<vec2> uv, vecto
 	glEnableVertexAttribArray(1);
 	glDrawArrays(GL_TRIANGLES, 0,pos.size());
 }
-// GLUT callback. Called to draw the scene.
 
 void My_Display()
 {
@@ -357,7 +364,7 @@ void My_Display()
 					characters[1]->hp -= amount;
 				if (characters[1]->hp == 0)
 				{
-					isdied = true;
+					characters[1]->isdied = true;
 					characters[1]->state = ACTION_STATE_DIE;
 				}					
 				printf("Miku hP:%d\n", characters[1]->hp);
@@ -365,7 +372,7 @@ void My_Display()
 		}
 	}	
 	//Attack detect
-	if (characters[1]->state == ACTION_STATE_ATTACK && attackcounter == 3)
+	if (characters[1]->state == ACTION_STATE_ATTACK && characters[1]->attackcounter == 3)
 	{
 		for (size_t i = 2; i < characters.size(); i++)
 		{
@@ -379,16 +386,30 @@ void My_Display()
 			}			
 		}
 	}
-	for (size_t i = 0; i < characters.size(); i++)
-	{		
-		glActiveTexture(characters[i]->textureid);		
-		glBindTexture(GL_TEXTURE_2D, characters[i]->textureid);		
+	printf("Xpos:%f\n", characters[1]->xpos);
+	for (size_t i = 0; i < characters.size()-1; i++)
+	{
 		if (i == 0)
 		{
-			Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[0], buffer_size, time, 0);
+			glActiveTexture(characters[i]->textureidL);
+			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
+			Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[0], buffer_size, time, 0);
 		}			
 		else if(i == 1)//Miku
 		{
+			//Directions
+			
+			if (characters[i]->left)
+			{
+				glActiveTexture(characters[i]->textureidL);
+				glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
+			}
+			else
+			{
+				glActiveTexture(characters[i]->textureidR);
+				glBindTexture(GL_TEXTURE_2D, characters[i]->textureidR);
+			}
+			
 			switch (characters[i]->state)
 			{
 			case ACTION_STATE_MOVE:				
@@ -396,11 +417,11 @@ void My_Display()
 				{
 					characters[i]->nextframe = 0;
 					characters[i]->state = 0;
-					Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], buffer_size, time, 0);
 				}
 				else
 				{
-					Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], buffer_size, time, 0);
 					characters[i]->nextframe++;
 				}
 				break;
@@ -408,19 +429,20 @@ void My_Display()
 				if (characters[i]->nextframe >= characters[i]->jump.second)
 				{
 					characters[i]->nextframe = 0;
-					Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->jump.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->jump.first + characters[i]->nextframe], buffer_size, time, 0);
 				}
 				else
 				{
-					Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->jump.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->jump.first + characters[i]->nextframe], buffer_size, time, 0);
 					characters[i]->nextframe++;
 				}
-				if (jumpcounter < 3)
+				if (characters[i]->jumpcounter < 3)
 				{
 					characters[i]->ypos += characters[i]->jump_distance;
-					characters[1]->modelview = mat4(1.0);
-					characters[1]->modelview *= translate(mat4(1.0), vec3(characters[1]->xpos, characters[1]->ypos, 0));					
-					if (characters[1]->dir == 1)
+					characters[1]->modelview *= translate(mat4(1.0), vec3(0, characters[i]->jump_distance, 0));
+					/*characters[1]->modelview = mat4(1.0);
+										
+					if (!characters[1]->left)
 					{
 						characters[1]->modelview *= rotate(mat4(1.0), 180.f, vec3(0, 1, 0));
 						characters[1]->modelview *= scale(mat4(1.0), vec3(0.25f, 0.25f, 0.25f));
@@ -429,15 +451,16 @@ void My_Display()
 					{
 						characters[1]->modelview *= rotate(mat4(1.0), 270.f, vec3(0, 1, 0));
 						characters[1]->modelview *= scale(mat4(1.0), vec3(0.2f, 0.2f, 0.2f));
-					}
-					jumpcounter++;
+					}*/
+					characters[1]->jumpcounter++;
 				}				
-				else if(jumpcounter < 6)
+				else if(characters[1]->jumpcounter < 6)
 				{
 					characters[i]->ypos -= characters[i]->jump_distance;
-					characters[1]->modelview = mat4(1.0);
+					characters[1]->modelview *= translate(mat4(1.0), vec3(0, -characters[i]->jump_distance, 0));
+					/*characters[1]->modelview = mat4(1.0);
 					characters[1]->modelview *= translate(mat4(1.0), vec3(characters[1]->xpos, characters[1]->ypos, 0));
-					if (characters[1]->dir == 1)
+					if (!characters[1]->left)
 					{
 						characters[1]->modelview *= rotate(mat4(1.0), 180.f, vec3(0, 1, 0));
 						characters[1]->modelview *= scale(mat4(1.0), vec3(0.25f, 0.25f, 0.25f));
@@ -446,51 +469,64 @@ void My_Display()
 					{
 						characters[1]->modelview *= rotate(mat4(1.0), 270.f, vec3(0, 1, 0));
 						characters[1]->modelview *= scale(mat4(1.0), vec3(0.2f, 0.2f, 0.2f));
-					}
-					jumpcounter ++;
+					}*/
+					characters[i]->jumpcounter ++;
 				}
-				else if (jumpcounter == 6)
+				else if (characters[1]->jumpcounter == 6)
 				{
 					characters[i]->state = 0;
-					isjump = false;
-					characters[i]->ypos =-0.7f;					
-					jumpcounter = 0;
+					characters[1]->isjump = false;
+					characters[i]->ypos =-0.7f;
+					//characters[1]->modelview *= translate(mat4(1.0), vec3(0, characters[i]->ypos, 0));
+					characters[1]->jumpcounter = 0;
 				}
 				break;
 			case ACTION_STATE_ATTACK:
 				if (characters[i]->nextframe >= characters[i]->attack.second)
 				{
 					characters[i]->nextframe = 0;
-					attackcounter = 0;
+					characters[1]->attackcounter = 0;
 					characters[i]->state = 0;
-					Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->attack.first + characters[i]->nextframe], buffer_size, time, 0);
-					if (jumpcounter > 0)
+					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->attack.first + characters[i]->nextframe], buffer_size, time, 0);
+					if (characters[1]->jumpcounter > 0)
 					{
 						characters[i]->state = ACTION_STATE_JUMP;
 					}						
 				}
 				else
 				{
-					Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->attack.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->attack.first + characters[i]->nextframe], buffer_size, time, 0);
 					characters[i]->nextframe++;
-					attackcounter++;
+					characters[1]->attackcounter++;
 				}
 				break;
 			case ACTION_STATE_DIE:
-				Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->die.first], buffer_size, time, 0);				
+				Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->die.first], buffer_size, time, 0);
 				break;
 			default:				
-				Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->idle.first + (characters[i]->nextframe % characters[i]->idle.second)], buffer_size, time, 0);
+				Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->idle.first + (characters[i]->nextframe % characters[i]->idle.second)], buffer_size, time, 0);
 				break;
 			}
-			if (characters[i]->beattack && !isdied)
+			if (characters[i]->beattack && !characters[1]->isdied)
 			{
-				Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->injured.first], buffer_size, time, 0);
+				Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->injured.first], buffer_size, time, 0);
 				characters[i]->beattack = false;
 			}				
 		}
 		else 
 		{
+			//Directions
+			if (characters[i]->left)
+			{
+				glActiveTexture(characters[i]->textureidL);
+				glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
+			}
+			else
+			{
+				glActiveTexture(characters[i]->textureidR);
+				glBindTexture(GL_TEXTURE_2D, characters[i]->textureidR);
+			}
+
 			switch (characters[i]->state)
 			{
 			case ACTION_STATE_MOVE:
@@ -498,11 +534,11 @@ void My_Display()
 				{
 					characters[i]->nextframe = 0;
 					characters[i]->state = 1;
-					Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], buffer_size, time, 0);
 				}
 				else
 				{
-					Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], buffer_size, time, 0);
 					characters[i]->nextframe++;
 				}
 				break;
@@ -511,11 +547,11 @@ void My_Display()
 				{
 					characters[i]->nextframe = 0;
 					characters[i]->state = 1;
-					Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->attack.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->attack.first + characters[i]->nextframe], buffer_size, time, 0);
 				}
 				else
 				{
-					Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->attack.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->attack.first + characters[i]->nextframe], buffer_size, time, 0);
 					characters[i]->nextframe++;
 				}
 				break;
@@ -524,11 +560,11 @@ void My_Display()
 				{
 					characters[i]->nextframe = characters[i]->die.second-1;
 					characters[i]->state = 4;
-					Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->die.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->die.first + characters[i]->nextframe], buffer_size, time, 0);
 				}
 				else
 				{
-					Render(characters[i]->modelview, characters[i]->projection, pos, characters[i]->action[characters[i]->die.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->die.first + characters[i]->nextframe], buffer_size, time, 0);
 					characters[i]->nextframe++;
 				}				
 				break;			
@@ -552,68 +588,65 @@ void keyboardevent(unsigned char key,int x,int y)
 	{
 	case 'w':
 	case 'W':
-		if (!isjump && !isdied)
+		if (!characters[1]->isjump && !characters[1]->isdied)
 		{
-			isjump = true;
+			characters[1]->isjump = true;
 			characters[1]->nextframe = 0;
 			characters[1]->state = ACTION_STATE_JUMP;
-			characters[1]->modelview = mat4(1.0);
-			characters[1]->modelview *= translate(mat4(1.0), vec3(characters[1]->xpos, characters[1]->ypos + steps * 2, 0));
-			if (characters[1]->dir == 1)
+			//characters[1]->modelview = mat4(1.0);
+			//characters[1]->modelview *= translate(mat4(1.0), vec3(0, characters[1]->ypos + steps * 2, 0));
+			if (!characters[1]->left)
 			{
-				characters[1]->modelview *= rotate(mat4(1.0), 180.f, vec3(0, 1, 0));
-				characters[1]->modelview *= scale(mat4(1.0), vec3(0.25f, 0.25f, 0.25f));
+				//characters[1]->modelview *= rotate(mat4(1.0), 180.f, vec3(0, 1, 0));
+				//characters[1]->modelview *= scale(mat4(1.0), vec3(0.25f, 0.25f, 0.25f));
 			}
 			else
 			{
-				characters[1]->modelview *= rotate(mat4(1.0), 270.f, vec3(0, 1, 0));
-				characters[1]->modelview *= scale(mat4(1.0), vec3(sc, sc, sc));
+				//characters[1]->modelview *= rotate(mat4(1.0), 270.f, vec3(0, 1, 0));
+				//characters[1]->modelview *= scale(mat4(1.0), vec3(sc, sc, sc));
 			}
-			characters[1]->ypos += steps * 2;
+			//characters[1]->ypos += steps * 2;
 		}		
 		break;
-	case 'a':
-	case 'A':
-		if ((jumpcounter < 3 && isjump || !isjump && jumpcounter == 0) && !isdied)
+	case 'd':
+	case 'D':
+		
+		if ((characters[1]->jumpcounter < 3 && characters[1]->isjump || !characters[1]->isjump && characters[1]->jumpcounter == 0) && !characters[1]->isdied)
 		{
 			characters[1]->state = ACTION_STATE_MOVE;
-			if (characters[1]->xpos >= -0.9f)
-			{
-				characters[1]->modelview = mat4(1.0);
-				characters[1]->modelview *= translate(mat4(1.0), vec3(characters[1]->xpos + -steps, characters[1]->ypos, 0));
-				characters[1]->modelview *= rotate(mat4(1.0), 270.f, vec3(0, 1, 0));
-				characters[1]->modelview *= scale(mat4(1.0), vec3(sc, sc, sc));
-				characters[1]->xpos += -steps;
-			}
-			characters[1]->dir = -1;
-			if (isjump)
+			if (characters[1]->xpos <= 0.9f)
+			{											
+				characters[1]->xpos += steps;
+				characters[1]->modelview *= translate(mat4(1.0), vec3(steps, 0, 0));
+			}							
+			if (characters[1]->isjump)
 				characters[1]->state = ACTION_STATE_JUMP;
-		}				
+		}
 		break;
 	case 's':
 	case 'S':		
 		break;
-	case 'd':
-	case 'D':
-		if ((jumpcounter < 3 && isjump || !isjump && jumpcounter == 0) && !isdied)
+	case 'a':
+	case 'A':
+		if ((characters[1]->jumpcounter < 3 && characters[1]->isjump) ||
+			(!characters[1]->isjump && characters[1]->jumpcounter == 0))
 		{
-			characters[1]->state = ACTION_STATE_MOVE;
-			if (characters[1]->xpos <= 0.8f)
+			if (!characters[1]->isdied)
 			{
-				characters[1]->modelview = mat4(1.0);
-				characters[1]->modelview *= translate(mat4(1.0), vec3(characters[1]->xpos + steps, characters[1]->ypos, 0));
-				characters[1]->modelview *= rotate(mat4(1.0), 180.f, vec3(0, 1, 0));
-				characters[1]->modelview *= scale(mat4(1.0), vec3(0.25f, 0.25f, 0.25f));
-				characters[1]->xpos += steps;
-			}
-			characters[1]->dir = 1;
-			if (isjump)
-				characters[1]->state = ACTION_STATE_JUMP;
-		}							
+				characters[1]->state = ACTION_STATE_MOVE;
+				if (characters[1]->xpos >= -0.9f)
+				{					
+					characters[1]->modelview *= translate(mat4(1.0), vec3(-steps, 0, 0));
+					characters[1]->xpos -= steps;
+				}
+				if (characters[1]->isjump)
+					characters[1]->state = ACTION_STATE_JUMP;
+			}			
+		}
 		break;
 	case 'z':
 	case 'Z':
-		if (!isdied)
+		if (!characters[1]->isdied)
 		{
 			characters[1]->nextframe = 0;
 			characters[1]->state = ACTION_STATE_ATTACK;			
@@ -626,10 +659,11 @@ void keyboardevent(unsigned char key,int x,int y)
 	case 'R':
 	case 'r':
 		characters[1]->nextframe = 0;
-		isdied = false;
-		isjump = false;		
-		jumpcounter = 0;
-		characters[1]->reset();
+		characters[1]->isdied = false;
+		characters[1]->isjump = false;
+		characters[1]->left = false;
+		characters[1]->jumpcounter = 0;
+		characters[1]->reset(100,1,0,0,0,0.25f,-0.9f,-0.7f,0.4f,0.2f);
 		break;
 	default:		
 		break;

@@ -50,9 +50,7 @@ void Phosgene()
 void main(void)
 {			
 	vec4 temp = texture(tex,coord);
-	if (temp.a < 0.1)
-		discard;
-	else		 
-		fragmentcolor = temp;
+		 
+	fragmentcolor = temp;
 	//Phosgene();
 }
