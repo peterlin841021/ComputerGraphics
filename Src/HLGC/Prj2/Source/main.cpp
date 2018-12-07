@@ -256,10 +256,21 @@ void My_Init()
 			none),		
 		new Character("Magnus",identity,
 			none),
-			new Character("Particle sys",identity,
-			character_attributes[2])
+		new Character("Particle sys",identity,
+		character_attributes[2])
 	};
-	const char* texture_images[count+2] = { "background.png","background.png" ,"mikuL.png","t.png","CrimsonBalrog.png","mashroom.png","pig.png","suu.png","wolf.png","walk.png","star.png"};
+	const char* texture_images[count+1] = { 
+		"background.png",
+		"mikuL.png",
+		"mikuR.png",
+		"CrimsonBalrog.png",
+		"mashroom.png",
+		"pig.png",
+		"suu.png",
+		"wolf.png",
+		"walk.png",
+		"star.png"
+	};
 		
 	for (size_t i = 0; i < count; i++)
 	{		
@@ -270,8 +281,7 @@ void My_Init()
 			cs[i]->modelview = scene_mv;			
 			cs[i]->action = generate_ani_uv(1596, 599, 2, 1);
 			cs[i]->idle = pair<int, int>(0, 1);
-			cs[i]->textureidL = generateTexture(texture_images[i]);
-			cs[i]->textureidR = generateTexture(texture_images[i+1]);
+			cs[i]->textureidL = generateTexture(texture_images[i]);			
 			cs[i]->left = true;
 		}
 		else if (i == 1)
@@ -290,8 +300,8 @@ void My_Init()
 			cs[i]->attack = attacks;
 
 			cs[i]->left = false;
-			cs[i]->textureidL = generateTexture(texture_images[i+1]);
-			cs[i]->textureidR = generateTexture(texture_images[i+2]);
+			cs[i]->textureidL = generateTexture(texture_images[i]);
+			cs[i]->textureidR = generateTexture(texture_images[i+1]);
 		}
 		else
 		{	
@@ -305,7 +315,7 @@ void My_Init()
 				cs[i]->move = pair<int, int>(0, 4);	
 
 				cs[i]->left = false;
-				cs[i]->textureidR = generateTexture(texture_images[i+2]);
+				cs[i]->textureidR = generateTexture(texture_images[i+1]);
 			}
 			else if (i == 3)//Origin mashroom
 			{
@@ -318,7 +328,7 @@ void My_Init()
 				cs[i]->die = pair<int, int>(3, 3);
 
 				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i + 2]);
+				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
 			}
 			else if (i == 4)//Pig
 			{
@@ -330,7 +340,7 @@ void My_Init()
 				cs[i]->move = pair<int, int>(0, 3);				
 
 				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i + 2]);
+				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
 			}
 			else if (i == 5)//Suu
 			{
@@ -342,7 +352,7 @@ void My_Init()
 				cs[i]->move = pair<int, int>(0, 4);
 				cs[i]->die = pair<int, int>(4, 8);
 				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i + 2]);
+				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
 			}
 			else if (i == 6)//Wolf
 			{				
@@ -354,7 +364,7 @@ void My_Init()
 				cs[i]->move = pair<int, int>(0, 12);
 
 				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i + 2]);
+				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
 			}
 			else if (i == 7)//Magnus
 			{
@@ -365,7 +375,7 @@ void My_Init()
 				cs[i]->action = generate_ani_uv(2912, 197, 8, 1);
 				cs[i]->move = pair<int, int>(0, 8);				
 				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i + 2]);
+				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
 			}
 			else if (i == 8)//Particle sys
 			{
@@ -376,7 +386,7 @@ void My_Init()
 				cs[i]->action = generate_ani_uv(128, 128, 1, 1);
 				cs[i]->move = pair<int, int>(0, 1);
 				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i+2]);
+				cs[i]->textureidL = generateTexture(texture_images[i+1]);
 			}
 		}
 		characters.push_back(cs[i]);
@@ -441,8 +451,10 @@ void Render(glm::mat4 pm, glm::mat4 mm, vector<vec2> uv, clock_t time,int effect
 	{
 		for (size_t i = 0; i < particle_num; i++)
 		{
-			pos.push_back(vec3((random_float() * 1.f) * 100, (random_float() * 1.f) * 100, random_float()));
-			//pos.push_back(vec3(1,1,-2));
+			pos.push_back(vec3(
+				(random_float() * 2.0f - 1.0f) * 100.0f,
+				(random_float() * 2.0f - 1.0f) * 100.0f, 
+				random_float()));			
 		}
 	}
 		
@@ -639,7 +651,7 @@ void My_Display()
 				characters[i]->isinjured = false;
 			}				
 		}
-		else 
+		else if(i != 8)
 		{		
 			//Monsters directions
 			if (characters[i]->left)
@@ -652,7 +664,54 @@ void My_Display()
 				glActiveTexture(characters[i]->textureidR);
 				glBindTexture(GL_TEXTURE_2D, characters[i]->textureidR);
 			}			
-			
+			////
+			size_t action_index = 0;
+			switch (characters[i]->state)
+			{
+			case ACTION_STATE_IDLE:
+				action_index = characters[i]->idle.first;
+				break;
+			case ACTION_STATE_MOVE:
+				action_index = characters[i]->move.first + characters[i]->nextframe;
+				if (characters[i]->nextframe == characters[i]->move.second - 1)
+				{
+					characters[i]->nextframe = 0;
+					characters[i]->state = 0;
+				}
+				else
+				{
+					characters[i]->nextframe++;
+				}
+				break;
+			case ACTION_STATE_ATTACK:
+				action_index = characters[i]->attack[0].first + characters[i]->nextframe;
+				if (characters[i]->nextframe == characters[i]->attack[0].second - 1)
+				{
+					characters[i]->nextframe = 0;
+					characters[1]->attackcounter = 0;
+					characters[i]->state = 0;
+					if (characters[1]->jumpcounter > 0)
+					{
+						characters[i]->state = ACTION_STATE_JUMP;
+					}
+				}
+				else
+				{
+					characters[i]->nextframe++;
+					characters[1]->attackcounter++;
+				}
+				break;			
+			case ACTION_STATE_DIE:
+				action_index = characters[i]->die.first;
+				break;
+			}
+			Render(projection_matrix, characters[i]->modelview, characters[i]->action[action_index], time, 0, 0);
+		}
+		else if( i == 8)
+		{
+			glActiveTexture(characters[i]->textureidL);
+			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
+			Render(projection_matrix, characters[1]->modelview, characters[i]->action[0], time, 0, 1);
 		}
 	}	
 	glDisable(GL_BLEND);

@@ -15,7 +15,7 @@ void Normal(){
 	if(type == 0)
 		texColor = texture(tex,coord);	
 	else if(type == 1)
-		texColor = texture(tex,gl_PointCoord);	
+		texColor = texture(tex,gl_PointCoord)*color;	
 	fragColor = texColor;		
 }
 
