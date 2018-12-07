@@ -26,11 +26,15 @@ const unsigned int interval = 100;
 GLuint vao, vvbo;
 const size_t defalut_w = 800;
 const size_t defalut_h = 600;
+int scene_counter = 0;
 
-
-void Render(glm::mat4 pm, glm::mat4 mm,vector<vec3> pos,vector<vec2> uv, vector<int> buffersize, clock_t time, int effect);
+void Render(glm::mat4 pm, glm::mat4 mm,vector<vec2> uv, clock_t time, int effect,int type);
 GLuint generateTexture(const char *image);
-
+struct Particle 
+{
+	vec3 pos;
+	vec3 color;
+};
 struct Uniform
 {
 	GLuint mv;
@@ -38,6 +42,7 @@ struct Uniform
 	GLuint time;
 	GLuint effect;
 	GLuint tex;
+	GLuint type;
 };
 struct Character 
 {
@@ -53,24 +58,25 @@ struct Character
 	pair<int, int> die;
 	size_t nextframe = 0;
 
-	size_t hp;
-	size_t damage;
+	size_t hp = 0;
+	size_t damage = 0;
 	size_t state = 0;
 	size_t jumpcounter = 0;
 	size_t attackcounter = 0;
+	size_t footsetps = 0;
 
-	bool isinjured;
-	bool left;
-	bool isjump;
-	bool isdied;
+	bool isinjured = false;
+	bool left = false;
+	bool isjump = false;
+	bool isdied = false;
 
 	GLuint textureidL;
 	GLuint textureidR;
-	float xpos, ypos;
-	float attack_distance;
-	float jump_distance;	
-	float scale_ratio;
-	float footsetps;
+	float xpos = 0.f, ypos= 0.f;	
+	float attack_distance= 0.f;
+	float jump_distance= 0.f;
+	float scale_ratio= 0.f;
+	
 	
 	Character(string name, mat4 mv, mat4 pm, float *attributes)
 	{
@@ -128,7 +134,6 @@ vector<vector<vec2>> generate_ani_uv(float origin_w, float origin_h,size_t wpart
 	}
 	return output;
 }
-
 void init_shader()
 {
 	sp = glCreateProgram();
@@ -149,7 +154,7 @@ void init_shader()
 	glLinkProgram(sp);
 
 	glGenBuffers(1, &vvbo);
-	glGenVertexArrays(1, &vao);
+	glGenVertexArrays(1, &vao);	
 }
 size_t collisiondetect(vec3 v1, vec3 v2, size_t damage,float attack_distance)
 {
@@ -182,51 +187,101 @@ void My_Init()
 	uniform->mv = glGetUniformLocation(sp, "mm");
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
-	
-	const size_t count = 8;	
+	uniform->type = glGetUniformLocation(sp, "type");
+	const size_t count = 9;	
 
 	mat4 pm(1.0);
 	mat4 identity(1.0);
 	mat4 character_mv(1.0);
 	mat4 scene_mv(1.0);
 	mat4 monster_mv(1.0);
-	float attributes[10] = {0};
-	
+
+	std::vector<float*> character_attributes;
+	character_attributes.reserve(count);
+	float ground = -0.5f;
+	float leftboundary = -0.8f;
+	float *attributes = new float[10];
+	float *none = new float[10]{0};
+	//*Scene*//
+		attributes[HP] = 0;
+		attributes[DAMAGE] = 0;
+		attributes[STATE] = 0;
+		attributes[ATTACK_COUNTER] = 0;
+		attributes[JUMP_COUNTER] = 0;
+		attributes[SCALE] = 1.f;
+		attributes[XPOS] = 2500;
+		attributes[YPOS] = 1.6f;//0.9-(-0.7)
+		attributes[ATTACK_DISTANCE] = 0;
+		attributes[JUMP_DISTANCE] = 0;
+		attributes[FOOTSTEP] = 25;
+	character_attributes.push_back(attributes);
+	attributes = new float[10];//Reset
+	//*Miku*//
+		attributes[HP] = 1000;
+		attributes[DAMAGE] = 1;
+		attributes[STATE] = 0;
+		attributes[ATTACK_COUNTER] = 0;
+		attributes[JUMP_COUNTER] = 0;
+		attributes[SCALE] = 0.15f;
+		attributes[XPOS] = 0;
+		attributes[YPOS] = 0;
+		attributes[ATTACK_DISTANCE] = 0.4f;
+		attributes[JUMP_DISTANCE] = 0.6f;
+		attributes[FOOTSTEP] = 2;
+	character_attributes.push_back(attributes);
+	attributes = new float[10];//Reset
+	//*Particle sys*//
+	attributes[HP] = 1;
+	attributes[DAMAGE] = 1;
+	attributes[STATE] = 1;
+	attributes[ATTACK_COUNTER] = 0;
+	attributes[JUMP_COUNTER] = 0;
+	attributes[SCALE] = 0.1f;
+	attributes[XPOS] = 0;
+	attributes[YPOS] = 0;
+	attributes[ATTACK_DISTANCE] = 0;
+	attributes[JUMP_DISTANCE] = 0;
+	attributes[FOOTSTEP] = 0;
+	character_attributes.push_back(attributes);
 	Character* cs[count] =
 	{
 		new Character("Background",identity,pm,
-			attributes),
+			character_attributes[0]),
 		new Character("Miku",identity,pm,
-			attributes),
+			character_attributes[1]),
 		new Character("CrimsonBalrog",identity,pm,
-			attributes),
+			none),
 		new Character("Origin marhroom",identity,pm,
-			attributes),
+			none),
 		new Character("Pig",identity,pm,
-			attributes),
+			none),
+			new Character("Wolf",identity,pm,
+			none),
 		new Character("Suu",identity,pm,
-			attributes),
-		new Character("Wolf",identity,pm,
-			attributes),
+			none),		
 		new Character("Magnus",identity,pm,
-			attributes),
+			none),
+			new Character("Particle sys",identity,pm,
+			character_attributes[2])
 	};
-	const char* texture_images[count+1] = { "background.png" ,"mikuL.png","mikuR.png","CrimsonBalrog.png","mashroom.png","pig.png","suu.png","wolf.png","walk.png"};
+	const char* texture_images[count+2] = { "background.png","background.png" ,"mikuL.png","t.png","CrimsonBalrog.png","mashroom.png","pig.png","suu.png","wolf.png","walk.png","star.png"};
 		
 	for (size_t i = 0; i < count; i++)
 	{		
 		if (i == 0)//Scene
 		{
-			scene_mv *= scale(identity, vec3(1.f, 1.f, 1.f));
+			scene_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
 			cs[i]->modelview = scene_mv;
-			cs[i]->action = generate_ani_uv(558, 299, 1, 1);
+			cs[i]->action = generate_ani_uv(1596, 599, 2, 1);
 			cs[i]->idle = pair<int, int>(0, 1);
-			cs[i]->textureidL = generateTexture(texture_images[0]);
+			cs[i]->textureidL = generateTexture(texture_images[i]);
+			cs[i]->textureidR = generateTexture(texture_images[i+1]);
+			cs[i]->left = true;
 		}
 		else if (i == 1)
 		{			
-			character_mv *= translate(identity, vec3(-0.9f, -0.6f, 0));
-			character_mv *= scale(identity, vec3(0.25f, 0.25f, 0.25f));
+			character_mv *= translate(identity, vec3(leftboundary, ground, 0));
+			character_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
 			cs[i]->modelview = character_mv;
 
 			cs[i]->action = generate_ani_uv(1100, 100, 11, 1);
@@ -240,8 +295,8 @@ void My_Init()
 			cs[i]->attack = attacks;
 
 			cs[i]->left = false;
-			cs[i]->textureidL = generateTexture(texture_images[1]);
-			cs[i]->textureidR = generateTexture(texture_images[2]);
+			cs[i]->textureidL = generateTexture(texture_images[i+1]);
+			cs[i]->textureidR = generateTexture(texture_images[i+2]);
 		}
 		else
 		{	
@@ -255,7 +310,7 @@ void My_Init()
 				cs[i]->move = pair<int, int>(0, 4);	
 
 				cs[i]->left = false;
-				cs[i]->textureidR = generateTexture(texture_images[3]);
+				cs[i]->textureidR = generateTexture(texture_images[i+2]);
 			}
 			else if (i == 3)//Origin mashroom
 			{
@@ -268,7 +323,7 @@ void My_Init()
 				cs[i]->die = pair<int, int>(3, 3);
 
 				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[4]);
+				cs[i]->textureidL = generateTexture(texture_images[i + 2]);
 			}
 			else if (i == 4)//Pig
 			{
@@ -280,21 +335,9 @@ void My_Init()
 				cs[i]->move = pair<int, int>(0, 3);				
 
 				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[5]);
+				cs[i]->textureidL = generateTexture(texture_images[i + 2]);
 			}
 			else if (i == 5)//Suu
-			{
-				monster_mv *= translate(identity, vec3(0.f, 1.f, 0));
-				monster_mv *= scale(identity, vec3(5.f, 5.f, 5.f));
-				cs[i]->modelview = monster_mv;
-
-				cs[i]->action = generate_ani_uv(3108, 255, 12, 1);
-				cs[i]->move = pair<int, int>(0, 12);
-
-				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[6]);
-			}
-			else if (i == 6)//Wolf
 			{
 				monster_mv *= translate(identity, vec3(0, 0.5f, 0));
 				monster_mv *= scale(identity, vec3(0.8f, 0.8f, 0.8f));
@@ -304,7 +347,19 @@ void My_Init()
 				cs[i]->move = pair<int, int>(0, 4);
 				cs[i]->die = pair<int, int>(4, 8);
 				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[7]);
+				cs[i]->textureidL = generateTexture(texture_images[i + 2]);
+			}
+			else if (i == 6)//Wolf
+			{				
+				monster_mv *= translate(identity, vec3(0.f, 1.f, 0));
+				monster_mv *= scale(identity, vec3(5.f, 5.f, 5.f));
+				cs[i]->modelview = monster_mv;
+
+				cs[i]->action = generate_ani_uv(3108, 255, 12, 1);
+				cs[i]->move = pair<int, int>(0, 12);
+
+				cs[i]->left = true;
+				cs[i]->textureidL = generateTexture(texture_images[i + 2]);
 			}
 			else if (i == 7)//Magnus
 			{
@@ -315,11 +370,22 @@ void My_Init()
 				cs[i]->action = generate_ani_uv(2912, 197, 8, 1);
 				cs[i]->move = pair<int, int>(0, 8);				
 				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[8]);
+				cs[i]->textureidL = generateTexture(texture_images[i + 2]);
+			}
+			else if (i == 8)//Particle sys
+			{
+				monster_mv *= translate(identity, vec3(0, 2.f, 0));
+				monster_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
+				cs[i]->modelview = monster_mv;
+
+				cs[i]->action = generate_ani_uv(128, 128, 1, 1);
+				cs[i]->move = pair<int, int>(0, 1);
+				cs[i]->left = true;
+				cs[i]->textureidL = generateTexture(texture_images[i + 2 ]);
 			}
 		}
 		characters.push_back(cs[i]);
-	}
+	}	
 }
 
 GLuint generateTexture(const char *image)
@@ -342,16 +408,13 @@ GLuint generateTexture(const char *image)
 	return id;
 }
 
-void Render(glm::mat4 pm, glm::mat4 mm, vector<vec3> pos, vector<vec2> uv, vector<int> buffersize, clock_t time,int effect)
+void Render(glm::mat4 pm, glm::mat4 mm, vector<vec2> uv, clock_t time,int effect,int type)
 {	
 	glUseProgram(sp);
-	glBindVertexArray(vao);	
+	glBindVertexArray(vao);
 	float mv_matrix[16] = { 0 };
 	float pm_matrix[16] = { 0 };
-	int pos_size = buffersize[0];
-	int color_size = buffersize[1];
-	int total_size = 0;
-
+	//MV
 	for (size_t i = 0; i < 4; i++)
 	{
 		for (size_t j = 0; j < 4; j++)
@@ -359,6 +422,7 @@ void Render(glm::mat4 pm, glm::mat4 mm, vector<vec3> pos, vector<vec2> uv, vecto
 			mv_matrix[i * 4 + j] = mm[i][j];
 		}
 	}
+	//PM
 	for (size_t i = 0; i < 4; i++)
 	{
 		for (size_t j = 0; j < 4; j++)
@@ -366,42 +430,55 @@ void Render(glm::mat4 pm, glm::mat4 mm, vector<vec3> pos, vector<vec2> uv, vecto
 			pm_matrix[i * 4 + j] = pm[i][j];
 		}
 	}
-	for (size_t i = 0; i < buffersize.size(); i++)
-	{
-		total_size += buffersize[i] * 3;
-	}
+	size_t particle_num = 20;
+	int pos_size = 6;
+		
+	//Two triangles
+	vector<vec3> pos;
+	pos.push_back(vec3(-1, 1, 0));
+	pos.push_back(vec3(1, 1, 0));
+	pos.push_back(vec3(1, -1, 0));
 
-	float *v = new float[total_size];
-	int vec_index = 0;
+	pos.push_back(vec3(1, -1, 0));
+	pos.push_back(vec3(-1, -1, 0));
+	pos.push_back(vec3(-1, 1, 0));
+		
+	vector<float> vtx;	
 	for (int i = 0; i < pos_size; i++)
 	{
-		v[vec_index] = pos[i].x;
-		vec_index++;
-		v[vec_index] = pos[i].y;
-		vec_index++;
-		v[vec_index] = pos[i].z;
-		vec_index++;
+		vtx.push_back(pos[i].x);
+		vtx.push_back(pos[i].y);
+		vtx.push_back(pos[i].z);
 	}	
-	for (int i = 0 ; i < color_size; i ++)
+	for (int i = 0 ; i < uv.size(); i++)
 	{
-		v[vec_index] = uv[i].x;
-		vec_index++;
-		v[vec_index] = uv[i].y;
-		vec_index++;
+		vtx.push_back(uv[i].x);
+		vtx.push_back(uv[i].y);
 	}	
 	glUniformMatrix4fv(uniform->mv,1, GL_FALSE, mv_matrix);
 	glUniformMatrix4fv(uniform->pm, 1, GL_FALSE, pm_matrix);
 	glUniform1i(uniform->effect, effect);
 	glUniform1f(uniform->time, time);
-
+	glUniform1f(uniform->type, type);
 	glBindBuffer(GL_ARRAY_BUFFER, vvbo);
-	glBufferData(GL_ARRAY_BUFFER, total_size * sizeof(float),v, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, (vtx.size()) * sizeof(float),vtx.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,0,0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,0, (void*)(pos_size * 3 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,0, (void*)(pos_size  * 3 * sizeof(float)));
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
-	glDrawArrays(GL_TRIANGLES, 0,pos.size());
+	if(type == 0)
+		glDrawArrays(GL_TRIANGLES, 0,6);
+	else if (type == 1)
+	{
+		glEnable(GL_POINT_SPRITE);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+				glEnable(GL_PROGRAM_POINT_SIZE);
+				glDrawArrays(GL_POINTS, 0, particle_num);
+			glDisable(GL_BLEND);
+		glDisable(GL_POINT_SPRITE);
+	}
 }
 
 void My_Display()
@@ -409,22 +486,9 @@ void My_Display()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(1, 1, 1, 1);
 	
-	glUseProgram(sp);
-	//Two triangles
-	vector<vec3> pos;
-	pos.push_back(vec3(-1,1,0));
-	pos.push_back(vec3(1, 1, 0));
-	pos.push_back(vec3(1, -1, 0));
-
-	pos.push_back(vec3(1, -1, 0));
-	pos.push_back(vec3(-1, -1, 0));
-	pos.push_back(vec3(-1, 1, 0));
-	vector<int> buffer_size;
-	buffer_size.push_back(6);
-	buffer_size.push_back(6);
+	glUseProgram(sp);	
 	//Time
-	clock_t time = clock();
-	
+	clock_t time = clock();	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//glDepthFunc(GL_LEQUAL);
@@ -465,13 +529,30 @@ void My_Display()
 		}
 	}
 	//printf("X:%f\n", characters[1]->xpos);
-	for (size_t i = 0; i < characters.size(); i++)
+	for (size_t i = 0; i < characters.size()-1; i++)
 	{
 		if (i == 0)
 		{
 			glActiveTexture(characters[i]->textureidL);
 			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
-			Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[0], buffer_size, time, 0);
+			if (scene_counter > 0 && scene_counter > 145)
+			{				
+				//characters[i]->left = !characters[i]->left;
+				scene_counter = 0;
+				vector<vector<vec2>> uv = characters[0]->action;
+
+			}
+			else if(scene_counter < 0)
+			{				
+				//characters[i]->left = !characters[i]->left;
+				scene_counter = 144;
+				/*characters[1]->modelview = mat4(1.0);
+				characters[1]->modelview *= translate(mat4(1.0), vec3(0.9f, -0.5f, 0));
+				characters[1]->modelview *= scale(mat4(1.0), vec3(characters[1]->scale_ratio, characters[1]->scale_ratio, characters[1]->scale_ratio));*/
+			}						
+			Render(characters[i]->projection, characters[i]->modelview,characters[i]->action[0], time, 0,0);
+			//printf("X position:%f\n", characters[1]->xpos);
+			//printf("sc:%d\n", scene_counter);
 		}			
 		else if(i == 1)//Miku
 		{
@@ -493,11 +574,21 @@ void My_Display()
 				{
 					characters[i]->nextframe = 0;
 					characters[i]->state = 0;
-					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], buffer_size, time, 0);
+					if (i == 8)
+					{
+						//Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], time, 0, 1);
+					}
+					else
+						Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], time, 0,0);
 				}
 				else
 				{
-					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], buffer_size, time, 0);
+					if (i == 8)
+					{
+						//Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], time, 0, 1);
+					}
+					else
+						Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], time, 0,0);
 					characters[i]->nextframe++;
 				}
 				break;
@@ -505,11 +596,11 @@ void My_Display()
 				if (characters[i]->nextframe >= characters[i]->jump.second)
 				{
 					characters[i]->nextframe = 0;
-					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->jump.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->jump.first + characters[i]->nextframe],time, 0,0);
 				}
 				else
 				{
-					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->jump.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->jump.first + characters[i]->nextframe], time, 0,0);
 					characters[i]->nextframe++;
 				}
 				if (characters[i]->jumpcounter < 3)
@@ -538,7 +629,7 @@ void My_Display()
 					characters[i]->nextframe = 0;
 					characters[1]->attackcounter = 0;
 					characters[i]->state = 0;
-					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->attack[0].first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->attack[0].first + characters[i]->nextframe], time, 0,0);
 					if (characters[1]->jumpcounter > 0)
 					{
 						characters[i]->state = ACTION_STATE_JUMP;
@@ -546,21 +637,21 @@ void My_Display()
 				}
 				else
 				{
-					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->attack[0].first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->attack[0].first + characters[i]->nextframe], time, 0,0);
 					characters[i]->nextframe++;
 					characters[1]->attackcounter++;
 				}
 				break;
 			case ACTION_STATE_DIE:
-				Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->die.first], buffer_size, time, 0);
+				Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->die.first], time, 0,0);
 				break;
 			default:				
-				Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->idle.first + (characters[i]->nextframe % characters[i]->idle.second)], buffer_size, time, 0);
+				//Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->idle.first + (characters[i]->nextframe % characters[i]->idle.second)], time, 0,0);
 				break;
 			}
 			if (characters[i]->isinjured && !characters[1]->isdied)
 			{
-				Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->injured.first], buffer_size, time, 0);
+				Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->injured.first], time, 0,0);
 				characters[i]->isinjured = false;
 			}				
 		}
@@ -585,11 +676,11 @@ void My_Display()
 				{
 					characters[i]->nextframe = 0;
 					characters[i]->state = 1;
-					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], time, 0,0);
 				}
 				else
 				{
-					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->move.first + characters[i]->nextframe], time, 0,0);
 					characters[i]->nextframe++;
 				}
 				break;
@@ -600,11 +691,11 @@ void My_Display()
 				{
 					characters[i]->nextframe = characters[i]->die.second-1;
 					characters[i]->state = 4;
-					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->die.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->die.first + characters[i]->nextframe], time, 0,0);
 				}
 				else
 				{
-					Render(characters[i]->projection, characters[i]->modelview, pos, characters[i]->action[characters[i]->die.first + characters[i]->nextframe], buffer_size, time, 0);
+					Render(characters[i]->projection, characters[i]->modelview, characters[i]->action[characters[i]->die.first + characters[i]->nextframe], time, 0,0);
 					characters[i]->nextframe++;
 				}				
 				break;			
@@ -642,13 +733,15 @@ void keyboardevent(unsigned char key,int x,int y)
 		characters[1]->attackcounter = 0;
 		characters[1]->left = false;
 		if ((characters[1]->jumpcounter < 3 && characters[1]->isjump || !characters[1]->isjump && characters[1]->jumpcounter == 0) && !characters[1]->isdied)
-		{
+		{			
 			characters[1]->state = ACTION_STATE_MOVE;
-			if (characters[1]->xpos <= 0.9f)
-			{											
-				characters[1]->xpos += (1.f / characters[1]->footsetps)*(characters[1]->scale_ratio*0.1);
-				characters[1]->modelview *= translate(mat4(1.0), vec3(characters[1]->footsetps, 0, 0));
-			}							
+			float d = (float)characters[1]->footsetps / characters[0]->footsetps;
+			if (characters[0]->xpos - characters[1]->xpos > 0)
+			{
+				scene_counter++;
+				characters[1]->xpos += characters[1]->footsetps;
+				characters[1]->modelview *= translate(mat4(1.0), vec3(d, 0, 0));
+			}			
 			if (characters[1]->isjump)
 				characters[1]->state = ACTION_STATE_JUMP;
 		}
@@ -664,13 +757,16 @@ void keyboardevent(unsigned char key,int x,int y)
 			(!characters[1]->isjump && characters[1]->jumpcounter == 0))
 		{
 			if (!characters[1]->isdied)
-			{
+			{				
 				characters[1]->state = ACTION_STATE_MOVE;
-				if (characters[1]->xpos >= -0.9f)
-				{					
-					characters[1]->xpos -= (1.f / characters[1]->footsetps)*(characters[1]->scale_ratio*0.1);
-					characters[1]->modelview *= translate(mat4(1.0), vec3(-characters[1]->footsetps, 0, 0));
+				float d = (float)characters[1]->footsetps / characters[0]->footsetps;
+				if (characters[0]->xpos - characters[1]->xpos < 2500)
+				{
+					scene_counter--;
+					characters[1]->xpos -= characters[1]->footsetps;
+					characters[1]->modelview *= translate(mat4(1.0), vec3(-d, 0, 0));
 				}
+					
 				if (characters[1]->isjump)
 					characters[1]->state = ACTION_STATE_JUMP;
 			}			
