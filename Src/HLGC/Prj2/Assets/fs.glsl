@@ -95,7 +95,7 @@ void FD(){
     float luminance = dot(delColor.rgb, W);
     fragColor = vec4(vec3(luminance), curColor.a) + bkColor;
 }
-/*-----------------------------�o���S��---------------------------------*/
+/*-----------------------------光氣---------------------------------*/
 float length2(vec2 p) { return dot(p, p); }
 
 float noise(vec2 p)
@@ -136,7 +136,7 @@ void Phosgene()
 	float r = length(abs(2.*uv - 1.) * iResolution.xy);
 	fragColor += vec4(t * vec3(1.8, 1.8*t, .1 + pow(t, 2.-t)), 0.);
 }
-/*--------------------------------��------------------------------------*/
+/*--------------------------------下雪------------------------------------*/
 #define _SnowflakeAmount 300  
 #define _BlizardFactor 0.25          
 float rnd(float x) {  return fract(sin(dot(vec2(x + 47.49, 38.2467 / (x + 2.3)),vec2(12.9898, 78.233))) * (43758.5453));}
@@ -161,7 +161,7 @@ void snow(){
    }
    
 }
-/*---------------------------------����------------------------------------*/
+/*---------------------------------藍焰------------------------------------*/
 
 float polygonDistance(vec2 p, float radius, float angleOffset, int sideCount) {
 	float a = atan(p.x, p.y)+ angleOffset;
@@ -209,7 +209,7 @@ void NebulaSmoke()
     
 	fragColor += vec4(vec3(1.0) - accum * subColor + addColor, 0.0);
 }
-/*-----------------------------�������--------------------------------*/
+/*-----------------------------紫環--------------------------------*/
 #define tau 6.2831853
 
 mat2 makem2(in float theta){float c = cos(theta);float s = sin(theta);return mat2(c,-s,s,c);}

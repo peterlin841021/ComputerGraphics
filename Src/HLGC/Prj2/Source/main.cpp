@@ -108,6 +108,7 @@ vector<Character*> characters;
 vector<vec3> particles_pos;
 vector<vec3> square_pos;
 vector<vec2> square_uv;
+vector<vec2> origin_left;
 vector<vector<vec2>> generate_ani_uv(float origin_w, float origin_h,size_t wpart, size_t hpart)
 {
 	vector<vector<vec2>> output;
@@ -299,13 +300,16 @@ void My_Init()
 			scene_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
 			cs[i]->modelview = scene_mv;			
 			cs[i]->action = generate_ani_uv(1596, 599, 2, 1);
+			//*******//
+			origin_left = cs[i]->action[0];
 			cs[i]->idle = pair<int, int>(0, 1);
 			cs[i]->textureidL = generateTexture(texture_images[i]);			
 			cs[i]->left = true;
 		}
 		else if (i == 1)
 		{			
-			character_mv *= translate(identity, vec3(leftboundary, ground, -2));
+			character_mv *= translate(identity, vec3(0, ground, -2));
+			
 			character_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
 			cs[i]->modelview = character_mv;			
 			cs[i]->action = generate_ani_uv(1100, 100, 11, 1);
@@ -608,11 +612,11 @@ void My_Display()
 	for (size_t i = 0; i < characters.size(); i++)
 	{
 		glActiveTexture(GL_TEXTURE0);		
-		if (/*i ==*/ 0)
+		if (i == 0)
 		{
-			/*glActiveTexture(characters[i]->textureidL);
-			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);*/									
-			Render(projection_matrix, characters[i]->modelview,characters[i]->action[0], characters[i]->textureidL, time, 0,0);
+			//printf("SC:%d\n", scene_counter);					
+			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
+			Render(projection_matrix, characters[i]->modelview, characters[0]->action[0],0, time, 0,0);
 		}	
 		else if(i == 1)//Miku
 		{
@@ -694,9 +698,9 @@ void My_Display()
 			case ACTION_STATE_DIE:
 				action_index = characters[i]->die.first;				
 				break;
-			}
-			
+			}			
 			Render(projection_matrix, characters[i]->modelview, characters[i]->action[action_index], 0, time, 0, 0);
+			
 			if (characters[i]->isinjured && !characters[1]->isdied)
 			{
 				if (characters[i]->left)
@@ -764,7 +768,7 @@ void My_Display()
 		//}
 		else if( i == 8)
 		{
-			//glActiveTexture(GL_TEXTURE0);
+			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
 			glEnable(GL_POINT_SPRITE);
 			glEnable(GL_PROGRAM_POINT_SIZE);
@@ -806,9 +810,10 @@ void My_Reshape(int width, int height)
 
 	float viewportAspect = (float)width / (float)height;
 
-	projection_matrix = perspective(deg2rad(50.0f), viewportAspect, 0.1f, 1000.0f);
+	projection_matrix = perspective(deg2rad(50.0f), viewportAspect, 0.1f, 1000.0f);		
 }
 //Kayboard input
+mat4 camrea_mv(1.0);
 void keyboardevent(unsigned char key,int x,int y) 
 {
 	float sc = 0.2f, ground =-0.7f;
@@ -827,7 +832,7 @@ void keyboardevent(unsigned char key,int x,int y)
 		}		
 		break;
 	case 'd':
-	case 'D':
+	case 'D':		
 		characters[1]->attackcounter = 0;
 		characters[1]->left = false;
 		if ((characters[1]->jumpcounter < 3 && characters[1]->isjump || !characters[1]->isjump && characters[1]->jumpcounter == 0) && !characters[1]->isdied)
@@ -838,14 +843,32 @@ void keyboardevent(unsigned char key,int x,int y)
 			{
 				scene_counter++;
 				characters[1]->xpos += characters[1]->footsetps;
-				characters[1]->modelview *= translate(mat4(1.0), vec3(d, 0, 0));
+				if (scene_counter > 2)
+				{
+					scene_counter = 0;
+					for (size_t i = 0; i < 6; i++)
+					{
+						characters[0]->action[0][i].x += 0.01f;
+						if (characters[0]->action[0][1].x > characters[0]->action[1][1].x)
+						{
+							characters[0]->action[0][0].x = origin_left[0].x;
+							characters[0]->action[0][1].x = origin_left[1].x;
+							characters[0]->action[0][2].x = origin_left[2].x;
+							characters[0]->action[0][3].x = origin_left[3].x;
+							characters[0]->action[0][4].x = origin_left[4].x;
+							characters[0]->action[0][5].x = origin_left[5].x;
+							break;
+						}
+					}
+				}				
 			}			
 			if (characters[1]->isjump)
 				characters[1]->state = ACTION_STATE_JUMP;
 		}
 		break;
 	case 's':
-	case 'S':		
+	case 'S':
+		projection_matrix *= translate(mat4(1.0), vec3(0, 0, -1));
 		break;
 	case 'a':
 	case 'A':
@@ -861,10 +884,26 @@ void keyboardevent(unsigned char key,int x,int y)
 				if (characters[0]->xpos - characters[1]->xpos < 2500)
 				{
 					scene_counter--;
-					characters[1]->xpos -= characters[1]->footsetps;
-					characters[1]->modelview *= translate(mat4(1.0), vec3(-d, 0, 0));
-				}
-					
+					characters[1]->xpos -= characters[1]->footsetps;					
+					if (scene_counter < -2)
+					{
+						scene_counter = 0;
+						for (size_t i = 0; i < 6; i++)
+						{
+							characters[0]->action[0][i].x -= 0.01f;
+							if (characters[0]->action[0][0].x < origin_left[0].x)
+							{
+								characters[0]->action[0][0].x = characters[0]->action[1][0].x;
+								characters[0]->action[0][1].x = characters[0]->action[1][1].x;
+								characters[0]->action[0][2].x = characters[0]->action[1][2].x;
+								characters[0]->action[0][3].x = characters[0]->action[1][3].x;
+								characters[0]->action[0][4].x = characters[0]->action[1][4].x;
+								characters[0]->action[0][5].x = characters[0]->action[1][5].x;
+								break;
+							}
+						}
+					}					
+				}					
 				if (characters[1]->isjump)
 					characters[1]->state = ACTION_STATE_JUMP;
 			}			
