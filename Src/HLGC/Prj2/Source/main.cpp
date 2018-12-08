@@ -29,6 +29,8 @@ const size_t defalut_w = 800;
 const size_t defalut_h = 600;
 int scene_counter = 0;
 mat4 projection_matrix;
+bool boxMoveUp = true;
+bool eatAttackUp = false;
 void Render(glm::mat4 pm, glm::mat4 mm,vector<vec2> uv, clock_t time, int effect,int type);
 GLuint generateTexture(const char *image);
 
@@ -183,13 +185,16 @@ void My_Init()
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
 	uniform->type = glGetUniformLocation(sp, "type");
-	const size_t count = 9;	
+	const size_t count = 12;	
 
 	mat4 pm(1.0);
 	mat4 identity(1.0);
 	mat4 character_mv(1.0);
 	mat4 scene_mv(1.0);
 	mat4 monster_mv(1.0);
+	mat4 box_mv(1.0);
+	mat4 attackup_mv(1.0);
+	mat4 hpwater_mv(1.0);
 
 	std::vector<float*> character_attributes;
 	character_attributes.reserve(count);
@@ -213,7 +218,7 @@ void My_Init()
 	attributes = new float[10];//Reset
 	//*Miku*//
 		attributes[HP] = 1000;
-		attributes[DAMAGE] = 1;
+		attributes[DAMAGE] = 0;
 		attributes[STATE] = 0;
 		attributes[ATTACK_COUNTER] = 0;
 		attributes[JUMP_COUNTER] = 0;
@@ -257,7 +262,13 @@ void My_Init()
 		new Character("Magnus",identity,
 			none),
 		new Character("Particle sys",identity,
-		character_attributes[2])
+		character_attributes[2]),
+		new Character("box",identity,
+		none),
+		new Character("attackup",identity,
+		none),
+		new Character("hpwater",identity,
+		none)
 	};
 	const char* texture_images[count+1] = { 
 		"background.png",
@@ -269,7 +280,10 @@ void My_Init()
 		"suu.png",
 		"wolf.png",
 		"walk.png",
-		"star.png"
+		"star.png",
+		"box.png",
+		"attackup.png",
+		"hpwater.png"
 	};
 		
 	for (size_t i = 0; i < count; i++)
@@ -319,7 +333,7 @@ void My_Init()
 			}
 			else if (i == 3)//Origin mashroom
 			{
-				monster_mv *= translate(identity, vec3(3.f, -1.f, 0));
+				monster_mv *= translate(identity, vec3(3.f, -1.f, -2));
 				monster_mv *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
 				cs[i]->modelview = monster_mv;
 
@@ -332,7 +346,7 @@ void My_Init()
 			}
 			else if (i == 4)//Pig
 			{
-				monster_mv *= translate(identity, vec3(3.f, 0.f, 0));
+				monster_mv *= translate(identity, vec3(3.f, 0.f, -2));
 				monster_mv *= scale(identity, vec3(1.f, 1.f, 1.f));
 				cs[i]->modelview = monster_mv;
 
@@ -344,7 +358,7 @@ void My_Init()
 			}
 			else if (i == 5)//Suu
 			{
-				monster_mv *= translate(identity, vec3(0, 0.5f, 0));
+				monster_mv *= translate(identity, vec3(0, 0.5f, -2));
 				monster_mv *= scale(identity, vec3(0.8f, 0.8f, 0.8f));
 				cs[i]->modelview = monster_mv;
 
@@ -356,7 +370,7 @@ void My_Init()
 			}
 			else if (i == 6)//Wolf
 			{				
-				monster_mv *= translate(identity, vec3(0.f, 1.f, 0));
+				monster_mv *= translate(identity, vec3(0.f, 1.f, -2));
 				monster_mv *= scale(identity, vec3(5.f, 5.f, 5.f));
 				cs[i]->modelview = monster_mv;
 
@@ -368,7 +382,7 @@ void My_Init()
 			}
 			else if (i == 7)//Magnus
 			{
-				monster_mv *= translate(identity, vec3(0, 0, 0));
+				monster_mv *= translate(identity, vec3(0, 0, -2));
 				monster_mv *= scale(identity, vec3(1.f, 1.f, 1.f));
 				cs[i]->modelview = monster_mv;
 
@@ -387,6 +401,36 @@ void My_Init()
 				cs[i]->move = pair<int, int>(0, 1);
 				cs[i]->left = true;
 				cs[i]->textureidL = generateTexture(texture_images[i+1]);
+			}
+			else if (i == 9) 
+			{ 
+				box_mv *= scale(identity, vec3(0.07f, 0.07f, -2.07f));
+				box_mv *= translate(identity, vec3(-0.9f, -8.2f, 1.f));
+				cs[i]->modelview = box_mv;
+				cs[i]->action = generate_ani_uv(558, 299, 1, 1);
+				cs[i]->idle = pair<int, int>(0, 1);
+				cs[i]->left = true;
+				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
+			}
+			else if (i == 10) 
+			{ 
+				attackup_mv *= scale(identity, vec3(0.07f, 0.07f, -2.07f));
+				attackup_mv *= translate(identity, vec3(-5.9f, -8.2f, 1.f));
+				cs[i]->modelview = attackup_mv;
+				cs[i]->action = generate_ani_uv(558, 299, 1, 1);
+				cs[i]->idle = pair<int, int>(0, 1);
+				cs[i]->left = true;
+				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
+			}
+			else if (i == 11) 
+			{ 
+				hpwater_mv *= scale(identity, vec3(0.06f, 0.06f, -2.06f));
+				hpwater_mv *= translate(identity, vec3(5.0f, -9.7f, 1.f));
+				cs[i]->modelview = hpwater_mv;
+				cs[i]->action = generate_ani_uv(558, 299, 1, 1);
+				cs[i]->idle = pair<int, int>(0, 1);
+				cs[i]->left = true;
+				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
 			}
 		}
 		characters.push_back(cs[i]);
@@ -651,7 +695,7 @@ void My_Display()
 				characters[i]->isinjured = false;
 			}				
 		}
-		else if(i != 8)
+		else if(false)
 		{		
 			//Monsters directions
 			if (characters[i]->left)
@@ -712,6 +756,30 @@ void My_Display()
 			glActiveTexture(characters[i]->textureidL);
 			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
 			Render(projection_matrix, characters[1]->modelview, characters[i]->action[0], time, 0, 1);
+		}
+		else if (i == 9 || i == 10 || i == 11) //www
+		{
+			if (characters[i]->ypos == 5.0f) 
+			{
+				boxMoveUp = false;
+			}
+			else if (characters[i]->ypos == 0.0f) 
+			{
+				boxMoveUp = true;
+			}
+			if (boxMoveUp) 
+			{
+				characters[i]->ypos += 1.f;
+				characters[i]->modelview *= translate(mat4(1.0), vec3(0, 0.08f, 0));
+			}
+			else 
+			{
+				characters[i]->ypos -= 1.f;
+				characters[i]->modelview *= translate(mat4(1.0), vec3(0, -0.08f, 0));
+			}
+			glActiveTexture(characters[i]->textureidL);
+			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
+			Render(projection_matrix, characters[i]->modelview,characters[i]->action[0], time, 0,0);
 		}
 	}	
 	glDisable(GL_BLEND);
