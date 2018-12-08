@@ -17,14 +17,15 @@ void main()
 	}		
 	else if(type == 1)
 	{
-		vec4 newvtx = vec4(position,1);
-		newvtx.z += time;
-		newvtx.z = fract(newvtx.z);
+		// vec4 newvtx = vec4(position,1);
+		// newvtx.z += time;
+		// newvtx.z = fract(newvtx.z);
 
-		float pointsize = (20.0 * newvtx.z * newvtx.z);
-		color = smoothstep(1.0, 7.0, pointsize) * vec4(1,1,0,1);
-		newvtx.z = (999.9 * newvtx.z ) - 1000.0;
-		gl_Position = pm * newvtx;
-		gl_PointSize = pointsize;
+		// float pointsize = (20.0 * newvtx.z * newvtx.z);
+		// color = smoothstep(1.0, 7.0, pointsize) * vec4(1,1,0,1);
+		// newvtx.z = (999.9 * newvtx.z ) - 1000.0;
+		// gl_Position = pm * newvtx;
+		gl_PointSize = 0.5;
+		gl_Position = pm  * mm * vec4(position, 1.0);
 	}
 }

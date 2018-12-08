@@ -31,9 +31,10 @@ int scene_counter = 0;
 mat4 projection_matrix;
 bool boxMoveUp = true;
 bool eatAttackUp = false;
-void Render(glm::mat4 pm, glm::mat4 mm,vector<vec2> uv, clock_t time, int effect,int type);
-GLuint generateTexture(const char *image);
+void Render(glm::mat4 pm, glm::mat4 mm,vector<vec2> uv,size_t texture, clock_t time, int effect,int type);
+static inline float random_float();
 
+GLuint generateTexture(const char *image);
 struct Uniform
 {
 	GLuint mv;
@@ -104,6 +105,9 @@ struct Character
 };
 Uniform *uniform;
 vector<Character*> characters;
+vector<vec3> particles_pos;
+vector<vec3> square_pos;
+vector<vec2> square_uv;
 vector<vector<vec2>> generate_ani_uv(float origin_w, float origin_h,size_t wpart, size_t hpart)
 {
 	vector<vector<vec2>> output;
@@ -185,6 +189,7 @@ void My_Init()
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
 	uniform->type = glGetUniformLocation(sp, "type");
+	uniform->tex = glGetUniformLocation(sp, "tex");
 	const size_t count = 12;	
 
 	mat4 pm(1.0);
@@ -208,7 +213,7 @@ void My_Init()
 		attributes[STATE] = 0;
 		attributes[ATTACK_COUNTER] = 0;
 		attributes[JUMP_COUNTER] = 0;
-		attributes[SCALE] = 0.1;
+		attributes[SCALE] = 1.f;
 		attributes[XPOS] = 2500;
 		attributes[YPOS] = 1.6f;//0.9-(-0.7)
 		attributes[ATTACK_DISTANCE] = 0;
@@ -236,7 +241,7 @@ void My_Init()
 		attributes[STATE] = 1;
 		attributes[ATTACK_COUNTER] = 0;
 		attributes[JUMP_COUNTER] = 0;
-		attributes[SCALE] = 1.f;
+		attributes[SCALE] = 5.f;
 		attributes[XPOS] = 0;
 		attributes[YPOS] = 0;
 		attributes[ATTACK_DISTANCE] = 0;
@@ -393,14 +398,15 @@ void My_Init()
 			}
 			else if (i == 8)//Particle sys
 			{
-				monster_mv *= translate(identity, vec3(0, 0, -2.f));
+				//monster_mv *= translate(identity, vec3(0, 0, 0));
 				monster_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
 				cs[i]->modelview = monster_mv;
 
 				cs[i]->action = generate_ani_uv(128, 128, 1, 1);
 				cs[i]->move = pair<int, int>(0, 1);
-				cs[i]->left = true;
+				cs[i]->left = false;
 				cs[i]->textureidL = generateTexture(texture_images[i+1]);
+				cs[i]->textureidR = generateTexture(texture_images[i + 1]);
 			}
 			else if (i == 9) 
 			{ 
@@ -434,9 +440,43 @@ void My_Init()
 			}
 		}
 		characters.push_back(cs[i]);
-	}	
+	}
+	//****//
+	size_t particle_num = 100;
+	for (size_t i = 0; i < particle_num; i++)
+	{
+		particles_pos.push_back(vec3( (random_float() * 3.0f - 1.0f) * 1, (random_float() * 3.0f - 1.0f) * 1,-2));
+		//particles_pos.push_back(vec3(0,0, -2));
+	}
+	//Position of square
+	square_pos.push_back(vec3(-1, 1, 0));
+	square_pos.push_back(vec3(1, 1, 0));
+	square_pos.push_back(vec3(1, -1, 0));
+	square_pos.push_back(vec3(1, -1, 0));
+	square_pos.push_back(vec3(-1, -1, 0));
+	square_pos.push_back(vec3(-1, 1, 0));
+	//UV of square
+	square_uv.push_back(vec2(0,0));
+	square_uv.push_back(vec2(1, 0));
+	square_uv.push_back(vec2(1, 1));
+	square_uv.push_back(vec2(1, 1));
+	square_uv.push_back(vec2(0, 1));
+	square_uv.push_back(vec2(0, 0));
 }
+static unsigned int seed = 0x13371337;
+static inline float random_float()
+{
+	float res;
+	unsigned int tmp;
 
+	seed *= 16807;
+
+	tmp = seed ^ (seed >> 4) ^ (seed << 15);
+
+	*((unsigned int *)&res) = (tmp >> 9) | 0x3F800000;
+
+	return (res - 1.0f);
+}
 GLuint generateTexture(const char *image)
 {
 	GLuint id = characters.size();
@@ -456,66 +496,36 @@ GLuint generateTexture(const char *image)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	return id;
 }
-static unsigned int seed = 0x13371337;
 
-static inline float random_float()
-{
-	float res;
-	unsigned int tmp;
-
-	seed *= 16807;
-
-	tmp = seed ^ (seed >> 4) ^ (seed << 15);
-
-	*((unsigned int *)&res) = (tmp >> 9) | 0x3F800000;
-
-	return (res - 1.0f);
-}
-void Render(glm::mat4 pm, glm::mat4 mm, vector<vec2> uv, clock_t time,int effect,int type)
+void Render(glm::mat4 pm, glm::mat4 mm, vector<vec2> uv, size_t texture, clock_t time,int effect,int type)
 {	
 	glUseProgram(sp);
 	glBindVertexArray(vao);
-	
-	size_t particle_num = 20;
-	int pos_size = (type == 0)? 6 : particle_num;
 		
-	//Two triangles
-	vector<vec3> pos;
-	if (type == 0)
-	{
-		pos.push_back(vec3(-1, 1, 0));
-		pos.push_back(vec3(1, 1, 0));
-		pos.push_back(vec3(1, -1, 0));
-
-		pos.push_back(vec3(1, -1, 0));
-		pos.push_back(vec3(-1, -1, 0));
-		pos.push_back(vec3(-1, 1, 0));
-	}
-	else if (type == 1)
-	{
-		for (size_t i = 0; i < particle_num; i++)
-		{
-			pos.push_back(vec3(
-				(random_float() * 2.0f - 1.0f) * 100.0f,
-				(random_float() * 2.0f - 1.0f) * 100.0f, 
-				random_float()));			
-		}
-	}
-		
+	int pos_size = (type == 0)? 6 : particles_pos.size();
+	//Two triangles	
 	vector<float> vtx;	
 	for (int i = 0; i < pos_size; i++)
 	{
-		vtx.push_back(pos[i].x);
-		vtx.push_back(pos[i].y);
-		vtx.push_back(pos[i].z);
-	}
-	if (type == 0)
-	{
-		for (int i = 0; i < uv.size(); i++)
+		int r = (rand() % 100);
+		if (type == 0)
 		{
-			vtx.push_back(uv[i].x);
-			vtx.push_back(uv[i].y);
+			vtx.push_back(square_pos[i].x);
+			vtx.push_back(square_pos[i].y);
+			vtx.push_back(square_pos[i].z);
 		}
+		else if (type == 1)
+		{
+			vtx.push_back(particles_pos[r].x);
+			vtx.push_back(particles_pos[r].y);
+			vtx.push_back(particles_pos[r].z);
+		}
+		
+	}
+	for (int i = 0; i < uv.size(); i++)
+	{
+		vtx.push_back(uv[i].x);
+		vtx.push_back(uv[i].y);
 	}
 	
 	glUniformMatrix4fv(uniform->mv,1, GL_FALSE, &mm[0][0]);
@@ -524,6 +534,7 @@ void Render(glm::mat4 pm, glm::mat4 mm, vector<vec2> uv, clock_t time,int effect
 	glUniform1i(uniform->effect, effect);
 	glUniform1f(uniform->time, time);
 	glUniform1f(uniform->type, type);
+	glUniform1i(uniform->tex, texture);
 	glBindBuffer(GL_ARRAY_BUFFER, vvbo);
 	glBufferData(GL_ARRAY_BUFFER, (vtx.size()) * sizeof(float),vtx.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,0,0);	
@@ -538,10 +549,7 @@ void Render(glm::mat4 pm, glm::mat4 mm, vector<vec2> uv, clock_t time,int effect
 	}		
 	else if (type == 1)
 	{
-		glEnable(GL_POINT_SPRITE);						
-			glEnable(GL_PROGRAM_POINT_SIZE);
-			glDrawArrays(GL_POINTS, 0, particle_num);			
-		glDisable(GL_POINT_SPRITE);
+		glDrawArrays(GL_POINTS, 0, particles_pos.size());
 	}
 }
 
@@ -599,23 +607,22 @@ void My_Display()
 	}	
 	for (size_t i = 0; i < characters.size(); i++)
 	{
-		if (i == 0)
+		glActiveTexture(GL_TEXTURE0);		
+		if (/*i ==*/ 0)
 		{
-			glActiveTexture(characters[i]->textureidL);
-			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);									
-			Render(projection_matrix, characters[i]->modelview,characters[i]->action[0], time, 0,0);		
-		}			
+			/*glActiveTexture(characters[i]->textureidL);
+			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);*/									
+			Render(projection_matrix, characters[i]->modelview,characters[i]->action[0], characters[i]->textureidL, time, 0,0);
+		}	
 		else if(i == 1)//Miku
 		{
 			//Directions			
 			if (characters[i]->left)
-			{
-				glActiveTexture(characters[i]->textureidL);
+			{				
 				glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
 			}
 			else
-			{
-				glActiveTexture(characters[i]->textureidR);
+			{				
 				glBindTexture(GL_TEXTURE_2D, characters[i]->textureidR);
 			}
 			size_t action_index = 0;
@@ -688,76 +695,83 @@ void My_Display()
 				action_index = characters[i]->die.first;				
 				break;
 			}
-			Render(projection_matrix, characters[i]->modelview, characters[i]->action[action_index], time, 0, 0);
+			
+			Render(projection_matrix, characters[i]->modelview, characters[i]->action[action_index], 0, time, 0, 0);
 			if (characters[i]->isinjured && !characters[1]->isdied)
 			{
-				Render(projection_matrix, characters[i]->modelview, characters[i]->action[characters[i]->injured.first], time, 0,0);
+				if (characters[i]->left)
+					Render(projection_matrix, characters[i]->modelview, characters[i]->action[characters[i]->injured.first], characters[i]->textureidL, time, 0,0);
+				else
+					Render(projection_matrix, characters[i]->modelview, characters[i]->action[characters[i]->injured.first], characters[i]->textureidR, time, 0, 0);
 				characters[i]->isinjured = false;
 			}				
 		}
-		else if(false)
-		{		
-			//Monsters directions
-			if (characters[i]->left)
-			{
-				glActiveTexture(characters[i]->textureidL);
-				glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
-			}
-			else
-			{
-				glActiveTexture(characters[i]->textureidR);
-				glBindTexture(GL_TEXTURE_2D, characters[i]->textureidR);
-			}			
-			////
-			size_t action_index = 0;
-			switch (characters[i]->state)
-			{
-			case ACTION_STATE_IDLE:
-				action_index = characters[i]->idle.first;
-				break;
-			case ACTION_STATE_MOVE:
-				action_index = characters[i]->move.first + characters[i]->nextframe;
-				if (characters[i]->nextframe == characters[i]->move.second - 1)
-				{
-					characters[i]->nextframe = 0;
-					characters[i]->state = 0;
-				}
-				else
-				{
-					characters[i]->nextframe++;
-				}
-				break;
-			case ACTION_STATE_ATTACK:
-				action_index = characters[i]->attack[0].first + characters[i]->nextframe;
-				if (characters[i]->nextframe == characters[i]->attack[0].second - 1)
-				{
-					characters[i]->nextframe = 0;
-					characters[1]->attackcounter = 0;
-					characters[i]->state = 0;
-					if (characters[1]->jumpcounter > 0)
-					{
-						characters[i]->state = ACTION_STATE_JUMP;
-					}
-				}
-				else
-				{
-					characters[i]->nextframe++;
-					characters[1]->attackcounter++;
-				}
-				break;			
-			case ACTION_STATE_DIE:
-				action_index = characters[i]->die.first;
-				break;
-			}
-			Render(projection_matrix, characters[i]->modelview, characters[i]->action[action_index], time, 0, 0);
-		}
+		//else if()
+		//{		
+		//	//Monsters directions
+		//	if (characters[i]->left)
+		//	{
+		//		glActiveTexture(characters[i]->textureidL);
+		//		glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
+		//	}
+		//	else
+		//	{
+		//		glActiveTexture(characters[i]->textureidR);
+		//		glBindTexture(GL_TEXTURE_2D, characters[i]->textureidR);
+		//	}			
+		//	////
+		//	size_t action_index = 0;
+		//	switch (characters[i]->state)
+		//	{
+		//	case ACTION_STATE_IDLE:
+		//		action_index = characters[i]->idle.first;
+		//		break;
+		//	case ACTION_STATE_MOVE:
+		//		action_index = characters[i]->move.first + characters[i]->nextframe;
+		//		if (characters[i]->nextframe == characters[i]->move.second - 1)
+		//		{
+		//			characters[i]->nextframe = 0;
+		//			characters[i]->state = 0;
+		//		}
+		//		else
+		//		{
+		//			characters[i]->nextframe++;
+		//		}
+		//		break;
+		//	case ACTION_STATE_ATTACK:
+		//		action_index = characters[i]->attack[0].first + characters[i]->nextframe;
+		//		if (characters[i]->nextframe == characters[i]->attack[0].second - 1)
+		//		{
+		//			characters[i]->nextframe = 0;
+		//			characters[1]->attackcounter = 0;
+		//			characters[i]->state = 0;
+		//			if (characters[1]->jumpcounter > 0)
+		//			{
+		//				characters[i]->state = ACTION_STATE_JUMP;
+		//			}
+		//		}
+		//		else
+		//		{
+		//			characters[i]->nextframe++;
+		//			characters[1]->attackcounter++;
+		//		}
+		//		break;			
+		//	case ACTION_STATE_DIE:
+		//		action_index = characters[i]->die.first;
+		//		break;
+		//	}
+		//	Render(projection_matrix, characters[i]->modelview, characters[i]->action[action_index], time, 0, 0);
+		//}
 		else if( i == 8)
 		{
-			glActiveTexture(characters[i]->textureidL);
+			//glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
-			Render(projection_matrix, characters[1]->modelview, characters[i]->action[0], time, 0, 1);
+			glEnable(GL_POINT_SPRITE);
+			glEnable(GL_PROGRAM_POINT_SIZE);
+				Render(projection_matrix, characters[i]->modelview, characters[i]->action[0], 1, time, 0, 1);
+			//glDisable(GL_POINT_SPRITE);			
 		}
-		else if (i == 9 || i == 10 || i == 11) //www
+		else if (i == 9 || i == 10 || i == 11)
 		{
 			if (characters[i]->ypos == 5.0f) 
 			{
@@ -777,9 +791,9 @@ void My_Display()
 				characters[i]->ypos -= 1.f;
 				characters[i]->modelview *= translate(mat4(1.0), vec3(0, -0.08f, 0));
 			}
-			glActiveTexture(characters[i]->textureidL);
+			//glActiveTexture(characters[i]->textureidL);
 			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
-			Render(projection_matrix, characters[i]->modelview,characters[i]->action[0], time, 0,0);
+			Render(projection_matrix, characters[i]->modelview,characters[i]->action[0], 0, time, 0,0);
 		}
 	}	
 	glDisable(GL_BLEND);
