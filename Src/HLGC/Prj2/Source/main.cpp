@@ -245,7 +245,7 @@ void My_Init()
 		new Character("Miku",identity,
 			character_attributes[1]),
 		new Character("CrimsonBalrog",identity,
-			none),
+			character_attributes[1]),
 		new Character("Origin marhroom",identity,
 			none),
 		new Character("Pig",identity,
@@ -263,7 +263,7 @@ void My_Init()
 		"background.png",
 		"mikuL.png",
 		"mikuR.png",
-		"CrimsonBalrog.png",
+		"CrimsonBalrogR.png",
 		"mashroom.png",
 		"pig.png",
 		"suu.png",
@@ -307,7 +307,7 @@ void My_Init()
 		{	
 			if (i == 2)//CrimsonBalrog
 			{
-				monster_mv *= translate(identity, vec3(-0.9f, -0.2f, 0));
+				monster_mv *= translate(identity, vec3(-0.9f, -0.2f, -2));
 				monster_mv *= scale(identity, vec3(0.5f, 0.5f, 0.5f));
 				cs[i]->modelview = monster_mv;
 
