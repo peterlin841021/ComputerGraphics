@@ -23,10 +23,14 @@ using namespace std;
 #define FOOTSTEP 10
 
 GLuint sp;
+GLuint sp_fbo;
 const unsigned int interval = 100;
-GLuint vao, vvbo;
+GLuint vao, vvbo,fbo,depthrbo,vao_fbo,vbo_fbo;
 const size_t defalut_w = 800;
 const size_t defalut_h = 600;
+size_t current_w = 0;
+size_t current_h = 0;
+size_t particle_num = 100;
 int scene_counter = 0;
 mat4 projection_matrix;
 bool boxMoveUp = true;
@@ -35,6 +39,7 @@ void Render(glm::mat4 pm, glm::mat4 mm,vector<vec2> uv,size_t texture, clock_t t
 static inline float random_float();
 
 GLuint generateTexture(const char *image);
+GLuint generateEmptyTexture();
 struct Uniform
 {
 	GLuint mv;
@@ -146,8 +151,11 @@ void init_shader()
 	glShaderSource(vs, 1, vsSource, NULL);
 	glShaderSource(fs, 1, fsSource, NULL);
 
+	FreeShaderSource(vsSource);
+	FreeShaderSource(fsSource);
 	glCompileShader(vs);
 	glCompileShader(fs);
+
 	ShaderLog(vs);
 	ShaderLog(fs);
 	//Attach Shader to program
@@ -156,7 +164,65 @@ void init_shader()
 	glLinkProgram(sp);
 
 	glGenBuffers(1, &vvbo);
-	glGenVertexArrays(1, &vao);	
+	glGenVertexArrays(1, &vao);
+
+	vector<float> vtx;//Puts all data with float type
+	//Put square position 0+6*3
+	/*for (size_t i = 0; i < 6; i++)
+	{
+		vtx.push_back(square_pos[i].x);
+		vtx.push_back(square_pos[i].y);
+		vtx.push_back(square_pos[i].z);
+	}*/
+	
+	////Put particle positions 18 + 100*3
+	//for (size_t i = 0; i < particles_pos.size(); i++)
+	//{
+	//	int r = (rand() % 100);
+	//	vtx.push_back(particles_pos[r].x);
+	//	vtx.push_back(particles_pos[r].y);
+	//	vtx.push_back(particles_pos[r].z);
+	//}
+	//Put square uv 318 + 6*2
+	/*for (size_t i = 0; i < square_uv.size(); i++)
+	{		
+		vtx.push_back(square_uv[i].x);
+		vtx.push_back(square_uv[i].y);
+	}*/
+	////Put miku action uv 330 + 11 * 12
+	//for (size_t i = 0; i < characters[1]->action.size(); i++)//Actions
+	//{
+	//	for (size_t j = 0; j < characters[1]->action[i].size(); j++)//Six uvs
+	//	{
+	//		vtx.push_back(characters[1]->action[i][j].x);
+	//		vtx.push_back(characters[1]->action[i][j].y);
+	//	}
+	//}
+	/*glBindBuffer(GL_ARRAY_BUFFER, vvbo);
+	glBufferData(GL_ARRAY_BUFFER, (vtx.size()) * sizeof(float), vtx.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)(18 * sizeof(float)));
+	glEnableVertexAttribArray(0);*/
+	//glEnableVertexAttribArray(1);
+	//******************************//	
+	//Attach Shader to program
+	sp_fbo = glCreateProgram();
+	vsSource = LoadShaderSource("./fbo.vs.glsl");
+	fsSource = LoadShaderSource("./fbo.fs.glsl");
+	glShaderSource(vs, 1, vsSource, NULL);
+	glShaderSource(fs, 1, fsSource, NULL);
+
+	FreeShaderSource(vsSource);
+	FreeShaderSource(fsSource);
+	glCompileShader(vs);
+	glCompileShader(fs);
+
+	ShaderLog(vs);
+	ShaderLog(fs);
+	glAttachShader(sp_fbo, vs);
+	glAttachShader(sp_fbo, fs);
+	glLinkProgram(sp_fbo);	
+	glGenFramebuffers(1, &fbo);
 }
 size_t collisiondetect(vec3 v1, vec3 v2, size_t damage,float attack_distance)
 {
@@ -181,7 +247,6 @@ size_t attackcal(vec3 v1, vec3 v2, size_t damage, float attack_distance)
 }
 void My_Init()
 {	
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	init_shader();
 	//Uniform variables
 	uniform = new Uniform();
@@ -191,8 +256,8 @@ void My_Init()
 	uniform->time = glGetUniformLocation(sp, "time");
 	uniform->type = glGetUniformLocation(sp, "type");
 	uniform->tex = glGetUniformLocation(sp, "tex");
-	const size_t count = 12;	
-
+	
+	const size_t count = 13;		
 	mat4 pm(1.0);
 	mat4 identity(1.0);
 	mat4 character_mv(1.0);
@@ -208,7 +273,7 @@ void My_Init()
 	float leftboundary = -0.8f;
 	float *attributes = new float[10];
 	float *none = new float[10]{0};
-	//*Scene*//
+	//*Scene 0*//
 		attributes[HP] = 0;
 		attributes[DAMAGE] = 0;
 		attributes[STATE] = 0;
@@ -222,7 +287,7 @@ void My_Init()
 		attributes[FOOTSTEP] = 25;
 	character_attributes.push_back(attributes);
 	attributes = new float[10];//Reset
-	//*Miku*//
+	//*Miku 1*//
 		attributes[HP] = 1000;
 		attributes[DAMAGE] = 0;
 		attributes[STATE] = 0;
@@ -236,15 +301,28 @@ void My_Init()
 		attributes[FOOTSTEP] = 2;
 	character_attributes.push_back(attributes);
 	attributes = new float[10];//Reset
-	//*Particle sys*//
+	//*Particle sys 2*//
 		attributes[HP] = 1;
 		attributes[DAMAGE] = 1;
 		attributes[STATE] = 1;
 		attributes[ATTACK_COUNTER] = 0;
 		attributes[JUMP_COUNTER] = 0;
-		attributes[SCALE] = 5.f;
+		attributes[SCALE] = 0.2f;
 		attributes[XPOS] = 0;
 		attributes[YPOS] = 0;
+		attributes[ATTACK_DISTANCE] = 0;
+		attributes[JUMP_DISTANCE] = 0;
+		attributes[FOOTSTEP] = 0;
+	character_attributes.push_back(attributes);
+	//*Minimap 3*//
+		attributes[HP] = 0;
+		attributes[DAMAGE] = 0;
+		attributes[STATE] = 1;
+		attributes[ATTACK_COUNTER] = 0;
+		attributes[JUMP_COUNTER] = 0;
+		attributes[SCALE] = 100.f;
+		attributes[XPOS] = 0.8f;
+		attributes[YPOS] = 0.8f;
 		attributes[ATTACK_DISTANCE] = 0;
 		attributes[JUMP_DISTANCE] = 0;
 		attributes[FOOTSTEP] = 0;
@@ -256,25 +334,27 @@ void My_Init()
 		new Character("Miku",identity,
 			character_attributes[1]),
 		new Character("CrimsonBalrog",identity,
-			character_attributes[1]),
+			none),
 		new Character("Origin marhroom",identity,
 			none),
 		new Character("Pig",identity,
 			none),
-			new Character("Wolf",identity,
+		new Character("Wolf",identity,
 			none),
 		new Character("Suu",identity,
 			none),		
 		new Character("Magnus",identity,
+			none),		
+		new Character("box",identity,
+			none),
+		new Character("attackup",identity,
+			none),
+		new Character("hpwater",identity,
 			none),
 		new Character("Particle sys",identity,
-		character_attributes[2]),
-		new Character("box",identity,
-		none),
-		new Character("attackup",identity,
-		none),
-		new Character("hpwater",identity,
-		none)
+			character_attributes[2]),
+		new Character("Minimap",identity,
+			character_attributes[3])
 	};
 	const char* texture_images[count+1] = { 
 		"background.png",
@@ -285,11 +365,11 @@ void My_Init()
 		"pig.png",
 		"suu.png",
 		"wolf.png",
-		"walk.png",
-		"star.png",
+		"walk.png",		
 		"box.png",
 		"attackup.png",
-		"hpwater.png"
+		"hpwater.png",
+		"star.png"
 	};
 		
 	for (size_t i = 0; i < count; i++)
@@ -297,7 +377,7 @@ void My_Init()
 		if (i == 0)//Scene
 		{
 			scene_mv *= translate(identity,vec3(0,0,-2));
-			scene_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
+			scene_mv *= scale(identity, vec3(cs[i]->scale_ratio*1.25f, cs[i]->scale_ratio, cs[i]->scale_ratio));
 			cs[i]->modelview = scene_mv;			
 			cs[i]->action = generate_ani_uv(1596, 599, 2, 1);
 			//*******//
@@ -400,19 +480,8 @@ void My_Init()
 				cs[i]->left = true;
 				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
 			}
-			else if (i == 8)//Particle sys
-			{
-				//monster_mv *= translate(identity, vec3(0, 0, 0));
-				monster_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
-				cs[i]->modelview = monster_mv;
-
-				cs[i]->action = generate_ani_uv(128, 128, 1, 1);
-				cs[i]->move = pair<int, int>(0, 1);
-				cs[i]->left = false;
-				cs[i]->textureidL = generateTexture(texture_images[i+1]);
-				cs[i]->textureidR = generateTexture(texture_images[i + 1]);
-			}
-			else if (i == 9) 
+			
+			else if (i == 8) 
 			{ 
 				box_mv *= scale(identity, vec3(0.07f, 0.07f, -2.07f));
 				box_mv *= translate(identity, vec3(-0.9f, -8.2f, 1.f));
@@ -422,7 +491,7 @@ void My_Init()
 				cs[i]->left = true;
 				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
 			}
-			else if (i == 10) 
+			else if (i == 9) 
 			{ 
 				attackup_mv *= scale(identity, vec3(0.07f, 0.07f, -2.07f));
 				attackup_mv *= translate(identity, vec3(-5.9f, -8.2f, 1.f));
@@ -432,7 +501,7 @@ void My_Init()
 				cs[i]->left = true;
 				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
 			}
-			else if (i == 11) 
+			else if (i == 10) 
 			{ 
 				hpwater_mv *= scale(identity, vec3(0.06f, 0.06f, -2.06f));
 				hpwater_mv *= translate(identity, vec3(5.0f, -9.7f, 1.f));
@@ -442,14 +511,32 @@ void My_Init()
 				cs[i]->left = true;
 				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
 			}
+			else if (i == 11)//Particle sys
+			{
+				monster_mv *= translate(identity, vec3(0, 0, 2.f));
+				monster_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
+				cs[i]->modelview = monster_mv;
+
+				cs[i]->action = generate_ani_uv(128, 128, 1, 1);
+				cs[i]->move = pair<int, int>(0, 1);
+				cs[i]->left = false;
+				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
+				cs[i]->textureidR = generateTexture(texture_images[i + 1]);
+			}
+			else if (i == 12)//Minimap
+			{
+				monster_mv *= translate(identity, vec3(-1.f,0, 2.f));
+				monster_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
+				cs[i]->modelview = monster_mv;				
+			}
 		}
 		characters.push_back(cs[i]);
 	}
 	//****//
-	size_t particle_num = 100;
+	
 	for (size_t i = 0; i < particle_num; i++)
 	{
-		particles_pos.push_back(vec3( (random_float() * 3.0f - 1.0f) * 1, (random_float() * 3.0f - 1.0f) * 1,-2));
+		particles_pos.push_back(vec3( (random_float() * 3.0f - 1.0f) * 1, (random_float() * 3.0f - 1.0f) * 1,1));
 		//particles_pos.push_back(vec3(0,0, -2));
 	}
 	//Position of square
@@ -466,6 +553,7 @@ void My_Init()
 	square_uv.push_back(vec2(1, 1));
 	square_uv.push_back(vec2(0, 1));
 	square_uv.push_back(vec2(0, 0));
+	//*******************//	
 }
 static unsigned int seed = 0x13371337;
 static inline float random_float()
@@ -500,19 +588,34 @@ GLuint generateTexture(const char *image)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	return id;
 }
-
+GLuint generateEmptyTexture()
+{
+	GLuint id;
+	glGenTextures(1, &id);
+	glBindTexture(GL_TEXTURE_2D, id);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, defalut_w, defalut_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);*/
+	return id;
+}
+GLuint generateReflection()
+{
+	GLuint id;
+	return id;
+}
 void Render(glm::mat4 pm, glm::mat4 mm, vector<vec2> uv, size_t texture, clock_t time,int effect,int type)
 {	
-	glUseProgram(sp);
-	glBindVertexArray(vao);
-		
-	int pos_size = (type == 0)? 6 : particles_pos.size();
+	/*glBindVertexArray(vao);
+	glUseProgram(sp);*/
+	int pos_size = (type == 1)? particles_pos.size():6;
 	//Two triangles	
 	vector<float> vtx;	
 	for (int i = 0; i < pos_size; i++)
 	{
 		int r = (rand() % 100);
-		if (type == 0)
+		if (type == 0 || type == 2)
 		{
 			vtx.push_back(square_pos[i].x);
 			vtx.push_back(square_pos[i].y);
@@ -523,8 +626,7 @@ void Render(glm::mat4 pm, glm::mat4 mm, vector<vec2> uv, size_t texture, clock_t
 			vtx.push_back(particles_pos[r].x);
 			vtx.push_back(particles_pos[r].y);
 			vtx.push_back(particles_pos[r].z);
-		}
-		
+		}		
 	}
 	for (int i = 0; i < uv.size(); i++)
 	{
@@ -539,13 +641,14 @@ void Render(glm::mat4 pm, glm::mat4 mm, vector<vec2> uv, size_t texture, clock_t
 	glUniform1f(uniform->time, time);
 	glUniform1f(uniform->type, type);
 	glUniform1i(uniform->tex, texture);
+	
 	glBindBuffer(GL_ARRAY_BUFFER, vvbo);
-	glBufferData(GL_ARRAY_BUFFER, (vtx.size()) * sizeof(float),vtx.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,0,0);	
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,0, (void*)(pos_size  * 3 * sizeof(float)));
-
+	glBufferData(GL_ARRAY_BUFFER, (vtx.size()) * sizeof(float), vtx.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)(pos_size * 3 * sizeof(float)));
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
+	
 
 	if (type == 0)
 	{
@@ -553,34 +656,35 @@ void Render(glm::mat4 pm, glm::mat4 mm, vector<vec2> uv, size_t texture, clock_t
 	}		
 	else if (type == 1)
 	{
+		glPointSize(10.0);
 		glDrawArrays(GL_POINTS, 0, particles_pos.size());
 	}
 }
 
 void My_Display()
-{
+{	
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClearColor(0, 0, 0, 1);			
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(1, 1, 1, 1);
-	
-	glUseProgram(sp);	
 	//Time
-	clock_t time = clock();	
+	clock_t time = clock();
 	float f_timer_cnt = glutGet(GLUT_ELAPSED_TIME);
 	float currentTime = f_timer_cnt * 0.001f;
-
+	
 	currentTime *= 0.1f;
 	currentTime -= floor(currentTime);
+	glBindVertexArray(vao);
+	glUseProgram(sp);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthFunc(GL_LEQUAL);
-
 	//Injure detect
 	if (!characters[1]->isinjured)
 	{
-		for (size_t i = 2; i < characters.size(); i++)
+		for (size_t i = 2; i < characters.size() - 1; i++)
 		{
 			size_t amount = collisiondetect(vec3(characters[1]->xpos, characters[1]->ypos, 0), vec3(characters[i]->xpos, characters[i]->ypos, 0), characters[i]->damage, characters[i]->attack_distance);
-			if (amount > 0 && characters[i] ->state != ACTION_STATE_DIE)
+			if (amount > 0 && characters[i]->state != ACTION_STATE_DIE)
 			{
 				characters[1]->isinjured = true;
 				if (characters[1]->hp > 0)
@@ -589,11 +693,11 @@ void My_Display()
 				{
 					characters[1]->isdied = true;
 					characters[1]->state = ACTION_STATE_DIE;
-				}					
+				}
 				printf("Miku hP:%d\n", characters[1]->hp);
 			}
 		}
-	}	
+	}
 	//Attack detect
 	if (characters[1]->state == ACTION_STATE_ATTACK && characters[1]->attackcounter == 3)
 	{
@@ -606,21 +710,23 @@ void My_Display()
 				if (characters[i]->hp == 0)
 					characters[i]->state = 4;
 				printf("Monster hp:%d\n", characters[i]->hp);
-			}			
+			}
 		}
-	}	
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	glViewport(0, 0, current_w, current_h);
 	for (size_t i = 0; i < characters.size(); i++)
 	{
 		glActiveTexture(GL_TEXTURE0);		
 		if (i == 0)
+		{			
+			glBindTexture(GL_TEXTURE_2D, characters[0]->textureidL);
+			Render(projection_matrix, characters[0]->modelview, characters[0]->action[0], 0, time, 0, 0);		
+		}
+		else if(i == 1)
 		{
-			//printf("SC:%d\n", scene_counter);					
-			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
-			Render(projection_matrix, characters[i]->modelview, characters[0]->action[0],0, time, 0,0);
-		}	
-		else if(i == 1)//Miku
-		{
-			//Directions			
+			//Miku directions			
 			if (characters[i]->left)
 			{				
 				glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
@@ -709,74 +815,9 @@ void My_Display()
 					Render(projection_matrix, characters[i]->modelview, characters[i]->action[characters[i]->injured.first], characters[i]->textureidR, time, 0, 0);
 				characters[i]->isinjured = false;
 			}				
-		}
-		//else if()
-		//{		
-		//	//Monsters directions
-		//	if (characters[i]->left)
-		//	{
-		//		glActiveTexture(characters[i]->textureidL);
-		//		glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
-		//	}
-		//	else
-		//	{
-		//		glActiveTexture(characters[i]->textureidR);
-		//		glBindTexture(GL_TEXTURE_2D, characters[i]->textureidR);
-		//	}			
-		//	////
-		//	size_t action_index = 0;
-		//	switch (characters[i]->state)
-		//	{
-		//	case ACTION_STATE_IDLE:
-		//		action_index = characters[i]->idle.first;
-		//		break;
-		//	case ACTION_STATE_MOVE:
-		//		action_index = characters[i]->move.first + characters[i]->nextframe;
-		//		if (characters[i]->nextframe == characters[i]->move.second - 1)
-		//		{
-		//			characters[i]->nextframe = 0;
-		//			characters[i]->state = 0;
-		//		}
-		//		else
-		//		{
-		//			characters[i]->nextframe++;
-		//		}
-		//		break;
-		//	case ACTION_STATE_ATTACK:
-		//		action_index = characters[i]->attack[0].first + characters[i]->nextframe;
-		//		if (characters[i]->nextframe == characters[i]->attack[0].second - 1)
-		//		{
-		//			characters[i]->nextframe = 0;
-		//			characters[1]->attackcounter = 0;
-		//			characters[i]->state = 0;
-		//			if (characters[1]->jumpcounter > 0)
-		//			{
-		//				characters[i]->state = ACTION_STATE_JUMP;
-		//			}
-		//		}
-		//		else
-		//		{
-		//			characters[i]->nextframe++;
-		//			characters[1]->attackcounter++;
-		//		}
-		//		break;			
-		//	case ACTION_STATE_DIE:
-		//		action_index = characters[i]->die.first;
-		//		break;
-		//	}
-		//	Render(projection_matrix, characters[i]->modelview, characters[i]->action[action_index], time, 0, 0);
-		//}
-		else if( i == 8)
-		{
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
-			glEnable(GL_POINT_SPRITE);
-			glEnable(GL_PROGRAM_POINT_SIZE);
-				Render(projection_matrix, characters[i]->modelview, characters[i]->action[0], 1, time, 0, 1);
-			//glDisable(GL_POINT_SPRITE);			
-		}
-		else if (i == 9 || i == 10 || i == 11)
-		{
+		}				
+		else if (i == 8 || i == 9 || i == 10)
+		{			
 			if (characters[i]->ypos == 5.0f) 
 			{
 				boxMoveUp = false;
@@ -794,23 +835,55 @@ void My_Display()
 			{
 				characters[i]->ypos -= 1.f;
 				characters[i]->modelview *= translate(mat4(1.0), vec3(0, -0.08f, 0));
-			}
-			//glActiveTexture(characters[i]->textureidL);
+			}			
 			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
-			Render(projection_matrix, characters[i]->modelview,characters[i]->action[0], 0, time, 0,0);
+			Render(projection_matrix, characters[i]->modelview,characters[i]->action[0], 0, time, 0,0);			
 		}
-	}	
+		//else if (i == 11)//Particle sys
+		//{					
+		//	//glEnable(GL_POINT_SPRITE);
+		//	glBindTexture(GL_TEXTURE_2D, characters[11]->textureidL);
+		//	
+		//	Render(projection_matrix, characters[i]->modelview, square_uv,0, time, 0, 1);						
+		//}		
+	}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindVertexArray(vao);		
+		glUseProgram(sp_fbo);
+		glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
+		//Origin
+		glViewport(0, 0, current_w, current_h);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		
+		//Mini
+		glViewport(current_w - 100, current_h - 100, 100, 100);
+		glDrawArrays(GL_TRIANGLES, 0, 6);	
 	glDisable(GL_BLEND);
 	glutSwapBuffers();
+	/*glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);*/		
 }
 //Call to resize the window
 void My_Reshape(int width, int height)
 {
-	glViewport(0, 0, width, height);	
-
+	glViewport(0, 0, width, height);
+	current_w = width;
+	current_h = height;
 	float viewportAspect = (float)width / (float)height;
-
-	projection_matrix = perspective(deg2rad(50.0f), viewportAspect, 0.1f, 1000.0f);		
+	projection_matrix = perspective(deg2rad(50.0f), viewportAspect, 0.1f, 1000.0f);	
+	glDeleteTextures(1, &characters[12]->textureidL);	
+		
+	glGenTextures(1, &characters[12]->textureidL);
+	glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
+	
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);	
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, characters[12]->textureidL, 0);
 }
 //Kayboard input
 mat4 camrea_mv(1.0);
@@ -843,7 +916,7 @@ void keyboardevent(unsigned char key,int x,int y)
 			{
 				scene_counter++;
 				characters[1]->xpos += characters[1]->footsetps;
-				if (scene_counter > 2)
+				if (scene_counter > 1)
 				{
 					scene_counter = 0;
 					for (size_t i = 0; i < 6; i++)
@@ -868,7 +941,7 @@ void keyboardevent(unsigned char key,int x,int y)
 		break;
 	case 's':
 	case 'S':
-		projection_matrix *= translate(mat4(1.0), vec3(0, 0, -1));
+		//projection_matrix *= translate(mat4(1.0), vec3(0, 0, -1));
 		break;
 	case 'a':
 	case 'A':
@@ -885,7 +958,7 @@ void keyboardevent(unsigned char key,int x,int y)
 				{
 					scene_counter--;
 					characters[1]->xpos -= characters[1]->footsetps;					
-					if (scene_counter < -2)
+					if (scene_counter < -1)
 					{
 						scene_counter = 0;
 						for (size_t i = 0; i < 6; i++)
