@@ -40,6 +40,7 @@ static inline float random_float();
 
 GLuint generateTexture(const char *image);
 GLuint generateEmptyTexture();
+GLuint lake;
 struct Uniform
 {
 	GLuint mv;
@@ -511,7 +512,8 @@ void My_Init()
 	uniform->mv = glGetUniformLocation(sp, "mm");
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
-	uniform->type = glGetUniformLocation(sp, "type");	
+	uniform->type = glGetUniformLocation(sp, "type");
+	lake = generateTexture("lake.jpg");
 }
 static unsigned int seed = 0x13371337;
 static inline float random_float()
@@ -569,6 +571,8 @@ void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec
 	glUniformMatrix4fv(uniform->pm, 1, GL_FALSE, &pm[0][0]);
 	
 	glUniform1i(uniform->effect, effect);
+	glUniform1i(glGetUniformLocation(sp,"tex"), 0);
+	glUniform1i(glGetUniformLocation(sp, "water"), 1);
 	glUniform1f(uniform->time, currentTime);
 	glUniform1f(uniform->type, type);
 	glBindBuffer(GL_ARRAY_BUFFER,vvbo);
@@ -785,17 +789,23 @@ void My_Display()
 		//}		
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);		
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glClearColor(1.0f, 1.0f, 0.0f, 1.0f);		
+		/*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(1.0f, 1.0f, 0.0f, 1.0f);*/
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
-		//Origin		
-		mat4 fullscreen(1.0),minimap(1.0);
-		fullscreen *= translate(mat4(1.0), vec3(0, 0, -2));
-		fullscreen *= scale(mat4(1.0),vec3(1,1,1));
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, lake);
+		mat4 reflection(1.0),identity(1.0);
+		reflection *= translate(identity,vec3(0,-1.3,-2));
+		reflection *= rotate(identity, deg2rad(180.f), vec3(0, 1, 0));
+		reflection *= rotate(identity, deg2rad(180.f), vec3(0, 0, 1));
+		reflection *= scale(identity, vec3(1, 1, 1));
+				
+		//Reflection
+		Render(projection_matrix, reflection,11, 0, square_pos, square_uv);
+		//Origin
 		Render(projection_matrix, characters[0]->modelview, 0, 0, square_pos, square_uv);
-		//Mini
-		minimap *= translate(mat4(1.0), vec3(0.8f, 0.8f, -2));
-		minimap *= scale(mat4(1.0), vec3(0.2, 0.2, 0.2));
+		//Mini		
 		Render(projection_matrix, characters[12]->modelview, 0, 0, square_pos, square_uv);
 	glDisable(GL_BLEND);
 	glutSwapBuffers();

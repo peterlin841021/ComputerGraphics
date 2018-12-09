@@ -3,6 +3,7 @@
 in vec2 coord;
 out vec4 fragColor; 
 uniform sampler2D tex;
+uniform sampler2D water;
 uniform int effect;
 uniform int type;
 uniform float time;
@@ -318,6 +319,13 @@ void main(void)
 		case(10):{		
 			PurpleHalo();
 			break;
-		}				
+		}
+		case(11)://Reflection
+		{		
+			vec4 texColor = texture(tex,coord);
+			texColor = mix(texColor,texture(water,coord),0.5);
+			fragColor = texColor;
+			break;
+		}
 	}	
 }
