@@ -24,11 +24,10 @@ using namespace std;
 
 float currentTime;
 GLuint sp;
-GLuint sp_fbo;
 const unsigned int interval = 100;
 GLuint vao, vvbo,fbo,depthrbo,vao_fbo,vbo_fbo;
-const size_t defalut_w = 800;
-const size_t defalut_h = 600;
+const size_t defalut_w = 1000;
+const size_t defalut_h = 1000;
 size_t current_w = 0;
 size_t current_h = 0;
 size_t particle_num = 100;
@@ -169,24 +168,7 @@ void init_shader()
 	glBindBuffer(GL_ARRAY_BUFFER, vvbo);
 	glBufferData(GL_ARRAY_BUFFER, 30 * sizeof(float), NULL, GL_STATIC_DRAW);
 	
-	//******************************//	
-	//Attach Shader to program
-	sp_fbo = glCreateProgram();
-	vsSource = LoadShaderSource("./fbo.vs.glsl");
-	fsSource = LoadShaderSource("./fbo.fs.glsl");
-	glShaderSource(vs, 1, vsSource, NULL);
-	glShaderSource(fs, 1, fsSource, NULL);
-
-	FreeShaderSource(vsSource);
-	FreeShaderSource(fsSource);
-	glCompileShader(vs);
-	glCompileShader(fs);
-
-	ShaderLog(vs);
-	ShaderLog(fs);
-	glAttachShader(sp_fbo, vs);
-	glAttachShader(sp_fbo, fs);
-	glLinkProgram(sp_fbo);	
+	//******************************//
 	glGenFramebuffers(1, &fbo);
 }
 size_t collisiondetect(vec3 v1, vec3 v2, size_t damage,float attack_distance)
@@ -224,7 +206,7 @@ void My_Init()
 
 	std::vector<float*> character_attributes;
 	character_attributes.reserve(count);
-	float ground = -0.5f;
+	float ground = -0.3f;
 	float leftboundary = -0.8f;
 	float *attributes = new float[10];
 	float *none = new float[10]{0};
@@ -275,9 +257,22 @@ void My_Init()
 		attributes[STATE] = 1;
 		attributes[ATTACK_COUNTER] = 0;
 		attributes[JUMP_COUNTER] = 0;
-		attributes[SCALE] = 100.f;
-		attributes[XPOS] = 0.8f;
-		attributes[YPOS] = 0.8f;
+		attributes[SCALE] = 0.2f;
+		attributes[XPOS] = 0.7f;
+		attributes[YPOS] = 0.7f;
+		attributes[ATTACK_DISTANCE] = 0;
+		attributes[JUMP_DISTANCE] = 0;
+		attributes[FOOTSTEP] = 0;
+	character_attributes.push_back(attributes);
+	//*Items 4*//
+		attributes[HP] = 0;
+		attributes[DAMAGE] = 0;
+		attributes[STATE] = 1;
+		attributes[ATTACK_COUNTER] = 0;
+		attributes[JUMP_COUNTER] = 0;
+		attributes[SCALE] = 0.05f;
+		attributes[XPOS] = 0;
+		attributes[YPOS] = 0;
 		attributes[ATTACK_DISTANCE] = 0;
 		attributes[JUMP_DISTANCE] = 0;
 		attributes[FOOTSTEP] = 0;
@@ -301,11 +296,11 @@ void My_Init()
 		new Character("Magnus",identity,
 			none),		
 		new Character("box",identity,
-			none),
+			character_attributes[4]),
 		new Character("attackup",identity,
-			none),
+			character_attributes[4]),
 		new Character("hpwater",identity,
-			none),
+			character_attributes[4]),
 		new Character("Particle sys",identity,
 			character_attributes[2]),
 		new Character("Minimap",identity,
@@ -325,14 +320,13 @@ void My_Init()
 		"attackup.png",
 		"hpwater.png",
 		"star.png"
-	};
-		
+	};		
 	for (size_t i = 0; i < count; i++)
 	{		
 		if (i == 0)//Scene
 		{
-			scene_mv *= translate(identity,vec3(0,0,-2));
-			scene_mv *= scale(identity, vec3(cs[i]->scale_ratio*1.25f, cs[i]->scale_ratio, cs[i]->scale_ratio));
+			scene_mv *= translate(identity,vec3(0,0.2f,-2));
+			scene_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
 			cs[i]->modelview = scene_mv;			
 			cs[i]->action = generate_ani_uv(1596, 599, 2, 1);
 			//*******//
@@ -438,8 +432,9 @@ void My_Init()
 			
 			else if (i == 8) 
 			{ 
-				box_mv *= scale(identity, vec3(0.07f, 0.07f, -2.07f));
-				box_mv *= translate(identity, vec3(-0.9f, -8.2f, 1.f));
+				box_mv *= translate(identity, vec3(-0.2, ground -0.1f, -2));
+				box_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
+				
 				cs[i]->modelview = box_mv;
 				cs[i]->action = generate_ani_uv(558, 299, 1, 1);
 				cs[i]->idle = pair<int, int>(0, 1);
@@ -448,8 +443,8 @@ void My_Init()
 			}
 			else if (i == 9) 
 			{ 
-				attackup_mv *= scale(identity, vec3(0.07f, 0.07f, -2.07f));
-				attackup_mv *= translate(identity, vec3(-5.9f, -8.2f, 1.f));
+				attackup_mv *= translate(identity, vec3(0, ground - 0.1f, -2));
+				attackup_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
 				cs[i]->modelview = attackup_mv;
 				cs[i]->action = generate_ani_uv(558, 299, 1, 1);
 				cs[i]->idle = pair<int, int>(0, 1);
@@ -458,8 +453,8 @@ void My_Init()
 			}
 			else if (i == 10) 
 			{ 
-				hpwater_mv *= scale(identity, vec3(0.06f, 0.06f, -2.06f));
-				hpwater_mv *= translate(identity, vec3(5.0f, -9.7f, 1.f));
+				hpwater_mv *= translate(identity, vec3(0.2, ground - 0.1f, -2));
+				hpwater_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
 				cs[i]->modelview = hpwater_mv;
 				cs[i]->action = generate_ani_uv(558, 299, 1, 1);
 				cs[i]->idle = pair<int, int>(0, 1);
@@ -502,12 +497,12 @@ void My_Init()
 	square_pos.push_back(vec3(-1, -1, 0));
 	square_pos.push_back(vec3(-1, 1, 0));
 	//UV of square
-	square_uv.push_back(vec2(0,0));
-	square_uv.push_back(vec2(1, 0));
-	square_uv.push_back(vec2(1, 1));
-	square_uv.push_back(vec2(1, 1));
 	square_uv.push_back(vec2(0, 1));
-	square_uv.push_back(vec2(0, 0));
+	square_uv.push_back(vec2(1, 1));
+	square_uv.push_back(vec2(1, 0));
+	square_uv.push_back(vec2(1,0));
+	square_uv.push_back(vec2(0, 0));	
+	square_uv.push_back(vec2(0, 1));		
 	//*******************//	
 	init_shader();
 	//Uniform variables
@@ -616,10 +611,10 @@ void My_Display()
 	glClearColor(1, 1, 1, 1);
 	//Time	
 	float f_timer_cnt = glutGet(GLUT_ELAPSED_TIME);
-	currentTime = f_timer_cnt * 0.001f;
-	
+	currentTime = f_timer_cnt * 0.001f;	
 	currentTime *= 0.1f;
 	currentTime -= floor(currentTime);
+
 	glBindVertexArray(vao);
 	glUseProgram(sp);
 	glEnable(GL_BLEND);
@@ -661,7 +656,7 @@ void My_Display()
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-	glViewport(0, 0, current_w, current_h);
+	//glViewport(0, 0, current_w, current_h);
 	for (size_t i = 0; i < characters.size(); i++)
 	{
 		glActiveTexture(GL_TEXTURE0);		
@@ -789,20 +784,19 @@ void My_Display()
 		//	Render(projection_matrix, characters[i]->modelview, square_uv,0, time, 0, 1);						
 		//}		
 	}
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
-		glBindVertexArray(vao);		
-		glUseProgram(sp_fbo);
+		glClearColor(1.0f, 1.0f, 0.0f, 1.0f);		
 		glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
-		//Origin
-		glViewport(0, 0, current_w, current_h);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		
+		//Origin		
+		mat4 fullscreen(1.0),minimap(1.0);
+		fullscreen *= translate(mat4(1.0), vec3(0, 0, -2));
+		fullscreen *= scale(mat4(1.0),vec3(1,1,1));
+		Render(projection_matrix, characters[0]->modelview, 0, 0, square_pos, square_uv);
 		//Mini
-		glViewport(current_w - 100, current_h - 100, 100, 100);
-		glDrawArrays(GL_TRIANGLES, 0, 6);	
+		minimap *= translate(mat4(1.0), vec3(0.8f, 0.8f, -2));
+		minimap *= scale(mat4(1.0), vec3(0.2, 0.2, 0.2));
+		Render(projection_matrix, characters[12]->modelview, 0, 0, square_pos, square_uv);
 	glDisable(GL_BLEND);
 	glutSwapBuffers();
 	glDisableVertexAttribArray(0);
@@ -814,13 +808,13 @@ void My_Reshape(int width, int height)
 	glViewport(0, 0, width, height);
 	current_w = width;
 	current_h = height;
-	float viewportAspect = (float)width / (float)height;
+	float viewportAspect = (float)current_h / (float)current_w;
 	projection_matrix = perspective(deg2rad(50.0f), viewportAspect, 0.1f, 1000.0f);	
 	glDeleteTextures(1, &characters[12]->textureidL);
 	glGenTextures(1, &characters[12]->textureidL);
 	glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
 	
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, current_w, current_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -885,7 +879,7 @@ void keyboardevent(unsigned char key,int x,int y)
 		break;
 	case 's':
 	case 'S':
-		//projection_matrix *= translate(mat4(1.0), vec3(0, 0, -1));
+		projection_matrix *= translate(mat4(1.0), vec3(0, 0, -1));
 		break;
 	case 'a':
 	case 'A':
