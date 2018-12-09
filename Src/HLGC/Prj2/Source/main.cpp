@@ -25,8 +25,8 @@ float currentTime;
 GLuint sp,sp_particle;
 const unsigned int interval = 100;
 GLuint vao, vvbo,fbo,depthrbo,vao_fbo,vbo_fbo;
-const size_t defalut_w = 1000;
-const size_t defalut_h = 1000;
+const size_t defalut_w = 800;
+const size_t defalut_h = 800;
 size_t current_w = 0;
 size_t current_h = 0;
 size_t particle_num = 100;
@@ -604,12 +604,12 @@ void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec
 		
 		for (int i = 0; i < particle_num; i++)
 		{
-			star[i].position[0] = (random_float() * 2.0f - 1.0f) * 2.0f;
-			star[i].position[1] = (random_float() * 2.0f - 1.0f) * 2.0f;
+			star[i].position[0] = (random_float() * 2.0f - 1.0f) * 2.0f;			
 			star[i].position[2] = random_float();
+			star[i].position[1] = (random_float() * 2.0f - 1.0f) * 2.0f;
 		}
 		glUnmapBuffer(GL_ARRAY_BUFFER);
-		glUseProgram(sp_particle);
+		glUseProgram(sp_particle);		
 		glUniformMatrix4fv(glGetUniformLocation(sp_particle, "pm"), 1, GL_FALSE, &pm[0][0]);		
 		glUniformMatrix4fv(glGetUniformLocation(sp_particle, "mm"), 1, GL_FALSE, &mm[0][0]);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(star_t), NULL);		
@@ -621,17 +621,16 @@ void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec
 }
 
 void My_Display()
-{
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClearColor(1, 1, 1, 1);
+{	
 	//Time	
 	float f_timer_cnt = glutGet(GLUT_ELAPSED_TIME);
 	currentTime = f_timer_cnt * 0.001f;	
 	currentTime *= 0.1f;
 	currentTime -= floor(currentTime);
-	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 	glBindVertexArray(vao);
 	glUseProgram(sp);
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//Injure detect
@@ -670,8 +669,9 @@ void My_Display()
 		}
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-	//glViewport(0, 0, current_w, current_h);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClearColor(1, 1, 1, 1);//Clear FBO
+	
 	for (size_t i = 0; i < characters.size(); i++)
 	{
 		glActiveTexture(GL_TEXTURE0);
@@ -795,107 +795,76 @@ void My_Display()
 	//Draw particles
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, particle);	
-	Render(projection_matrix, mat4(1.0)*translate(mat4(1.0), vec3(0, 0, 0)), 0, 1, square_pos, square_uv);
-
+	Render(projection_matrix, mat4(1.0)*translate(mat4(1.0), vec3(-5, 0, 0)), 0, 1, square_pos, square_uv);
+	
 	glUseProgram(sp);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);		
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
+	/*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(1.0f, 1.0f, 0.0f, 1.0f);*/
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, lake);
+		
 		mat4 reflection(1.0),identity(1.0);
-		reflection *= translate(identity,vec3(0,-1.3,-2.1));
+		reflection *= translate(identity,vec3(0,-1.4f,-2));
 		reflection *= rotate(identity, deg2rad(180.f), vec3(0, 1, 0));
 		reflection *= rotate(identity, deg2rad(180.f), vec3(0, 0, 1));
-		reflection *= scale(identity, vec3(1, 1, 1));
-				
+		reflection *= scale(identity, vec3(1.2, 1.2, 1));
+		
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, lake);
 		//Reflection
-		Render(projection_matrix, reflection,11, 0, square_pos, square_uv);
+		Render(projection_matrix, reflection, 11, 0, square_pos, square_uv);
 		//Origin
 		Render(projection_matrix, characters[0]->modelview, 0, 0, square_pos, square_uv);
 		//Mini		
 		Render(projection_matrix, characters[12]->modelview, 0, 0, square_pos, square_uv);
+		
+		
 	glDisable(GL_BLEND);
+	
 	glutSwapBuffers();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);	
 }
 //Call to resize the window
 void My_Reshape(int width, int height)
-{
+{	
 	glViewport(0, 0, width, height);
 	current_w = width;
 	current_h = height;
 	float viewportAspect = (float)current_h / (float)current_w;
-	projection_matrix = perspective(deg2rad(50.0f), viewportAspect, 0.1f, 1000.0f);	
+	projection_matrix = perspective(deg2rad(50.0f), viewportAspect, 0.1f, 1000.0f);		
 	glDeleteTextures(1, &characters[12]->textureidL);
 	glGenTextures(1, &characters[12]->textureidL);
 	glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
 	
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, defalut_w, defalut_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA, current_w, current_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);	
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, characters[12]->textureidL, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, characters[12]->textureidL,0);
 }
 //Kayboard input
 mat4 camrea_mv(1.0);
 void keyboardevent(unsigned char key,int x,int y) 
 {
 	float sc = 0.2f, ground =-0.7f;
+	float viewportAspect = (float)current_h / (float)current_w;
 	mat4 identity(1.0), mv(1.0);
 	float *attributes = new float[10]{0};
 	switch (key)
 	{
 	case 'w':
 	case 'W':
-		characters[1]->attackcounter = 0;
-		if (!characters[1]->isjump && !characters[1]->isdied)
-		{
-			characters[1]->isjump = true;
-			characters[1]->nextframe = 0;
-			characters[1]->state = ACTION_STATE_JUMP;
-		}		
+		projection_matrix *= translate(mat4(1.0), vec3(0, 0, 1));
 		break;
 	case 'd':
 	case 'D':		
-		characters[1]->attackcounter = 0;
-		characters[1]->left = false;
-		if ((characters[1]->jumpcounter < 3 && characters[1]->isjump || !characters[1]->isjump && characters[1]->jumpcounter == 0) && !characters[1]->isdied)
-		{			
-			characters[1]->state = ACTION_STATE_MOVE;
-			float d = (float)characters[1]->footsetps / characters[0]->footsetps;
-			if (characters[0]->xpos - characters[1]->xpos > 0)
-			{
-				scene_counter++;
-				characters[1]->xpos += characters[1]->footsetps;
-				if (scene_counter > 1)
-				{
-					scene_counter = 0;
-					for (size_t i = 0; i < 6; i++)
-					{
-						characters[0]->action[0][i].x += 0.01f;
-						if (characters[0]->action[0][1].x > characters[0]->action[1][1].x)
-						{
-							characters[0]->action[0][0].x = origin_left[0].x;
-							characters[0]->action[0][1].x = origin_left[1].x;
-							characters[0]->action[0][2].x = origin_left[2].x;
-							characters[0]->action[0][3].x = origin_left[3].x;
-							characters[0]->action[0][4].x = origin_left[4].x;
-							characters[0]->action[0][5].x = origin_left[5].x;
-							break;
-						}
-					}
-				}				
-			}			
-			if (characters[1]->isjump)
-				characters[1]->state = ACTION_STATE_JUMP;
-		}
+		projection_matrix *= translate(mat4(1.0), vec3(1, 0, 0));
 		break;
 	case 's':
 	case 'S':
@@ -903,42 +872,7 @@ void keyboardevent(unsigned char key,int x,int y)
 		break;
 	case 'a':
 	case 'A':
-		characters[1]->attackcounter = 0;
-		characters[1]->left = true;
-		if ((characters[1]->jumpcounter < 3 && characters[1]->isjump) ||
-			(!characters[1]->isjump && characters[1]->jumpcounter == 0))
-		{
-			if (!characters[1]->isdied)
-			{				
-				characters[1]->state = ACTION_STATE_MOVE;
-				float d = (float)characters[1]->footsetps / characters[0]->footsetps;
-				if (characters[0]->xpos - characters[1]->xpos < 2500)
-				{
-					scene_counter--;
-					characters[1]->xpos -= characters[1]->footsetps;					
-					if (scene_counter < -1)
-					{
-						scene_counter = 0;
-						for (size_t i = 0; i < 6; i++)
-						{
-							characters[0]->action[0][i].x -= 0.01f;
-							if (characters[0]->action[0][0].x < origin_left[0].x)
-							{
-								characters[0]->action[0][0].x = characters[0]->action[1][0].x;
-								characters[0]->action[0][1].x = characters[0]->action[1][1].x;
-								characters[0]->action[0][2].x = characters[0]->action[1][2].x;
-								characters[0]->action[0][3].x = characters[0]->action[1][3].x;
-								characters[0]->action[0][4].x = characters[0]->action[1][4].x;
-								characters[0]->action[0][5].x = characters[0]->action[1][5].x;
-								break;
-							}
-						}
-					}					
-				}					
-				if (characters[1]->isjump)
-					characters[1]->state = ACTION_STATE_JUMP;
-			}			
-		}
+		projection_matrix *= translate(mat4(1.0), vec3(-1, 0, 0));
 		break;
 	case 'z':
 	case 'Z':
@@ -965,13 +899,100 @@ void keyboardevent(unsigned char key,int x,int y)
 		attributes[JUMP_DISTANCE] = 0.6f;
 		attributes[FOOTSTEP] = 2;
 		mv *= translate(identity,vec3(0, -0.33f,-2));
-		mv *= scale(identity, vec3(characters[1]->scale_ratio, characters[1]->scale_ratio, characters[1]->scale_ratio));
-		characters[1]->reset(mv, attributes);
-		//My_Reshape(defalut_w,defalut_h);
+		mv *= scale(identity, vec3(0.15f, 0.15f,0.15f));
+		characters[1]->reset(mv, attributes);		
+		projection_matrix = perspective(deg2rad(50.0f), viewportAspect, 0.1f, 1000.0f);		
 		break;
 	default:		
 		break;
 	}	
+}
+void specialkeyevent(int key, int x, int y)
+{
+	switch (key)
+	{
+	case GLUT_KEY_LEFT:
+		characters[1]->attackcounter = 0;
+		characters[1]->left = true;
+		if ((characters[1]->jumpcounter < 3 && characters[1]->isjump) ||
+			(!characters[1]->isjump && characters[1]->jumpcounter == 0))
+		{
+			if (!characters[1]->isdied)
+			{
+				characters[1]->state = ACTION_STATE_MOVE;
+				float d = (float)characters[1]->footsetps / characters[0]->footsetps;
+				if (characters[0]->xpos - characters[1]->xpos < 2500)
+				{
+					scene_counter--;
+					characters[1]->xpos -= characters[1]->footsetps;
+					if (scene_counter < -1)
+					{
+						scene_counter = 0;
+						for (size_t i = 0; i < 6; i++)
+						{
+							characters[0]->action[0][i].x -= 0.01f;
+							if (characters[0]->action[0][0].x < origin_left[0].x)
+							{
+								characters[0]->action[0][0].x = characters[0]->action[1][0].x;
+								characters[0]->action[0][1].x = characters[0]->action[1][1].x;
+								characters[0]->action[0][2].x = characters[0]->action[1][2].x;
+								characters[0]->action[0][3].x = characters[0]->action[1][3].x;
+								characters[0]->action[0][4].x = characters[0]->action[1][4].x;
+								characters[0]->action[0][5].x = characters[0]->action[1][5].x;
+								break;
+							}
+						}
+					}
+				}
+				if (characters[1]->isjump)
+					characters[1]->state = ACTION_STATE_JUMP;
+			}
+		}
+		break;
+	case GLUT_KEY_RIGHT:
+		characters[1]->attackcounter = 0;
+		characters[1]->left = false;
+		if ((characters[1]->jumpcounter < 3 && characters[1]->isjump || !characters[1]->isjump && characters[1]->jumpcounter == 0) && !characters[1]->isdied)
+		{
+			characters[1]->state = ACTION_STATE_MOVE;
+			float d = (float)characters[1]->footsetps / characters[0]->footsetps;
+			if (characters[0]->xpos - characters[1]->xpos > 0)
+			{
+				scene_counter++;
+				characters[1]->xpos += characters[1]->footsetps;
+				if (scene_counter > 1)
+				{
+					scene_counter = 0;
+					for (size_t i = 0; i < 6; i++)
+					{
+						characters[0]->action[0][i].x += 0.01f;
+						if (characters[0]->action[0][1].x > characters[0]->action[1][1].x)
+						{
+							characters[0]->action[0][0].x = origin_left[0].x;
+							characters[0]->action[0][1].x = origin_left[1].x;
+							characters[0]->action[0][2].x = origin_left[2].x;
+							characters[0]->action[0][3].x = origin_left[3].x;
+							characters[0]->action[0][4].x = origin_left[4].x;
+							characters[0]->action[0][5].x = origin_left[5].x;
+							break;
+						}
+					}
+				}
+			}
+			if (characters[1]->isjump)
+				characters[1]->state = ACTION_STATE_JUMP;
+		}
+		break;
+	case GLUT_KEY_UP:
+		characters[1]->attackcounter = 0;
+		if (!characters[1]->isjump && !characters[1]->isdied)
+		{
+			characters[1]->isjump = true;
+			characters[1]->nextframe = 0;
+			characters[1]->state = ACTION_STATE_JUMP;
+		}
+		break;
+	}
 }
 //Timer event
 void My_Timer(int val)
@@ -1023,8 +1044,8 @@ int main(int argc, char *argv[])
 	//Register GLUT callback functions
 	glutDisplayFunc(My_Display);
 	glutReshapeFunc(My_Reshape);
-	glutKeyboardFunc(keyboardevent);	
-	
+	glutKeyboardFunc(keyboardevent);
+	glutSpecialFunc(specialkeyevent);
 	glutTimerFunc(interval, My_Timer, 0);
 	// Enter main event loop.
 	glutMainLoop();

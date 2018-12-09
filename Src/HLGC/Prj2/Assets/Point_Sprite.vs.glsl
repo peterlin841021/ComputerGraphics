@@ -14,9 +14,9 @@ void main(void)
 
 	newVertex.z += time;
 	newVertex.z = fract(newVertex.z);
-
+	float density = 1000.0;
 	float size = (20.0 * newVertex.z * newVertex.z);	
-	newVertex.z = (999.9 * newVertex.z) - 1000.0;
-	gl_Position = pm *mm* newVertex;
+	newVertex.z = (density * newVertex.z) - density;
+	gl_Position = pm * newVertex;
 	gl_PointSize = size;
 }
