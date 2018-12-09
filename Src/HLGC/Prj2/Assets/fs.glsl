@@ -5,18 +5,16 @@ out vec4 fragColor;
 uniform sampler2D tex;
 uniform sampler2D water;
 uniform int effect;
-uniform int type;
 uniform float time;
 vec2 img_size = vec2(800., 340.);
 const vec2 iResolution = vec2(800., 600.);
 flat in vec4 color;
 
-void Normal(){
+void Normal()
+{
+	vec2 xy = vec2(gl_PointCoord.x*0.155f+0.155f,gl_PointCoord.y+0.155f);
 	vec4 texColor = vec4(1,1,1,1);
-	if(type == 0)
-		texColor = texture(tex,coord);	
-	else if(type == 1)
-		texColor = texture(tex,gl_PointCoord);	
+	texColor = texture(tex,coord);	
 	fragColor = texColor;		
 }
 

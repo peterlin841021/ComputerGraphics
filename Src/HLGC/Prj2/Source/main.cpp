@@ -22,7 +22,7 @@ using namespace std;
 #define FOOTSTEP 9
 
 float currentTime;
-GLuint sp;
+GLuint sp,sp_particle;
 const unsigned int interval = 100;
 GLuint vao, vvbo,fbo,depthrbo,vao_fbo,vbo_fbo;
 const size_t defalut_w = 1000;
@@ -36,17 +36,21 @@ bool boxMoveUp = true;
 bool eatAttackUp = false;
 void Render(mat4 pm,mat4 mm, int effect,int type,vector<vec3> pos, vector<vec2> uv);
 static inline float random_float();
-
+struct star_t
+{
+	glm::vec3     position;
+	glm::vec3     color;
+};
 GLuint generateTexture(const char *image);
 GLuint generateEmptyTexture();
 GLuint lake;
+GLuint particle;
 struct Uniform
 {
 	GLuint mv;
 	GLuint pm;
 	GLuint time;
-	GLuint effect;	
-	GLuint type;
+	GLuint effect;
 };
 struct Character 
 {
@@ -169,6 +173,22 @@ void init_shader()
 	
 	//******************************//
 	glGenFramebuffers(1, &fbo);
+
+	sp_particle = glCreateProgram();
+	vsSource = LoadShaderSource("./Point_Sprite.vs.glsl");
+	fsSource = LoadShaderSource("./Point_Sprite.fs.glsl");
+	glShaderSource(vs, 1, vsSource, NULL);
+	glShaderSource(fs, 1, fsSource, NULL);
+	FreeShaderSource(vsSource);
+	FreeShaderSource(fsSource);
+	glCompileShader(vs);
+	glCompileShader(fs);
+
+	ShaderLog(vs);
+	ShaderLog(fs);	
+	glAttachShader(sp_particle, vs);
+	glAttachShader(sp_particle, fs);
+	glLinkProgram(sp_particle);
 }
 size_t collisiondetect(vec3 v1, vec3 v2, size_t damage,float attack_distance)
 {
@@ -316,29 +336,28 @@ void My_Init()
 		"star.png"
 	};		
 	for (size_t i = 0; i < count; i++)
-	{		
+	{
 		if (i == 0)//Scene
 		{
-			scene_mv *= translate(identity,vec3(0,0.2f,-2));
-			scene_mv *= scale(identity, vec3(1,1,1));
-			cs[i]->modelview = scene_mv;			
+			scene_mv *= translate(identity, vec3(0, 0.2f, -2));
+			scene_mv *= scale(identity, vec3(1, 1, 1));
+			cs[i]->modelview = scene_mv;
 			cs[i]->action = generate_ani_uv(1596, 599, 2, 1);
 			//*******//
 			origin_left = cs[i]->action[0];
 			cs[i]->idle = pair<int, int>(0, 1);
-			cs[i]->textureidL = generateTexture(texture_images[i]);			
+			cs[i]->textureidL = generateTexture(texture_images[i]);
 			cs[i]->left = true;
 		}
 		else if (i == 1)
-		{			
+		{
 			character_mv *= translate(identity, vec3(0, ground, -2));
-			
 			character_mv *= scale(identity, vec3(0.15f, 0.15f, 0.15f));
-			cs[i]->modelview = character_mv;			
+			cs[i]->modelview = character_mv;
 			cs[i]->action = generate_ani_uv(1100, 100, 11, 1);
 			cs[i]->idle = pair<int, int>(0, 1);
 			cs[i]->move = pair<int, int>(1, 4);
-			cs[i]->jump = pair<int, int>(5, 1);						
+			cs[i]->jump = pair<int, int>(5, 1);
 			cs[i]->die = pair<int, int>(6, 1);
 			cs[i]->injured = pair<int, int>(10, 1);
 			vector<pair<int, int>> attacks;
@@ -347,146 +366,121 @@ void My_Init()
 
 			cs[i]->left = false;
 			cs[i]->textureidL = generateTexture(texture_images[i]);
-			cs[i]->textureidR = generateTexture(texture_images[i+1]);
-		}
-		else
-		{	
-			if (i == 2)//CrimsonBalrog
-			{
-				monster_mv = mat4(1.0);
-				monster_mv *= translate(identity, vec3(-0.9f, -0.2f, -2));
-				monster_mv *= scale(identity, vec3(0.5f, 0.5f, 0.5f));
-				cs[i]->modelview = monster_mv;
-
-				cs[i]->action = generate_ani_uv(1280, 231, 4, 1);
-				cs[i]->move = pair<int, int>(0, 4);	
-
-				cs[i]->left = false;
-				cs[i]->textureidR = generateTexture(texture_images[i+1]);
-			}
-			else if (i == 3)//Origin mashroom
-			{
-				monster_mv = mat4(1.0);
-				monster_mv *= translate(identity, vec3(3.f, -1.f, -2));
-				monster_mv *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
-				cs[i]->modelview = monster_mv;
-
-				cs[i]->action = generate_ani_uv(600, 100, 6, 1);
-				cs[i]->move = pair<int, int>(0, 3);
-				cs[i]->die = pair<int, int>(3, 3);
-
-				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
-			}
-			else if (i == 4)//Pig
-			{
-				monster_mv = mat4(1.0);
-				monster_mv *= translate(identity, vec3(3.f, 0.f, -2));
-				monster_mv *= scale(identity, vec3(1.f, 1.f, 1.f));
-				cs[i]->modelview = monster_mv;
-
-				cs[i]->action = generate_ani_uv(201, 50, 3, 1);
-				cs[i]->move = pair<int, int>(0, 3);				
-
-				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
-			}
-			else if (i == 5)//Suu
-			{
-				monster_mv = mat4(1.0);
-				monster_mv *= translate(identity, vec3(0, 0.5f, -2));
-				monster_mv *= scale(identity, vec3(0.8f, 0.8f, 0.8f));
-				cs[i]->modelview = monster_mv;
-
-				cs[i]->action = generate_ani_uv(2040, 166, 12, 1);
-				cs[i]->move = pair<int, int>(0, 4);
-				cs[i]->die = pair<int, int>(4, 8);
-				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
-			}
-			else if (i == 6)//Wolf
-			{	
-				monster_mv = mat4(1.0);
-				monster_mv *= translate(identity, vec3(0.f, 1.f, -2));
-				monster_mv *= scale(identity, vec3(5.f, 5.f, 5.f));
-				cs[i]->modelview = monster_mv;
-
-				cs[i]->action = generate_ani_uv(3108, 255, 12, 1);
-				cs[i]->move = pair<int, int>(0, 12);
-
-				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
-			}
-			else if (i == 7)//Magnus
-			{
-				monster_mv = mat4(1.0);
-				monster_mv *= translate(identity, vec3(0, 0, -2));
-				monster_mv *= scale(identity, vec3(1.f, 1.f, 1.f));
-				cs[i]->modelview = monster_mv;
-
-				cs[i]->action = generate_ani_uv(2912, 197, 8, 1);
-				cs[i]->move = pair<int, int>(0, 8);				
-				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
-			}
-			
-			else if (i == 8) 
-			{ 
-				monster_mv = mat4(1.0);
-				box_mv *= translate(identity, vec3(-0.2, ground-0.05f, -2));
-				box_mv *= scale(identity, vec3(0.04f, 0.04f, 0.04f));
+			cs[i]->textureidR = generateTexture(texture_images[i + 1]);
+		}			
+		//else if (i == 2)//CrimsonBalrog
+		//{
+		//	monster_mv = mat4(1.0);
+		//	monster_mv *= translate(identity, vec3(-0.9f, -0.2f, -2));
+		//	monster_mv *= scale(identity, vec3(0.5f, 0.5f, 0.5f));
+		//	cs[i]->modelview = monster_mv;
+		//	cs[i]->action = generate_ani_uv(1280, 231, 4, 1);
+		//	cs[i]->move = pair<int, int>(0, 4);	
+		//	cs[i]->left = false;
+		//	cs[i]->textureidR = generateTexture(texture_images[i+1]);
+		//}
+		//else if (i == 3)//Origin mashroom
+		//{
+		//	monster_mv = mat4(1.0);
+		//	monster_mv *= translate(identity, vec3(3.f, -1.f, -2));
+		//	monster_mv *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
+		//	cs[i]->modelview = monster_mv;
+		//	cs[i]->action = generate_ani_uv(600, 100, 6, 1);
+		//	cs[i]->move = pair<int, int>(0, 3);
+		//	cs[i]->die = pair<int, int>(3, 3);
+		//	cs[i]->left = true;
+		//	cs[i]->textureidL = generateTexture(texture_images[i + 1]);
+		//}
+		//else if (i == 4)//Pig
+		//{
+		//	monster_mv = mat4(1.0);
+		//	monster_mv *= translate(identity, vec3(3.f, 0.f, -2));
+		//	monster_mv *= scale(identity, vec3(1.f, 1.f, 1.f));
+		//	cs[i]->modelview = monster_mv;
+		//	cs[i]->action = generate_ani_uv(201, 50, 3, 1);
+		//	cs[i]->move = pair<int, int>(0, 3);				
+		//	cs[i]->left = true;
+		//	cs[i]->textureidL = generateTexture(texture_images[i + 1]);
+		//}
+		//else if (i == 5)//Suu
+		//{
+		//	monster_mv = mat4(1.0);
+		//	monster_mv *= translate(identity, vec3(0, 0.5f, -2));
+		//	monster_mv *= scale(identity, vec3(0.8f, 0.8f, 0.8f));
+		//	cs[i]->modelview = monster_mv;
+		//	cs[i]->action = generate_ani_uv(2040, 166, 12, 1);
+		//	cs[i]->move = pair<int, int>(0, 4);
+		//	cs[i]->die = pair<int, int>(4, 8);
+		//	cs[i]->left = true;
+		//	cs[i]->textureidL = generateTexture(texture_images[i + 1]);
+		//}
+		//else if (i == 6)//Wolf
+		//{	
+		//	monster_mv = mat4(1.0);
+		//	monster_mv *= translate(identity, vec3(0.f, 1.f, -2));
+		//	monster_mv *= scale(identity, vec3(5.f, 5.f, 5.f));
+		//	cs[i]->modelview = monster_mv;
+		//	cs[i]->action = generate_ani_uv(3108, 255, 12, 1);
+		//	cs[i]->move = pair<int, int>(0, 12);
+		//	cs[i]->left = true;
+		//	cs[i]->textureidL = generateTexture(texture_images[i + 1]);
+		//}
+		//else if (i == 7)//Magnus
+		//{
+		//	monster_mv = mat4(1.0);
+		//	monster_mv *= translate(identity, vec3(0, 0, -2));
+		//	monster_mv *= scale(identity, vec3(1.f, 1.f, 1.f));
+		//	cs[i]->modelview = monster_mv;
+		//	cs[i]->action = generate_ani_uv(2912, 197, 8, 1);
+		//	cs[i]->move = pair<int, int>(0, 8);				
+		//	cs[i]->left = true;
+		//	cs[i]->textureidL = generateTexture(texture_images[i + 1]);
+		//}	
+		else if (i == 8) 
+		{ 
+			monster_mv = mat4(1.0);
+			box_mv *= translate(identity, vec3(-0.2, ground-0.05f, -2));
+			box_mv *= scale(identity, vec3(0.04f, 0.04f, 0.04f));
 				
-				cs[i]->modelview = box_mv;
-				cs[i]->action = generate_ani_uv(558, 299, 1, 1);
-				cs[i]->idle = pair<int, int>(0, 1);
-				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
-			}
-			else if (i == 9) 
-			{
-				attackup_mv *= translate(identity, vec3(0, ground - 0.05f, -2));
-				attackup_mv *= scale(identity, vec3(0.04f, 0.04f, 0.04f));
-				cs[i]->modelview = attackup_mv;
-				cs[i]->action = generate_ani_uv(558, 299, 1, 1);
-				cs[i]->idle = pair<int, int>(0, 1);
-				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
-			}
-			else if (i == 10) 
-			{ 			
-				hpwater_mv *= translate(identity, vec3(0.2, ground - 0.05f, -2));
-				hpwater_mv *= scale(identity, vec3(0.04f, 0.04f, 0.04f));
-				
-				cs[i]->modelview = hpwater_mv;
-				cs[i]->action = generate_ani_uv(558, 299, 1, 1);
-				cs[i]->idle = pair<int, int>(0, 1);
-				cs[i]->left = true;
-				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
-			}
-			else if (i == 11)//Particle sys
-			{				
-				cs[i]->modelview = monster_mv;
-
-				cs[i]->action = generate_ani_uv(128, 128, 1, 1);
-				cs[i]->move = pair<int, int>(0, 1);
-				cs[i]->left = false;
-				cs[i]->textureidL = generateTexture(texture_images[i + 1]);
-				cs[i]->textureidR = generateTexture(texture_images[i + 1]);
-			}
-			else if (i == 12)//Minimap
-			{				
-				cs[i]->modelview *= translate(identity, vec3(0.8f, 0.8f, -2));
-				cs[i]->modelview *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
-			}
+			cs[i]->modelview = box_mv;
+			cs[i]->action = generate_ani_uv(558, 299, 1, 1);
+			cs[i]->idle = pair<int, int>(0, 1);
+			cs[i]->left = true;
+			cs[i]->textureidL = generateTexture(texture_images[i + 1]);
 		}
+		else if (i == 9) 
+		{
+			attackup_mv *= translate(identity, vec3(0, ground - 0.05f, -2));
+			attackup_mv *= scale(identity, vec3(0.04f, 0.04f, 0.04f));
+			cs[i]->modelview = attackup_mv;
+			cs[i]->action = generate_ani_uv(558, 299, 1, 1);
+			cs[i]->idle = pair<int, int>(0, 1);
+			cs[i]->left = true;
+			cs[i]->textureidL = generateTexture(texture_images[i + 1]);
+		}
+		else if (i == 10) 
+		{ 			
+			hpwater_mv *= translate(identity, vec3(0.2, ground - 0.05f, -2));
+			hpwater_mv *= scale(identity, vec3(0.04f, 0.04f, 0.04f));
+				
+			cs[i]->modelview = hpwater_mv;
+			cs[i]->action = generate_ani_uv(558, 299, 1, 1);
+			cs[i]->idle = pair<int, int>(0, 1);
+			cs[i]->left = true;
+			cs[i]->textureidL = generateTexture(texture_images[i + 1]);
+		}
+		else if (i == 12)//Minimap
+		{				
+			cs[i]->modelview *= translate(identity, vec3(0.8f, 0.8f, -1.9f));
+			cs[i]->modelview *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
+		}		
 		characters.push_back(cs[i]);
 	}
 	//****//
 	
 	for (size_t i = 0; i < particle_num; i++)
 	{
-		particles_pos.push_back(vec3( (random_float() * 3.0f - 1.0f) * 1, (random_float() * 3.0f - 1.0f) * 1,1));
-		//particles_pos.push_back(vec3(0,0, -2));
+		particles_pos.push_back(vec3( (random_float() * 2.0f - 1.0f) * 100.f, (random_float() * 2.0f - 1.0f) * 100.f, random_float()));
 	}
 	//Position of square
 	square_pos.push_back(vec3(-1, 1, 0));
@@ -509,10 +503,11 @@ void My_Init()
 	uniform->pm = glGetUniformLocation(sp, "pm");
 	uniform->mv = glGetUniformLocation(sp, "mm");
 	uniform->effect = glGetUniformLocation(sp, "effect");
-	uniform->time = glGetUniformLocation(sp, "time");
-	uniform->type = glGetUniformLocation(sp, "type");
+	uniform->time = glGetUniformLocation(sp, "time");	
 	lake = generateTexture("lake.jpg");
+	particle = generateTexture("star.png");
 }
+
 static unsigned int seed = 0x13371337;
 static inline float random_float()
 {
@@ -571,19 +566,18 @@ void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec
 	glUniform1i(uniform->effect, effect);
 	glUniform1i(glGetUniformLocation(sp,"tex"), 0);
 	glUniform1i(glGetUniformLocation(sp, "water"), 1);
-	glUniform1f(uniform->time, currentTime);
-	glUniform1f(uniform->type, type);
+	glUniform1f(uniform->time, currentTime);	
 	glBindBuffer(GL_ARRAY_BUFFER,vvbo);
 	void* ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 	
-	vector<float> vtx;//Puts all data with float type	
+	vector<float> vtx;//Puts all data with float type
 	for (size_t i = 0; i < pos.size(); i++)
 	{
 		vtx.push_back(pos[i].x);
 		vtx.push_back(pos[i].y);
 		vtx.push_back(pos[i].z);
 	}
-
+	
 	for (size_t i = 0; i < uv.size(); i++)
 	{
 		vtx.push_back(uv[i].x);
@@ -594,16 +588,35 @@ void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)(pos.size() * 3 * sizeof(float)));
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
+	
 	if (type == 0)
-	{
+	{		
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
 		glDrawArrays(GL_TRIANGLES, 0, pos.size());
 	}		
 	else if (type == 1)
 	{
-		glPointSize(10.0);
-		glDrawArrays(GL_POINTS, 0, particles_pos.size());
+		glBindBuffer(GL_ARRAY_BUFFER, vvbo);
+		glBufferData(GL_ARRAY_BUFFER, particle_num * sizeof(star_t), NULL, GL_STATIC_DRAW);
+
+		star_t * star = (star_t *)glMapBufferRange(GL_ARRAY_BUFFER, 0, particle_num * sizeof(star_t), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+		
+		for (int i = 0; i < particle_num; i++)
+		{
+			star[i].position[0] = (random_float() * 2.0f - 1.0f) * 2.0f;
+			star[i].position[1] = (random_float() * 2.0f - 1.0f) * 2.0f;
+			star[i].position[2] = random_float();
+		}
+		glUnmapBuffer(GL_ARRAY_BUFFER);
+		glUseProgram(sp_particle);
+		glUniformMatrix4fv(glGetUniformLocation(sp_particle, "pm"), 1, GL_FALSE, &pm[0][0]);		
+		glUniformMatrix4fv(glGetUniformLocation(sp_particle, "mm"), 1, GL_FALSE, &mm[0][0]);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(star_t), NULL);		
+		//glEnableVertexAttribArray(0);		
+		glEnable(GL_POINT_SPRITE);		
+		glEnable(GL_PROGRAM_POINT_SIZE);		
+		glDrawArrays(GL_POINTS, 0, particle_num);		
 	}
 }
 
@@ -616,7 +629,7 @@ void My_Display()
 	currentTime = f_timer_cnt * 0.001f;	
 	currentTime *= 0.1f;
 	currentTime -= floor(currentTime);
-
+	glEnable(GL_DEPTH_TEST);
 	glBindVertexArray(vao);
 	glUseProgram(sp);
 	glEnable(GL_BLEND);
@@ -661,7 +674,7 @@ void My_Display()
 	//glViewport(0, 0, current_w, current_h);
 	for (size_t i = 0; i < characters.size(); i++)
 	{
-		glActiveTexture(GL_TEXTURE0);		
+		glActiveTexture(GL_TEXTURE0);
 		if (i == 0)
 		{			
 			glBindTexture(GL_TEXTURE_2D, characters[0]->textureidL);
@@ -777,29 +790,27 @@ void My_Display()
 			}			
 			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
 			Render(projection_matrix, characters[i]->modelview,0,0,square_pos, characters[i]->action[0]);
-		}
-		else if (i == 11)//Particle sys
-		{					
-			//glEnable(GL_POINT_SPRITE);
-			glBindTexture(GL_TEXTURE_2D, characters[11]->textureidL);
-			
-			//Render(projection_matrix, characters[i]->modelview, 0, 0, square_pos, square_uv);
 		}		
 	}
+	//Draw particles
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, particle);	
+	Render(projection_matrix, mat4(1.0)*translate(mat4(1.0), vec3(0, 0, 0)), 0, 1, square_pos, square_uv);
+
+	glUseProgram(sp);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);		
-		/*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glClearColor(1.0f, 1.0f, 0.0f, 1.0f);*/
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, lake);
 		mat4 reflection(1.0),identity(1.0);
-		reflection *= translate(identity,vec3(0,-1.3,-2));
+		reflection *= translate(identity,vec3(0,-1.3,-2.1));
 		reflection *= rotate(identity, deg2rad(180.f), vec3(0, 1, 0));
 		reflection *= rotate(identity, deg2rad(180.f), vec3(0, 0, 1));
 		reflection *= scale(identity, vec3(1, 1, 1));
-		
-		
+				
 		//Reflection
 		Render(projection_matrix, reflection,11, 0, square_pos, square_uv);
 		//Origin
