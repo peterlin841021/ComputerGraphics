@@ -22,6 +22,7 @@ using namespace std;
 #define JUMP_DISTANCE 9
 #define FOOTSTEP 10
 
+float currentTime;
 GLuint sp;
 GLuint sp_fbo;
 const unsigned int interval = 100;
@@ -35,7 +36,7 @@ int scene_counter = 0;
 mat4 projection_matrix;
 bool boxMoveUp = true;
 bool eatAttackUp = false;
-void Render(glm::mat4 pm, glm::mat4 mm,vector<vec2> uv,size_t texture, clock_t time, int effect,int type);
+void Render(mat4 pm,mat4 mm, int effect,int type,vector<vec3> pos, vector<vec2> uv);
 static inline float random_float();
 
 GLuint generateTexture(const char *image);
@@ -45,8 +46,7 @@ struct Uniform
 	GLuint mv;
 	GLuint pm;
 	GLuint time;
-	GLuint effect;
-	GLuint tex;
+	GLuint effect;	
 	GLuint type;
 };
 struct Character 
@@ -165,45 +165,10 @@ void init_shader()
 
 	glGenBuffers(1, &vvbo);
 	glGenVertexArrays(1, &vao);
-
-	vector<float> vtx;//Puts all data with float type
-	//Put square position 0+6*3
-	/*for (size_t i = 0; i < 6; i++)
-	{
-		vtx.push_back(square_pos[i].x);
-		vtx.push_back(square_pos[i].y);
-		vtx.push_back(square_pos[i].z);
-	}*/
+		
+	glBindBuffer(GL_ARRAY_BUFFER, vvbo);
+	glBufferData(GL_ARRAY_BUFFER, 30 * sizeof(float), NULL, GL_STATIC_DRAW);
 	
-	////Put particle positions 18 + 100*3
-	//for (size_t i = 0; i < particles_pos.size(); i++)
-	//{
-	//	int r = (rand() % 100);
-	//	vtx.push_back(particles_pos[r].x);
-	//	vtx.push_back(particles_pos[r].y);
-	//	vtx.push_back(particles_pos[r].z);
-	//}
-	//Put square uv 318 + 6*2
-	/*for (size_t i = 0; i < square_uv.size(); i++)
-	{		
-		vtx.push_back(square_uv[i].x);
-		vtx.push_back(square_uv[i].y);
-	}*/
-	////Put miku action uv 330 + 11 * 12
-	//for (size_t i = 0; i < characters[1]->action.size(); i++)//Actions
-	//{
-	//	for (size_t j = 0; j < characters[1]->action[i].size(); j++)//Six uvs
-	//	{
-	//		vtx.push_back(characters[1]->action[i][j].x);
-	//		vtx.push_back(characters[1]->action[i][j].y);
-	//	}
-	//}
-	/*glBindBuffer(GL_ARRAY_BUFFER, vvbo);
-	glBufferData(GL_ARRAY_BUFFER, (vtx.size()) * sizeof(float), vtx.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)(18 * sizeof(float)));
-	glEnableVertexAttribArray(0);*/
-	//glEnableVertexAttribArray(1);
 	//******************************//	
 	//Attach Shader to program
 	sp_fbo = glCreateProgram();
@@ -246,17 +211,7 @@ size_t attackcal(vec3 v1, vec3 v2, size_t damage, float attack_distance)
 	}
 }
 void My_Init()
-{	
-	init_shader();
-	//Uniform variables
-	uniform = new Uniform();
-	uniform->pm = glGetUniformLocation(sp, "pm");
-	uniform->mv = glGetUniformLocation(sp, "mm");
-	uniform->effect = glGetUniformLocation(sp, "effect");
-	uniform->time = glGetUniformLocation(sp, "time");
-	uniform->type = glGetUniformLocation(sp, "type");
-	uniform->tex = glGetUniformLocation(sp, "tex");
-	
+{
 	const size_t count = 13;		
 	mat4 pm(1.0);
 	mat4 identity(1.0);
@@ -554,6 +509,14 @@ void My_Init()
 	square_uv.push_back(vec2(0, 1));
 	square_uv.push_back(vec2(0, 0));
 	//*******************//	
+	init_shader();
+	//Uniform variables
+	uniform = new Uniform();
+	uniform->pm = glGetUniformLocation(sp, "pm");
+	uniform->mv = glGetUniformLocation(sp, "mm");
+	uniform->effect = glGetUniformLocation(sp, "effect");
+	uniform->time = glGetUniformLocation(sp, "time");
+	uniform->type = glGetUniformLocation(sp, "type");	
 }
 static unsigned int seed = 0x13371337;
 static inline float random_float()
@@ -605,54 +568,40 @@ GLuint generateReflection()
 	GLuint id;
 	return id;
 }
-void Render(glm::mat4 pm, glm::mat4 mm, vector<vec2> uv, size_t texture, clock_t time,int effect,int type)
-{	
-	/*glBindVertexArray(vao);
-	glUseProgram(sp);*/
-	int pos_size = (type == 1)? particles_pos.size():6;
-	//Two triangles	
-	vector<float> vtx;	
-	for (int i = 0; i < pos_size; i++)
-	{
-		int r = (rand() % 100);
-		if (type == 0 || type == 2)
-		{
-			vtx.push_back(square_pos[i].x);
-			vtx.push_back(square_pos[i].y);
-			vtx.push_back(square_pos[i].z);
-		}
-		else if (type == 1)
-		{
-			vtx.push_back(particles_pos[r].x);
-			vtx.push_back(particles_pos[r].y);
-			vtx.push_back(particles_pos[r].z);
-		}		
-	}
-	for (int i = 0; i < uv.size(); i++)
-	{
-		vtx.push_back(uv[i].x);
-		vtx.push_back(uv[i].y);
-	}
-	
+void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec2> uv)
+{
 	glUniformMatrix4fv(uniform->mv,1, GL_FALSE, &mm[0][0]);
 	glUniformMatrix4fv(uniform->pm, 1, GL_FALSE, &pm[0][0]);
 	
 	glUniform1i(uniform->effect, effect);
-	glUniform1f(uniform->time, time);
+	glUniform1f(uniform->time, currentTime);
 	glUniform1f(uniform->type, type);
-	glUniform1i(uniform->tex, texture);
+	glBindBuffer(GL_ARRAY_BUFFER,vvbo);
+	void* ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 	
-	glBindBuffer(GL_ARRAY_BUFFER, vvbo);
-	glBufferData(GL_ARRAY_BUFFER, (vtx.size()) * sizeof(float), vtx.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)(pos_size * 3 * sizeof(float)));
+	vector<float> vtx;//Puts all data with float type	
+	for (size_t i = 0; i < pos.size(); i++)
+	{
+		vtx.push_back(pos[i].x);
+		vtx.push_back(pos[i].y);
+		vtx.push_back(pos[i].z);
+	}
+
+	for (size_t i = 0; i < uv.size(); i++)
+	{
+		vtx.push_back(uv[i].x);
+		vtx.push_back(uv[i].y);
+	}	
+	memcpy(ptr, vtx.data(), vtx.size() * sizeof(float));
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)(pos.size() * 3 * sizeof(float)));
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
-	
-
 	if (type == 0)
 	{
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDrawArrays(GL_TRIANGLES, 0, pos.size());
 	}		
 	else if (type == 1)
 	{
@@ -662,15 +611,12 @@ void Render(glm::mat4 pm, glm::mat4 mm, vector<vec2> uv, size_t texture, clock_t
 }
 
 void My_Display()
-{	
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClearColor(0, 0, 0, 1);			
+{
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(1, 1, 1, 1);
-	//Time
-	clock_t time = clock();
+	//Time	
 	float f_timer_cnt = glutGet(GLUT_ELAPSED_TIME);
-	float currentTime = f_timer_cnt * 0.001f;
+	currentTime = f_timer_cnt * 0.001f;
 	
 	currentTime *= 0.1f;
 	currentTime -= floor(currentTime);
@@ -722,7 +668,7 @@ void My_Display()
 		if (i == 0)
 		{			
 			glBindTexture(GL_TEXTURE_2D, characters[0]->textureidL);
-			Render(projection_matrix, characters[0]->modelview, characters[0]->action[0], 0, time, 0, 0);		
+			Render(projection_matrix, characters[0]->modelview,0,0,square_pos, characters[0]->action[0]);
 		}
 		else if(i == 1)
 		{
@@ -739,10 +685,10 @@ void My_Display()
 			switch (characters[i]->state)
 			{
 			case ACTION_STATE_IDLE:
-				action_index = characters[i]->idle.first;
+				action_index = characters[i]->idle.first;				
 				break;
 			case ACTION_STATE_MOVE:
-				action_index = characters[i]->move.first + characters[i]->nextframe;
+				action_index = characters[i]->move.first + characters[i]->nextframe;			
 				if (characters[i]->nextframe == characters[i]->move.second -1)
 				{
 					characters[i]->nextframe = 0;
@@ -805,14 +751,10 @@ void My_Display()
 				action_index = characters[i]->die.first;				
 				break;
 			}			
-			Render(projection_matrix, characters[i]->modelview, characters[i]->action[action_index], 0, time, 0, 0);
-			
+			Render(projection_matrix, characters[i]->modelview,0,0,square_pos, characters[i]->action[action_index]);			
 			if (characters[i]->isinjured && !characters[1]->isdied)
 			{
-				if (characters[i]->left)
-					Render(projection_matrix, characters[i]->modelview, characters[i]->action[characters[i]->injured.first], characters[i]->textureidL, time, 0,0);
-				else
-					Render(projection_matrix, characters[i]->modelview, characters[i]->action[characters[i]->injured.first], characters[i]->textureidR, time, 0, 0);
+				Render(projection_matrix, characters[i]->modelview,0,0,square_pos, characters[i]->action[10]);
 				characters[i]->isinjured = false;
 			}				
 		}				
@@ -837,7 +779,7 @@ void My_Display()
 				characters[i]->modelview *= translate(mat4(1.0), vec3(0, -0.08f, 0));
 			}			
 			glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
-			Render(projection_matrix, characters[i]->modelview,characters[i]->action[0], 0, time, 0,0);			
+			Render(projection_matrix, characters[i]->modelview,0,0,square_pos, characters[i]->action[0]);
 		}
 		//else if (i == 11)//Particle sys
 		//{					
@@ -848,6 +790,9 @@ void My_Display()
 		//}		
 	}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
 		glBindVertexArray(vao);		
 		glUseProgram(sp_fbo);
 		glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
@@ -860,8 +805,8 @@ void My_Display()
 		glDrawArrays(GL_TRIANGLES, 0, 6);	
 	glDisable(GL_BLEND);
 	glutSwapBuffers();
-	/*glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);*/		
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);	
 }
 //Call to resize the window
 void My_Reshape(int width, int height)
@@ -871,8 +816,7 @@ void My_Reshape(int width, int height)
 	current_h = height;
 	float viewportAspect = (float)width / (float)height;
 	projection_matrix = perspective(deg2rad(50.0f), viewportAspect, 0.1f, 1000.0f);	
-	glDeleteTextures(1, &characters[12]->textureidL);	
-		
+	glDeleteTextures(1, &characters[12]->textureidL);
 	glGenTextures(1, &characters[12]->textureidL);
 	glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
 	
