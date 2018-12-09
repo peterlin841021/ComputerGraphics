@@ -207,7 +207,7 @@ void My_Init()
 
 	std::vector<float*> character_attributes;
 	character_attributes.reserve(count);
-	float ground = -0.3f;
+	float ground = -0.33f;
 	float leftboundary = -0.8f;
 	float *attributes = new float[10];
 	float *none = new float[10]{0};
@@ -231,7 +231,7 @@ void My_Init()
 		attributes[STATE] = 0;
 		attributes[ATTACK_COUNTER] = 0;
 		attributes[JUMP_COUNTER] = 0;
-		attributes[SCALE] = 0.2f;
+		attributes[SCALE] = 0.15f;
 		attributes[XPOS] = 0;
 		attributes[YPOS] = 0;
 		attributes[ATTACK_DISTANCE] = 0.4f;
@@ -271,7 +271,7 @@ void My_Init()
 		attributes[STATE] = 1;
 		attributes[ATTACK_COUNTER] = 0;
 		attributes[JUMP_COUNTER] = 0;
-		attributes[SCALE] = 0.05f;
+		attributes[SCALE] = 0.04f;
 		attributes[XPOS] = 0;
 		attributes[YPOS] = 0;
 		attributes[ATTACK_DISTANCE] = 0;
@@ -433,7 +433,7 @@ void My_Init()
 			
 			else if (i == 8) 
 			{ 
-				box_mv *= translate(identity, vec3(-0.2, ground -0.1f, -2));
+				box_mv *= translate(identity, vec3(-0.2, ground-0.05f, -2));
 				box_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
 				
 				cs[i]->modelview = box_mv;
@@ -444,7 +444,7 @@ void My_Init()
 			}
 			else if (i == 9) 
 			{ 
-				attackup_mv *= translate(identity, vec3(0, ground - 0.1f, -2));
+				attackup_mv *= translate(identity, vec3(0, ground - 0.05f, -2));
 				attackup_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
 				cs[i]->modelview = attackup_mv;
 				cs[i]->action = generate_ani_uv(558, 299, 1, 1);
@@ -454,8 +454,9 @@ void My_Init()
 			}
 			else if (i == 10) 
 			{ 
-				hpwater_mv *= translate(identity, vec3(0.2, ground - 0.1f, -2));
+				hpwater_mv *= translate(identity, vec3(0.2, ground - 0.05f, -2));
 				hpwater_mv *= scale(identity, vec3(cs[i]->scale_ratio, cs[i]->scale_ratio, cs[i]->scale_ratio));
+				
 				cs[i]->modelview = hpwater_mv;
 				cs[i]->action = generate_ani_uv(558, 299, 1, 1);
 				cs[i]->idle = pair<int, int>(0, 1);
