@@ -7,7 +7,7 @@ uniform float time;
 uniform mat4 pm;
 uniform mat4 mm;
 flat out vec4 starColor;
-
+uniform int ps;
 void main(void)
 {
 	vec4 newVertex = position;
@@ -18,5 +18,5 @@ void main(void)
 	float size = (20.0 * newVertex.z * newVertex.z);	
 	newVertex.z = (density * newVertex.z) - density;
 	gl_Position = pm * newVertex;
-	gl_PointSize = size;
+	gl_PointSize = size * ps;
 }

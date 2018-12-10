@@ -30,6 +30,8 @@ const size_t defalut_h = 800;
 size_t current_w = 0;
 size_t current_h = 0;
 size_t particle_num = 100;
+size_t particle_size = 1;
+
 int scene_counter = 0;
 mat4 projection_matrix;
 bool boxMoveUp = true;
@@ -116,6 +118,7 @@ vector<vec3> particles_pos;
 vector<vec3> square_pos;
 vector<vec2> square_uv;
 vector<vec2> origin_left;
+vec3 particle_dir;
 vector<vector<vec2>> generate_ani_uv(float origin_w, float origin_h,size_t wpart, size_t hpart)
 {
 	vector<vector<vec2>> output;
@@ -506,6 +509,7 @@ void My_Init()
 	uniform->time = glGetUniformLocation(sp, "time");	
 	lake = generateTexture("lake.jpg");
 	particle = generateTexture("s.png");
+	particle_dir = vec3(-1, 0, 0);
 }
 
 static unsigned int seed = 0x13371337;
@@ -565,8 +569,8 @@ void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec
 	
 	glUniform1i(uniform->effect, effect);
 	glUniform1i(glGetUniformLocation(sp,"tex"), 0);
-	glUniform1i(glGetUniformLocation(sp, "water"), 1);
-	glUniform1f(uniform->time, currentTime);	
+	glUniform1i(glGetUniformLocation(sp, "water"), 1);	
+	glUniform1f(uniform->time, currentTime);
 	glBindBuffer(GL_ARRAY_BUFFER,vvbo);
 	void* ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 	
@@ -612,6 +616,7 @@ void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec
 		glUseProgram(sp_particle);		
 		glUniformMatrix4fv(glGetUniformLocation(sp_particle, "pm"), 1, GL_FALSE, &pm[0][0]);		
 		glUniformMatrix4fv(glGetUniformLocation(sp_particle, "mm"), 1, GL_FALSE, &mm[0][0]);
+		glUniform1i(glGetUniformLocation(sp_particle, "ps"), particle_size);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(star_t), NULL);		
 		//glEnableVertexAttribArray(0);		
 		glEnable(GL_POINT_SPRITE);		
@@ -795,7 +800,7 @@ void My_Display()
 	//Draw particles
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, particle);	
-	Render(projection_matrix*translate(mat4(1.0),vec3(0, -1, 0)), mat4(1.0), 0, 1, square_pos, square_uv);
+	Render(projection_matrix * translate(mat4(1.0),particle_dir), mat4(1.0), 0, 1, square_pos, square_uv);
 	
 	glUseProgram(sp);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);		
@@ -859,20 +864,20 @@ void keyboardevent(unsigned char key,int x,int y)
 	switch (key)
 	{
 	case 'w':
-	case 'W':
-		//projection_matrix *= translate(mat4(1.0), vec3(0, 0, 1));
+	case 'W':		
+		particle_dir = vec3(0,1,0);
 		break;
 	case 'd':
-	case 'D':		
-		//projection_matrix *= translate(mat4(1.0), vec3(1, 0, 0));
+	case 'D':
+		particle_dir = vec3(1, 0, 0);		
 		break;
 	case 's':
 	case 'S':
-		//projection_matrix *= translate(mat4(1.0), vec3(0, 0, -1));
+		particle_dir = vec3(0, -1, 0);		
 		break;
 	case 'a':
 	case 'A':
-		//projection_matrix *= translate(mat4(1.0), vec3(-1, 0, 0));
+		particle_dir = vec3(-1, 0, 0);		
 		break;
 	case 'z':
 	case 'Z':
@@ -882,9 +887,13 @@ void keyboardevent(unsigned char key,int x,int y)
 			characters[1]->state = ACTION_STATE_ATTACK;			
 		}	
 		break;
-	case '+':		
+	case '+':
+		if(particle_size < 10)
+			particle_size += 1;
 		break;
-	case '-':		
+	case '-':
+		if (particle_size > 1)
+			particle_size -= 1;
 		break;
 	case 'R':
 	case 'r':
