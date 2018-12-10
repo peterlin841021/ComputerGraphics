@@ -108,8 +108,7 @@ setup(QWidget* _wind, float _fieldOfView, float _eyeZ,
 //
 // * Set up the camera projection 
 //==========================================================================
-void ArcBallCam::
-setProjection(bool doClear)
+void ArcBallCam::setProjection(bool doClear)
 //==========================================================================
 {
   glMatrixMode(GL_PROJECTION);

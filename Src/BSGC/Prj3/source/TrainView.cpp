@@ -546,7 +546,8 @@ void TrainView::paintGL()
 		water->shaderProgram->setUniformValue("heightmap", highmap_textureid);
 		water->shaderProgram->setUniformValue("normalmap", normalmap_textureid);
 		water->shaderProgram->setUniformValue("texcube", skybox->textureId);				
-		//water->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.eyeX, arcball.eyeY,arcball.eyeZ));		
+		water->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx,arcball.posy, arcball.posz));
+
 		float ratio = 25;
 		float xfrom = 0;
 		float zfrom = 0;
@@ -846,7 +847,8 @@ void TrainView::setProjection()
 	{						
 		glMatrixMode(GL_MODELVIEW);		
 		glLoadIdentity();
-		arcball.setProjection(false);		
+		arcball.setProjection(false);
+		
 		update();
 	// Or we use the top cam
 	}else if (this->camera == 1) 

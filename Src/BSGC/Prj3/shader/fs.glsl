@@ -1,8 +1,6 @@
 #version 430 core
 const vec2 iResolution = vec2(800., 800.);
-// in vec3 vs_worldpos;
-// in vec3 vs_normal;
-//uniform vec3 camerapos;
+uniform vec3 camerapos;
 in vec2 texturecoord;
 in vec3 texturecoord3d;
 in vec3 fcolor;
@@ -292,31 +290,35 @@ void main(void)
 		}
 		case(7)://Tessellation
 		{
-			vec3 light_direction = normalize(vpos.xyz - vec3(ModelViewMatrix * vec4(light_position,1.0)));
+			//vec3 light_direction = normalize(vpos.xyz - vec3(ModelViewMatrix * vec4(light_position,1.0)));
+			vec3 light_direction = normalize(vec3(ModelViewMatrix * vec4(light_position,1.0)) - vpos.xyz);
 			vec4 normalmapcolor = texture(normalmap,tc*2);
 			vec3 normal = vec3(normalmapcolor.r * 2 - 1,normalmapcolor.b,normalmapcolor.g * 2 - 1);			
 			mat3 normalmatrix = transpose(inverse(mat3(ModelViewMatrix)));
 			normal = normalize(normalmatrix * normal);
 
-			vec3 camera = -vec3(ProjectionMatrix * ModelViewMatrix * vec4(vpos,1.0));
-			vec3 viewvector = normalize(camera);			
+			vec3 camera = vec3(ModelViewMatrix * vec4(camerapos,1.0));			
+			vec3 cameradir = normalize(vpos.xyz-camera.xyz);			
 			float dv = dot(light_direction,normal);
 			float diffuse = max(0.0,dv);
-			float sv = dot(viewvector,normal);
+
+			vec3 halfvector = normalize(light_direction+cameradir);
+			float sv = dot(halfvector,normal);			
 			float specular = pow(max(0.0,sv),shininess);
 			vec3 light_color = min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular;			
 						
-			vec3 RefractVec = refract(viewvector,normalize(normal), eta);
-    		vec3 ReflectVec = reflect(viewvector, normalize(normal));	
+			vec3 RefractVec = refract(cameradir,normalize(normal), eta);
+    		vec3 ReflectVec = reflect(cameradir, normalize(normal));	
 			
 			vec4 RefractColor = texture(texcube,RefractVec);
 			vec4 ReflectColor = texture(texcube,ReflectVec);			
 			ReflectColor = mix(RefractColor,ReflectColor,0.5);
 
-			vec4 color = texture2D(tex,tc*2);			
-						
-			//color = mix(color,vec4(light_color,1.0),0.5);
-			color = mix(color,ReflectColor,0.6);
+			vec4 color = texture2D(tex,tc*2);
+			color *= vec4(light_color,0.5);			
+			//color = mix(color,vec4(light_color,1.0),0.3);
+			color = mix(color,ReflectColor,0.45);
+			
 			if(alpha !=1)
 				color.a = alpha;			
 			fragmentcolor = color;
