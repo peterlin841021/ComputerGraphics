@@ -632,7 +632,7 @@ void TrainView::paintGL()
 			<< 1 << 1
 			<< 1 << 0
 			<< 0 << 0;
-		buffer_size.push_back(0);
+		buffer_size.push_back(8);
 		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7,(int)(current_time*0.005), 7);
 		water->End();
 		water_vertices.clear();

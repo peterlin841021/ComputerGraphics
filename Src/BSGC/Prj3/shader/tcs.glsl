@@ -2,7 +2,9 @@
 
 layout(vertices = 4) out;
 in vec2 tc[];
+in vec2 texturecoord[];
 out vec2 tc_out[];
+out vec2 tc_uv[];
 uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewMatrix;
 
@@ -21,4 +23,5 @@ void main()
     }
     gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 	tc_out[gl_InvocationID] = tc[gl_InvocationID];
+    //tc_uv[gl_InvocationID] = texturecoord[gl_InvocationID];
 }
