@@ -225,7 +225,7 @@ void My_Init()
 
 	std::vector<float*> character_attributes;
 	character_attributes.reserve(count);
-	float ground = -0.33f;
+	float ground = -0.53f;
 	float leftboundary = -0.8f;
 	float *attributes = new float[10];
 	float *none = new float[10]{0};
@@ -339,7 +339,7 @@ void My_Init()
 	{
 		if (i == 0)//Scene
 		{
-			scene_mv *= translate(identity, vec3(0, 0.2f, -2));
+			scene_mv *= translate(identity, vec3(0, 0, -2));
 			scene_mv *= scale(identity, vec3(1, 1, 1));
 			cs[i]->modelview = scene_mv;
 			cs[i]->action = generate_ani_uv(1596, 599, 2, 1);
@@ -505,7 +505,7 @@ void My_Init()
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");	
 	lake = generateTexture("lake.jpg");
-	particle = generateTexture("star.png");
+	particle = generateTexture("s.png");
 }
 
 static unsigned int seed = 0x13371337;
@@ -795,7 +795,7 @@ void My_Display()
 	//Draw particles
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, particle);	
-	Render(projection_matrix, mat4(1.0)*translate(mat4(1.0), vec3(-5, 0, 0)), 0, 1, square_pos, square_uv);
+	Render(projection_matrix*translate(mat4(1.0),vec3(0, -1, 0)), mat4(1.0), 0, 1, square_pos, square_uv);
 	
 	glUseProgram(sp);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);		
@@ -804,18 +804,18 @@ void My_Display()
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
 		
-		mat4 reflection(1.0),identity(1.0);
+		mat4 reflection(1.0),identity(1.0),origin(1.0);
+		origin *= translate(identity, vec3(0, 0.6f, -2));
 		reflection *= translate(identity,vec3(0,-1.4f,-2));
 		reflection *= rotate(identity, deg2rad(180.f), vec3(0, 1, 0));
-		reflection *= rotate(identity, deg2rad(180.f), vec3(0, 0, 1));
-		reflection *= scale(identity, vec3(1.2, 1.2, 1));
+		reflection *= rotate(identity, deg2rad(180.f), vec3(0, 0, 1));		
 		
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, lake);
 		//Reflection
 		Render(projection_matrix, reflection, 11, 0, square_pos, square_uv);
 		//Origin
-		Render(projection_matrix, characters[0]->modelview, 0, 0, square_pos, square_uv);
+		Render(projection_matrix, origin, 0, 0, square_pos, square_uv);
 		//Mini		
 		Render(projection_matrix, characters[12]->modelview, 0, 0, square_pos, square_uv);
 		
@@ -860,19 +860,19 @@ void keyboardevent(unsigned char key,int x,int y)
 	{
 	case 'w':
 	case 'W':
-		projection_matrix *= translate(mat4(1.0), vec3(0, 0, 1));
+		//projection_matrix *= translate(mat4(1.0), vec3(0, 0, 1));
 		break;
 	case 'd':
 	case 'D':		
-		projection_matrix *= translate(mat4(1.0), vec3(1, 0, 0));
+		//projection_matrix *= translate(mat4(1.0), vec3(1, 0, 0));
 		break;
 	case 's':
 	case 'S':
-		projection_matrix *= translate(mat4(1.0), vec3(0, 0, -1));
+		//projection_matrix *= translate(mat4(1.0), vec3(0, 0, -1));
 		break;
 	case 'a':
 	case 'A':
-		projection_matrix *= translate(mat4(1.0), vec3(-1, 0, 0));
+		//projection_matrix *= translate(mat4(1.0), vec3(-1, 0, 0));
 		break;
 	case 'z':
 	case 'Z':
