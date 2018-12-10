@@ -264,6 +264,10 @@ void loadmodel(string modelname,string texturename, Model *model, QVector<QOpenG
 	{
 		model_vts << vt[f[i].y()-1].x() << vt[f[i].y()-1].y();
 	}
+	for (size_t i = 0; i < f.size(); i++)
+	{
+		model_vts << vn[f[i].z() - 1].x() << vn[f[i].z() - 1].y() << vn[f[i].z() - 1].z();;
+	}
 	uv_size = (model_vts.size() - pos_size);
 	model->setValues(model_vts);
 	QOpenGLTexture *tex = new QOpenGLTexture(QImage(stringToChar(texturename)));
@@ -623,8 +627,13 @@ void TrainView::paintGL()
 			<< -min << wy << -min		
 			<< min << wy << -min;
 		buffer_size.push_back(12);
+		water_vertices
+			<< 0 << 1
+			<< 1 << 1
+			<< 1 << 0
+			<< 0 << 0;
 		buffer_size.push_back(0);
-		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7,current_time, 7);
+		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7,(int)(current_time*0.005), 7);
 		water->End();
 		water_vertices.clear();
 		buffer_size.clear();
@@ -743,10 +752,11 @@ void TrainView::paintGL()
 			}						
 			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
+			miku3d->shaderProgram->setUniformValue("texcube", skybox->textureId);
 			if (i == 0)
-				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(),1,1,4);
+				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(),1,1,8);
 			else
-				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(), 1, 1, 1);
+				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(), 1, 1, 8);
 			glPopMatrix();
 		}				
 		miku3d->End();

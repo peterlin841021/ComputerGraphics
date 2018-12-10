@@ -41,7 +41,7 @@ void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GL
 	shaderProgram->setUniformValue("colormode", colorMode);
 	shaderProgram->setUniformValue("alpha", alpha);
 	shaderProgram->setUniformValue("time", time);
-	QVector<GLfloat> positions,colors,texturecoords,indexes;
+	QVector<GLfloat> positions,colors,texturecoords,indexes,normals;
 
 	for (size_t i = 0; i < buffersize[0] + buffersize[1]; i++)
 	{
@@ -57,7 +57,13 @@ void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GL
 			colors << values[i];
 		}
 	}
-		
+	if (buffersize.size() == 3)
+	{
+		for (size_t i = buffersize[0] + buffersize[1]; i < buffersize[0] + buffersize[1] + buffersize[2]; i++)
+		{
+			normals << values[i];
+		}
+	}
 	vbo.bind();
 	vbo.allocate(positions.constData(), (buffersize[0] + buffersize[1]) * sizeof(GLfloat));
 	shaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 3, 0);	
@@ -67,6 +73,12 @@ void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelViewMatrix, QVector<GL
 		vbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
 		shaderProgram->setAttributeBuffer(2, GL_FLOAT, buffersize[0] * sizeof(GLfloat),3, 0);
 		shaderProgram->enableAttributeArray(2);
+		if (buffersize.size() == 3)
+		{
+			vbo.write((buffersize[0]+ buffersize[1]) * sizeof(GLfloat), normals.constData(), buffersize[2] * sizeof(GLfloat));
+			shaderProgram->setAttributeBuffer(3, GL_FLOAT, (buffersize[0] + buffersize[1]) * sizeof(GLfloat), 3, 0);
+			shaderProgram->enableAttributeArray(3);
+		}
 	}
 	else if(colorMode == 1)
 	{

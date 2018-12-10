@@ -7,11 +7,11 @@ uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewMatrix;
 uniform int colormode;
 uniform int effect;
-out vec3 half_vector;
 out vec2 texturecoord;
 out vec3 fcolor;
 out vec3 texturecoord3d;
 out vec2 tc;
+out vec3 vs_normal;
 void main(void)
 {
     tc = position.xz;
@@ -25,4 +25,5 @@ void main(void)
     texturecoord = uv;
     texturecoord3d = position;
     fcolor = color;
+    vs_normal = normal;
 }
