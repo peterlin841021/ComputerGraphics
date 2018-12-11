@@ -297,7 +297,7 @@ void My_Init()
 	character_attributes.push_back(attributes);
 	attributes = new float[10];//Reset
 	//*Suu 5*//
-		attributes[HP] = 5;
+		attributes[HP] = 50;
 		attributes[DAMAGE] = 5;
 		attributes[STATE] = 1;
 		attributes[ATTACK_COUNTER] = 0;
@@ -455,7 +455,7 @@ void My_Init()
 			cs[i]->modelview = monster_mv;
 			cs[i]->action = generate_ani_uv(2040, 166, 12, 1);
 			cs[i]->move = pair<int, int>(0, 12);
-			cs[i]->die = pair<int, int>(0, 1);
+			cs[i]->die = pair<int, int>(0, 4);
 			cs[i]->left = true;
 			cs[i]->textureidL = generateTexture(texture_images[i + 1]);
 			cs[i]->isappear = false;
@@ -692,8 +692,7 @@ void My_Display()
 				characters[i]->hp -= amount;
 				if (characters[i]->hp <= 0)
 				{
-					characters[i]->state = ACTION_STATE_DIE;
-					characters[i]->isappear = false;
+					characters[i]->state = ACTION_STATE_DIE;					
 				}
 				printf("Monster hp:%d\n", characters[i]->hp);
 			}
@@ -802,6 +801,9 @@ void My_Display()
 				}
 				break;
 			case ACTION_STATE_DIE:
+				characters[i]->modelview = mat4(1.0);
+				characters[i]->modelview *= translate(mat4(1.0),vec3(0,-0.57f,-2));
+				characters[i]->modelview *= scale(mat4(1.0),vec3(0.15f, 0.15f, 0.15f));
 				action_index = characters[i]->die.first;				
 				break;
 			}			
@@ -861,6 +863,18 @@ void My_Display()
 					{
 						characters[i]->nextframe++;
 					}
+					break;
+				case ACTION_STATE_DIE:
+					if (characters[i]->nextframe == characters[i]->die.second - 1)
+					{
+						characters[i]->nextframe = 0;
+						characters[i]->state = 4;
+						characters[i]->isappear = false;
+					}
+					else
+					{
+						characters[i]->nextframe++;
+					}					
 					break;
 				}				
 				Render(projection_matrix, characters[i]->modelview, 9, 0, square_pos, characters[i]->action[action_index]);				
