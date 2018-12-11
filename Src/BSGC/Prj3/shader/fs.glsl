@@ -316,11 +316,14 @@ void main(void)
 			//RefractVec = vec3(RefractVec.x,-RefractVec.y,-RefractVec.z);
 			//ReflectVec = vec3(ReflectVec.x,-ReflectVec.y,-ReflectVec.z);
 			vec4 RefractColor = texture(texcube,RefractVec);
-			vec4 ReflectColor =texture(texcube,ReflectVec);
+			vec4 ReflectColor = texture(texcube,ReflectVec);
 			//ReflectColor = mix(RefractColor,ReflectColor,0.5);			
 			vec4 color = texture2D(tex,uv);//Water
 			color *= light_color;
-			color = mix(color,ReflectColor,0.5);
+			color = mix(color,RefractColor,0.7);
+			color = mix(color,ReflectColor,0.7);
+			color += vec4(0,0,0.1,0);
+			//color = RefractColor;
 			//color = ReflectColor;
 			if(alpha !=1)
 				color.a = alpha;			

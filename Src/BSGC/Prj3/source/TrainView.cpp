@@ -72,8 +72,8 @@ void generateTextureCube(std::vector<QImage> images, QVector<QOpenGLTexture*> *t
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	return id;*/
-	QOpenGLTexture *t = new QOpenGLTexture(QOpenGLTexture::TargetCubeMap);
+	return id;*/	
+	QOpenGLTexture *t = new QOpenGLTexture(QOpenGLTexture::TargetCubeMap);	
 	t->create();
 	t->setSize(images.at(0).width(), images.at(0).height());
 	t->setFormat(QOpenGLTexture::RGBAFormat);
