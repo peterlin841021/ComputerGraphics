@@ -96,7 +96,7 @@ bool AppMain::eventFilter(QObject *watched, QEvent *e)
 	if (e->type() == QEvent::Wheel) 
 	{
 		float n= 1.f;
-		float f = 1000.f;
+		float f = 1500.f;
 		QWheelEvent *event = static_cast<QWheelEvent*> (e);
 		float zamt = (event->delta() < 0) ? 1.1f : 1/1.1f;
 		if(trainview->arcball.eyeZ * zamt > n && trainview->arcball.eyeZ * zamt <f)

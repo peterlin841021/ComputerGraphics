@@ -288,7 +288,7 @@ void TrainView::initializeTexture()
 	land->textureId = Textures.size();
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/underwater.jpg")));
 	water->textureId = Textures.size();
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/water_texture.png")));	
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/water.png")));	
 	std::vector<QImage> skybox_imgs;
 	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_front.jpg"));
 	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_back.jpg"));
@@ -296,6 +296,12 @@ void TrainView::initializeTexture()
 	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_right.jpg"));
 	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_top.jpg"));
 	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_bottom.jpg"));
+	/*skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/ss_ft.png"));
+	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/ss_bk.png"));
+	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/ss_lf.png"));
+	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/ss_rt.png"));
+	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/ss_up.png"));
+	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/ss_dn.png"));*/
 	generateTextureCube(skybox_imgs,&Textures);
 	skybox->textureId = Textures.size()-1;	
 	nendoroid->textureId = Textures.size();
@@ -359,7 +365,7 @@ void TrainView::paintGL()
 	GLfloat blueLight[]			= {.1f,.1f,.3f,1.0};
 	GLfloat grayLight[]			= {.3f, .3f, .3f, 1.0};
 	std::vector<int> buffer_size;
-	float boxsize = 1000;
+	float boxsize = 1500;
 
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition1);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteLight);
@@ -539,7 +545,7 @@ void TrainView::paintGL()
 		float speed = 0.0001f;
 		float step = boxsize / water_size * 2;
 		float old_wave_height = 0;
-		float wy = 8.f;
+		float wy = 100.f;
 		float wave_height = 0.f;
 
 		setupFloor();
@@ -633,7 +639,7 @@ void TrainView::paintGL()
 			<< 1 << 0
 			<< 0 << 0;
 		buffer_size.push_back(8);
-		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7,(int)(current_time*0.005), 7);
+		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7,clock()*0.001, 7);
 		water->End();
 		water_vertices.clear();
 		buffer_size.clear();

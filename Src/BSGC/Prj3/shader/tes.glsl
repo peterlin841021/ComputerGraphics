@@ -15,25 +15,19 @@ void main()
     vec2 tc1 = mix(tc_out[0], tc_out[3], gl_TessCoord.x);
 	vec2 tc2 = mix(tc_out[1], tc_out[2], gl_TessCoord.x);
 	vec2 tc3 = mix(tc2, tc1, gl_TessCoord.y);
-
-	vec2 uv1 = mix(tc_uv[0],tc_uv[3],gl_TessCoord.x);
-	vec2 uv2 = mix(tc_uv[1],tc_uv[2],gl_TessCoord.x);
-	vec2 uv3 = mix(uv1,uv2,gl_TessCoord.y);
-
-	float height = 20 * sin(gl_TessCoord.x + time * 20);
+	
 	vec4 p1 = mix(gl_in[0].gl_Position, gl_in[3].gl_Position, gl_TessCoord.x);
 	vec4 p2 = mix(gl_in[1].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);    	
-	vec4 p = mix(p2, p1, gl_TessCoord.y);
-	//tc = tc3 /(sin(time)* 100);
-    //p.y += texture(heightmap,tc).r * 40;
-	//p.x += time;
-	//tc = tc3 / 4096;
-	gl_Position = ProjectionMatrix * ModelViewMatrix * p;
+	vec4 p = mix(p2, p1, gl_TessCoord.y);	
+	uv = tc3/(30*30);
+	
+    p.y += texture(heightmap,uv).r * 100 * (sin(time+p.x));
+	//p.x += sin(asin(p.y));
+	gl_Position = ProjectionMatrix * ModelViewMatrix * p;	
 	vpos = vec3(ModelViewMatrix * p);
-	uv = uv3;
 	//	
-	float height_diff1 = texture(heightmap, tc - vec2(0.01, 0)).r - texture(heightmap, tc + vec2(0.01, 0)).r;
-	float height_diff2 = texture(heightmap, tc - vec2(0, 0.01)).r - texture(heightmap, tc + vec2(0, 0.01)).r;
+	float height_diff1 = texture(heightmap, tc3 - vec2(0.01, 0)).r - texture(heightmap, tc3 + vec2(0.01, 0)).r;
+	float height_diff2 = texture(heightmap, tc3 - vec2(0, 0.01)).r - texture(heightmap, tc3 + vec2(0, 0.01)).r;
 
 	nor = normalize(vec3(height_diff1, 2.0, height_diff2));
 }

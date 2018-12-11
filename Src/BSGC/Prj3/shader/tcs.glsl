@@ -10,18 +10,17 @@ uniform mat4 ModelViewMatrix;
 
 void main()
 {
-    int part = 64;
+    int part = 16;
     if(gl_InvocationID == 0)
     {        
         gl_TessLevelInner[0] = part;
         gl_TessLevelInner[1] = part;
 
-		gl_TessLevelOuter[0] = part;
-		gl_TessLevelOuter[1] = part;
-		gl_TessLevelOuter[2] = part;
-        gl_TessLevelOuter[3] = part;
+		gl_TessLevelOuter[0] = part*2;
+		gl_TessLevelOuter[1] = part*2;
+		gl_TessLevelOuter[2] = part*2;
+        gl_TessLevelOuter[3] = part*2;
     }
     gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
-	tc_out[gl_InvocationID] = tc[gl_InvocationID];
-    //tc_uv[gl_InvocationID] = texturecoord[gl_InvocationID];
+	tc_out[gl_InvocationID] = tc[gl_InvocationID];   
 }
