@@ -591,7 +591,7 @@ void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec
 	glUniform1i(uniform->effect, effect);
 	glUniform1i(glGetUniformLocation(sp,"tex"), 0);
 	glUniform1i(glGetUniformLocation(sp, "water"), 1);	
-	glUniform1f(uniform->time, currentTime);
+	glUniform1f(uniform->time, clock());
 	glBindBuffer(GL_ARRAY_BUFFER,vvbo);
 	void* ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 	
@@ -876,8 +876,11 @@ void My_Display()
 						characters[i]->nextframe++;
 					}					
 					break;
-				}				
-				Render(projection_matrix, characters[i]->modelview, 9, 0, square_pos, characters[i]->action[action_index]);				
+				}
+				if(characters[i]->state == ACTION_STATE_DIE)
+					Render(projection_matrix, characters[i]->modelview, 1, 0, square_pos, characters[i]->action[action_index]);
+				else
+					Render(projection_matrix, characters[i]->modelview, 10, 0, square_pos, characters[i]->action[action_index]);
 				//Draw electrified particles
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_2D, particle);
@@ -1005,7 +1008,8 @@ void keyboardevent(unsigned char key,int x,int y)
 		//Enemy
 		characters[6]->isappear = false;
 		characters[6]->state = 1;
-		characters[6]->xpos = 0;		
+		characters[6]->xpos = 0;
+		characters[6]->nextframe = 0;
 		electric_resist = false;
 
 		break;
