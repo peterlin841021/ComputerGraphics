@@ -25,6 +25,7 @@ void main()
 	//p.x += sin(asin(p.y));
 	gl_Position = ProjectionMatrix * ModelViewMatrix * p;	
 	vpos = vec3(ModelViewMatrix * p);
+	
 	//	
 	float height_diff1 = texture(heightmap, tc3 - vec2(0.01, 0)).r - texture(heightmap, tc3 + vec2(0.01, 0)).r;
 	float height_diff2 = texture(heightmap, tc3 - vec2(0, 0.01)).r - texture(heightmap, tc3 + vec2(0, 0.01)).r;
