@@ -20,6 +20,10 @@ using namespace std;
 #define JUMP_DISTANCE 8
 #define FOOTSTEP 9
 
+#define STAGE1 true
+#define STAGE2 false
+#define STAGE3 false
+
 float currentTime;
 GLuint sp, sp_particle;
 const unsigned int interval = 100;
@@ -29,13 +33,13 @@ const size_t defalut_h = 800;
 size_t current_w = 0;
 size_t current_h = 0;
 size_t particle_num = 100;
-size_t particle_size = 1;
+size_t particle_size = 30;
 
 int scene_counter = 0;
 mat4 projection_matrix;
 bool boxMoveUp = true;
 bool eatAttackUp = false;
-bool electric_resist = true;
+bool electric_resist = false;
 GLuint lake;
 GLuint particle;
 void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec2> uv);

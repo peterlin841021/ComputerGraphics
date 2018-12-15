@@ -144,7 +144,8 @@ float drawCircle(vec2 uv, vec2 center, float radius)
    return 1.0 - smoothstep(0.0, radius, length(uv - center));
 }
 
-void snow(){
+void snow()
+{
    vec2 uv =  gl_FragCoord.xy  /iResolution.x;
    vec4 color = texture(tex,coord);  
    fragColor = color;  
@@ -155,10 +156,8 @@ void snow(){
       j = float(i);      
       float speed = 0.3 + rnd(cos(j)) * (0.7 + 0.5 * cos(j / (float(_SnowflakeAmount) * 0.25)));           
       vec2 center = vec2((-0.25 + uv.y) * _BlizardFactor + rnd(j) + 0.1 * cos(time*0.001 + sin(j)),mod(rnd(j) - speed * (time * 0.001 * (0.1 + _BlizardFactor)),0.95));
-      fragColor += vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008 ));
-	  
-   }
-   
+      fragColor += vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008 ))*vec4(0,0,1.0,1.0);	  
+   }   
 }
 /*---------------------------------藍焰------------------------------------*/
 

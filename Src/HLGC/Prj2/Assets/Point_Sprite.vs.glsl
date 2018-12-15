@@ -5,9 +5,9 @@ layout(location = 1) in vec4 color;
 
 uniform float time;
 uniform mat4 pm;
-uniform mat4 mm;
-flat out vec4 starColor;
 uniform int ps;
+flat out vec4 starColor;
+
 void main(void)
 {
 	vec4 newVertex = position;
@@ -18,5 +18,5 @@ void main(void)
 	float size = (20.0 * newVertex.z * newVertex.z);	
 	newVertex.z = (density * newVertex.z) - density;
 	gl_Position = pm * newVertex;
-	gl_PointSize = size * ps;
+	gl_PointSize = ps;
 }
