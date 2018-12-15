@@ -115,6 +115,7 @@ void My_Init()
 	characters.push_back(new Character("hpwater", identity, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, "hpwater.png", "hpwater.png"));
 	characters.push_back(new Character("Particle sys", identity, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, "star.png", "star.png"));
 	characters.push_back(new Character("Minimap", identity, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "",""));
+	characters.push_back(new Character("Hp", identity, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "hp.png", "hp.png"));
 	
 	for (size_t i = 0; i < characters.size(); i++)
 	{
@@ -246,11 +247,20 @@ void My_Init()
 			characters[i]->modelview *= translate(identity, vec3(0.8f, 0.8f, -1.9f));
 			characters[i]->modelview *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
 		}
+		else if (i == 13)//Hp slider
+		{
+			characters[i]->modelview *= translate(identity, vec3(-0.5f, 0.2f, -2.f));
+			characters[i]->modelview *= scale(identity, vec3(0.3f, 0.15f, 0.15f));
+			characters[i]->action = generate_ani_uv(1250, 300, 11, 1);
+			characters[i]->move = pair<int, int>(0, 11);
+			characters[i]->state = 1;
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 1);
+			characters[i]->isappear = true;
+		}
 	}
 	//****//
 	lake = generateTexture("lake.jpg", characters.size());
-	particle = generateTexture("s.png", characters.size()+1);
-	
+	particle = generateTexture("s.png", characters.size()+1);	
 	for (size_t i = 0; i < particle_num; i++)
 	{
 		particles_pos.push_back(vec3( (random_float() * 2.0f - 1.0f) * 100.f, (random_float() * 2.0f - 1.0f) * 100.f, random_float()));
@@ -808,6 +818,27 @@ void My_Display()
 					}
 					glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
 					Render(projection_matrix, characters[i]->modelview, 0, 0, square_pos, characters[i]->action[0]);
+				}
+				if (i == 13)//Hp slider
+				{
+					size_t action_index = 0;
+					switch (characters[i]->state)
+					{
+					case ACTION_STATE_MOVE:
+						action_index = characters[i]->move.first + characters[i]->nextframe;
+						/*if (characters[i]->nextframe == characters[i]->move.second - 1)
+						{
+							characters[i]->nextframe = 0;
+							characters[i]->state = 1;
+						}
+						else
+						{
+							characters[i]->nextframe++;
+						}*/
+						break;
+					}
+					glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
+					Render(projection_matrix, characters[i]->modelview, 0, 0, square_pos, characters[i]->action[action_index]);
 				}
 			}
 		}

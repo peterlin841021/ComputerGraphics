@@ -42,6 +42,7 @@ bool eatAttackUp = false;
 bool electric_resist = false;
 GLuint lake;
 GLuint particle;
+GLuint hp;
 void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec2> uv);
 GLuint generateTexture(const char *image, GLuint id);
 static inline float random_float();
