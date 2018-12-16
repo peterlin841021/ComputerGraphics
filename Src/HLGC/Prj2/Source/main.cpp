@@ -1557,6 +1557,7 @@ void keyboardevent(unsigned char key,int x,int y)
 		characters[15]->isappear = false;//Lose
 		characters[19]->isappear = false;//Win
 
+		characters[21]->state = 1;
 		scene_change = false;
 		break;
 	default:		
