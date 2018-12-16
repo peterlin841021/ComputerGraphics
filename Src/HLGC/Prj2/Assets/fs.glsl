@@ -157,8 +157,10 @@ void snow(){
       j = float(i);      
       float speed = 0.3 + rnd(cos(j)) * (0.7 + 0.5 * cos(j / (float(_SnowflakeAmount) * 0.25)));           
       vec2 center = vec2((-0.25 + uv.y) * _BlizardFactor + rnd(j) + 0.1 * cos(time*0.001 + sin(j)),mod(rnd(j) - speed * (time * 0.001 * (0.1 + _BlizardFactor)),0.95));
-      fragColor += vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008 ));
-	  
+	if(effect == 12)
+      	fragColor += vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008 ))*vec4(0,0,1,1);
+	else
+	  fragColor += vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008 ));
    }
    
 }
@@ -346,6 +348,12 @@ void main(void)
 		case(11)://Reflection
 		{		
 			Reflection();
+			Darken();
+			break;
+		}
+		case(12)://Blue snow
+		{		
+			snow();
 			Darken();
 			break;
 		}

@@ -124,6 +124,7 @@ void My_Init()
 	characters.push_back(new Character("Hint3", identity, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Hint3.png", "Hint3.png"));
 	characters.push_back(new Character("Win", identity, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Win.png", "Win.png"));
 	characters.push_back(new Character("Hp frame", identity, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "hpframe.png", "hpframe.png"));
+	characters.push_back(new Character("Doris", identity, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "doirs.png", "doirs.png"));
 	for (size_t i = 0; i < characters.size(); i++)
 	{
 		if (i == 0)//Scene
@@ -300,8 +301,8 @@ void My_Init()
 		}
 		else if (i == 16)//Hint1
 		{
-			characters[i]->modelview *= translate(identity, vec3(0.15f, 0.5f, -1.8f));
-			characters[i]->modelview *= scale(identity, vec3(0.4f, 0.4f, 0.4f));
+			characters[i]->modelview *= translate(identity, vec3(0, 0, -1.8f));
+			characters[i]->modelview *= scale(identity, vec3(0.5f, 0.5f, 0.5f));
 			characters[i]->action = generate_ani_uv(600, 338, 1, 1);
 			characters[i]->move = pair<int, int>(0, 1);
 			characters[i]->state = 1;
@@ -310,8 +311,8 @@ void My_Init()
 		}
 		else if (i == 17)//Hint2
 		{
-			characters[i]->modelview *= translate(identity, vec3(0.05f, 0.4f, -1.8f));
-			characters[i]->modelview *= scale(identity, vec3(0.4f, 0.4f, 0.4f));
+			characters[i]->modelview *= translate(identity, vec3(0, 0, -1.8f));
+			characters[i]->modelview *= scale(identity, vec3(0.25f, 0.25f, 0.25f));
 			characters[i]->action = generate_ani_uv(1024, 700, 1, 1);
 			characters[i]->move = pair<int, int>(0, 1);
 			characters[i]->state = 1;
@@ -320,8 +321,8 @@ void My_Init()
 		}
 		else if (i == 18)//Hint3
 		{
-			characters[i]->modelview *= translate(identity, vec3(0.05f, 0.4f, -1.8f));
-			characters[i]->modelview *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
+			characters[i]->modelview *= translate(identity, vec3(0, 0, -1.8f));
+			characters[i]->modelview *= scale(identity, vec3(0.5f, 0.5f, 0.5f));
 			characters[i]->action = generate_ani_uv(570, 381, 1, 1);
 			characters[i]->move = pair<int, int>(0, 1);
 			characters[i]->state = 1;
@@ -347,6 +348,16 @@ void My_Init()
 			characters[i]->state = 1;
 			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 6);
 			characters[i]->isappear = true;
+		}
+		else if (i == 21)//Doris
+		{
+			characters[i]->modelview *= translate(identity, vec3(0.6f, -0.35f, -1.9f));
+			characters[i]->modelview *= scale(identity, vec3(0.3f, 0.3f, 0.2f));
+			characters[i]->action = generate_ani_uv(4066, 235, 19, 1);
+			characters[i]->move = pair<int, int>(0, 19);
+			characters[i]->state = 1;
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 6);
+			characters[i]->isappear = false;
 		}
 	}
 	//****//
@@ -654,12 +665,22 @@ void My_Display()
 							//printf("suu pos :%f\n", characters[6]->xpos);
 						}
 					}
-					if (characters[i]->xpos / characters[0]->xpos > 0.4f && characters[i]->xpos / characters[0]->xpos < 0.45f)//Hint1
+					//if (characters[i]->xpos / characters[0]->xpos > 0.4f && characters[i]->xpos / characters[0]->xpos < 0.45f)//Hint1
+					//{
+					//	if (!characters[16]->isappear)
+					//	{
+					//		characters[16]->isappear = true;
+					//		isdark = true;
+					//	}
+					//}
+					if (characters[i]->xpos / characters[0]->xpos > 0.4f)//Doris
 					{
-						if (!characters[16]->isappear)
+						if (!characters[21]->isappear)
 						{
-							characters[16]->isappear = true;
-							isdark = true;
+							if(characters[21]->state != 0)
+								characters[21]->isappear = true;
+							else
+								characters[21]->isappear = false;
 						}
 					}
 					if (characters[i]->xpos / characters[0]->xpos > 0.1f)//Mashroom
@@ -1021,7 +1042,7 @@ void My_Display()
 							if (characters[i]->state == ACTION_STATE_DIE)
 								Render(projection_matrix, characters[i]->modelview, 1, 0, isdark, square_pos, characters[i]->action[action_index]);
 							else
-								Render(projection_matrix, characters[i]->modelview, 8, 0, isdark, square_pos, characters[i]->action[action_index]);
+								Render(projection_matrix, characters[i]->modelview, 12, 0, isdark, square_pos, characters[i]->action[action_index]);
 							//Draw electrified particles						
 							glBindTexture(GL_TEXTURE_2D, particle);
 							Render(projection_matrix, mat4(1.0)*rotate(mat4(1.0), rad2deg(90.f), vec3(0, 0, 1)), 0, 1, isdark, square_pos, square_uv);
@@ -1049,6 +1070,33 @@ void My_Display()
 						}
 						glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
 						Render(projection_matrix, characters[i]->modelview, 0, 0, isdark, square_pos, characters[i]->action[0]);
+					}
+					if (i == 21)
+					{
+						if (characters[i]->isappear)
+						{
+							size_t action_index = 0;
+							switch (characters[i]->state)
+							{
+							case ACTION_STATE_MOVE:
+								action_index = characters[i]->move.first + characters[i]->nextframe;
+								if (characters[i]->nextframe == characters[i]->move.second - 1)
+								{
+									characters[i]->nextframe = 0;
+									characters[i]->state = 0;
+									characters[i]->isappear = false;
+								}
+								else
+								{
+									characters[i]->nextframe++;
+									if (characters[i]->nextframe == 14)
+										effect = 8;
+								}
+								break;
+							}
+							glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
+							Render(projection_matrix, characters[i]->modelview, 0, 0, isdark, square_pos, characters[i]->action[action_index]);
+						}
 					}
 				}
 				//STAGE2
@@ -1163,11 +1211,11 @@ void My_Display()
 								if (characters[i]->nextframe == characters[i]->action.size() - 1)
 								{
 									characters[i]->nextframe = 0;
-									if (characters[18]->isappear)
+									/*if (characters[18]->isappear)
 									{
 										characters[18]->isappear = false;
 										isdark = false;
-									}
+									}*/
 									srand(time(NULL));
 									random_action = (rand() % 4)+1;
 									characters[i]->state = random_action;
@@ -1276,8 +1324,8 @@ void My_Display()
 	//Hint1
 	if (characters[16]->isappear)
 	{
-		characters[16]->isappear = false;
-		isdark = false;
+		//characters[16]->isappear = false;
+		//isdark = false;
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, characters[16]->textureidL);
 		Render(projection_matrix, characters[16]->modelview, 0, 0, false, square_pos, square_uv);
@@ -1350,6 +1398,24 @@ void keyboardevent(unsigned char key,int x,int y)
 	mat4 identity(1.0), mv(1.0);	
 	switch (key)
 	{
+	case 'h':
+	case 'H':
+		if (stage == 1)
+		{
+			characters[16]->isappear = !characters[16]->isappear;
+			isdark = !isdark;
+		}
+		else if (stage == 2)
+		{
+			characters[17]->isappear = !characters[17]->isappear;
+			isdark = !isdark;
+		}
+		else if (stage == 3)
+		{
+			characters[18]->isappear = !characters[18]->isappear;
+			isdark = !isdark;
+		}		
+		break;
 	case 'w':
 	case 'W':		
 		
@@ -1407,6 +1473,7 @@ void keyboardevent(unsigned char key,int x,int y)
 		break;
 	case 'R':
 	case 'r':
+		effect = 0;
 		isdark = false;
 		stage = checkpoint;
 		scene_counter = 0;
@@ -1680,16 +1747,16 @@ void specialkeyevent(int key, int x, int y)
 					characters[1]->modelview *= translate(mat4(1.0), vec3(0.1f, 0,0));
 					printf("xpos:%f\n", characters[1]->xpos);					
 					another_pos.x -= 0.015f;
-					if (characters[1]->xpos < 4.f && characters[1]->xpos > 3.f)
-					{
-						characters[17]->isappear = true;//Show hint2
-						isdark = true;
-					}
-					else
-					{
-						characters[17]->isappear = false;
-						isdark = false;
-					}
+					//if (characters[1]->xpos < 4.f && characters[1]->xpos > 3.f)
+					//{
+					//	characters[17]->isappear = true;//Show hint2
+					//	isdark = true;
+					//}
+					//else
+					//{
+					//	characters[17]->isappear = false;
+					//	isdark = false;
+					//}
 				}
 			}
 			if (stage == 3)
@@ -1724,8 +1791,8 @@ void specialkeyevent(int key, int x, int y)
 				stage = 3;
 				checkpoint = 3;				
 				characters[7]->isappear = true;
-				characters[18]->isappear = true;
-				isdark = true;
+				//characters[18]->isappear = true;
+				//isdark = true;
 				scene_change = true;
 			}			
 		}
