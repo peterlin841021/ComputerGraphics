@@ -5,6 +5,7 @@ layout(location = 1) in vec4 color;
 
 uniform float time;
 uniform mat4 pm;
+uniform int d;
 uniform int ps;
 flat out vec4 starColor;
 
@@ -14,7 +15,7 @@ void main(void)
 
 	newVertex.z += time;
 	newVertex.z = fract(newVertex.z);
-	float density = 1000.0;
+	float density = d;
 	float size = (20.0 * newVertex.z * newVertex.z);	
 	newVertex.z = (density * newVertex.z) - density;
 	gl_Position = pm * newVertex;

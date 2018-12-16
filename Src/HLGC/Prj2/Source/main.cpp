@@ -2,6 +2,7 @@
 #define MENU_EXIT   4
 bool preserve = false;
 int random_action = 0;
+float spur_dis = 0;
 vector<vector<vec2>> generate_ani_uv(float origin_w, float origin_h,size_t wpart, size_t hpart)
 {
 	vector<vector<vec2>> output;
@@ -102,7 +103,7 @@ void My_Init()
 	float ground = -0.53f;
 	float leftboundary = -0.8f;	
 	vector<map<int, float>> attribute;
-	characters.push_back(new Character("Background", identity,0,0,0,0,0,40,0,0,0,0,"background.png", "background.png"));
+	characters.push_back(new Character("Background", identity,0,0,0,0,0,35,0,0,0,0,"background.png", "boss.png"));
 	characters.push_back(new Character("Miku", identity,100,5,0,0,0,0,0,0.3f,0.6f,0.1f,"mikuL.png", "mikuR.png"));	
 	characters.push_back(new Character("CrimsonBalrog", identity,9999,9999,1,0,0,-500.f,0,0.1f,0,0.1f,"CrimsonBalrogR.png", "CrimsonBalrogR.png"));
 	characters.push_back(new Character("Origin marhroom", identity,5,2,1,0,0,0,0,0.15f,0,0.2f,"mashroom.png", "mashroom.png"));
@@ -133,6 +134,7 @@ void My_Init()
 			origin_left = characters[i]->action[0];
 			characters[i]->idle = pair<int, int>(0, 1);
 			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L,i);
+			characters[i]->textureidR = generateTexture(characters[i]->texture_images_R, i+1);
 			characters[i]->left = true;
 			characters[i]->isappear = true;
 		}
@@ -151,8 +153,8 @@ void My_Init()
 			characters[i]->attack = attacks;
 
 			characters[i]->left = false;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L,i);
-			characters[i]->textureidR = generateTexture(characters[i]->texture_images_R,i+1);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L,i+1);
+			characters[i]->textureidR = generateTexture(characters[i]->texture_images_R,i+2);
 			characters[i]->isappear = true;
 		}			
 		else if (i == 2)//CrimsonBalrog
@@ -162,7 +164,7 @@ void My_Init()
 			characters[i]->action = generate_ani_uv(1280, 231, 4, 1);
 			characters[i]->move = pair<int, int>(0, 4);	
 			characters[i]->left = false;
-			characters[i]->textureidR = generateTexture(characters[i]->texture_images_L,i+1);
+			characters[i]->textureidR = generateTexture(characters[i]->texture_images_L,i+2);
 		}
 		else if (i == 3)//Origin mashroom
 		{			
@@ -172,7 +174,7 @@ void My_Init()
 			characters[i]->move = pair<int, int>(0, 3);
 			characters[i]->die = pair<int, int>(3, 3);
 			characters[i]->left = true;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L,i + 1);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L,i + 2);
 			characters[i]->state = 1;
 		}
 		else if (i == 4)//Pig
@@ -183,7 +185,7 @@ void My_Init()
 			characters[i]->move = pair<int, int>(0, 3);
 			characters[i]->die = pair<int, int>(0, 3);
 			characters[i]->left = true;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 1);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 2);
 			characters[i]->state = 1;
 		}
 		else if (i == 5)//Wolf
@@ -194,7 +196,7 @@ void My_Init()
 			characters[i]->move = pair<int, int>(0, 4);
 			characters[i]->die = pair<int, int>(4, 8);
 			characters[i]->left = true;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 1);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 2);
 			characters[i]->state = 1;
 		}
 		else if (i == 6)//Suu
@@ -205,7 +207,7 @@ void My_Init()
 			characters[i]->move = pair<int, int>(0, 12);
 			characters[i]->die = pair<int, int>(0, 12);
 			characters[i]->left = true;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 1);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 2);
 			characters[i]->isappear = false;
 		}		
 		else if (i == 7)//Magnus
@@ -222,7 +224,7 @@ void My_Init()
 			characters[i]->move = pair<int, int>(0, 8);				
 			characters[i]->left = true;
 			//***********************//
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 1);//walk
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 2);//walk
 			characters[i]->textureidD = generateTexture("die.png", i + 2);//die
 			characters[i]->textureidB = generateTexture("bladeworks.png", i + 3);//blade
 			characters[i]->textureidS = generateTexture("stub.png", i + 4);//stub
@@ -238,7 +240,7 @@ void My_Init()
 			characters[i]->action = generate_ani_uv(558, 299, 1, 1);
 			characters[i]->idle = pair<int, int>(0, 1);
 			characters[i]->left = true;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 5);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 6);
 			characters[i]->isappear = false;
 		}
 		else if (i == 9)//reel
@@ -248,7 +250,7 @@ void My_Init()
 			characters[i]->action = generate_ani_uv(558, 299, 1, 1);
 			characters[i]->idle = pair<int, int>(0, 1);
 			characters[i]->left = true;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 5);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 6);
 			characters[i]->isappear = false;
 		}
 		else if (i == 10)//Potion
@@ -258,32 +260,32 @@ void My_Init()
 			characters[i]->action = generate_ani_uv(558, 299, 1, 1);
 			characters[i]->idle = pair<int, int>(0, 1);
 			characters[i]->left = true;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 5);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 6);
 			characters[i]->isappear = false;
 		}
 		else if (i == 12)//Minimap
 		{				
-			characters[i]->modelview *= translate(identity, vec3(0.78f, 0.75f, -1.9f));
-			characters[i]->modelview *= scale(identity, vec3(0.1f, 0.1f, 0.1f));
+			characters[i]->modelview *= translate(identity, vec3(0.71f, 0.70f, -1.9f));
+			characters[i]->modelview *= scale(identity, vec3(0.15f, 0.15f, 0.15f));
 		}
 		else if (i == 13)//Hp slider
 		{
-			characters[i]->modelview *= translate(identity, vec3(-0.5f, 0.8f, -2.f));
-			characters[i]->modelview *= scale(identity, vec3(0.3f, 0.08f, 0.08f));
+			characters[i]->modelview *= translate(identity, vec3(-0.43f, 0.82f, -2.f));
+			characters[i]->modelview *= scale(identity, vec3(0.36f, 0.09f, 0.1f));
 			characters[i]->action = generate_ani_uv(13750, 300, 11, 1);
 			characters[i]->move = pair<int, int>(0, 11);
 			characters[i]->state = 1;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 5);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 6);
 			characters[i]->isappear = true;
 		}
 		else if (i == 14)//Map frame
 		{
-			characters[i]->modelview *= translate(identity, vec3(0.8f, 0.77f, -1.95f));
-			characters[i]->modelview *= scale(identity, vec3(0.12f, 0.14f, 0.12f));
+			characters[i]->modelview *= translate(identity, vec3(0.73f, 0.72f, -1.95f));
+			characters[i]->modelview *= scale(identity, vec3(0.18f, 0.21f, 0.18f));
 			characters[i]->action = generate_ani_uv(4500, 3000, 1, 1);
 			characters[i]->move = pair<int, int>(0, 1);
 			characters[i]->state = 1;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 5);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 6);
 			characters[i]->isappear = true;
 		}
 		else if (i == 15)//Lose
@@ -293,27 +295,27 @@ void My_Init()
 			characters[i]->action = generate_ani_uv(500, 313, 1, 1);
 			characters[i]->move = pair<int, int>(0, 1);
 			characters[i]->state = 1;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 5);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 6);
 			characters[i]->isappear = false;
 		}
 		else if (i == 16)//Hint1
 		{
 			characters[i]->modelview *= translate(identity, vec3(0.15f, 0.5f, -1.8f));
-			characters[i]->modelview *= scale(identity, vec3(0.3f, 0.3f, 0.3f));
+			characters[i]->modelview *= scale(identity, vec3(0.4f, 0.4f, 0.4f));
 			characters[i]->action = generate_ani_uv(600, 338, 1, 1);
 			characters[i]->move = pair<int, int>(0, 1);
 			characters[i]->state = 1;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 5);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 6);
 			characters[i]->isappear = false;
 		}
 		else if (i == 17)//Hint2
 		{
 			characters[i]->modelview *= translate(identity, vec3(0.05f, 0.4f, -1.8f));
-			characters[i]->modelview *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
+			characters[i]->modelview *= scale(identity, vec3(0.4f, 0.4f, 0.4f));
 			characters[i]->action = generate_ani_uv(1024, 700, 1, 1);
 			characters[i]->move = pair<int, int>(0, 1);
 			characters[i]->state = 1;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 5);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 6);
 			characters[i]->isappear = false;
 		}
 		else if (i == 18)//Hint3
@@ -323,7 +325,7 @@ void My_Init()
 			characters[i]->action = generate_ani_uv(570, 381, 1, 1);
 			characters[i]->move = pair<int, int>(0, 1);
 			characters[i]->state = 1;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 5);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 6);
 			characters[i]->isappear = false;
 		}
 		else if (i == 19)//Win
@@ -333,17 +335,17 @@ void My_Init()
 			characters[i]->action = generate_ani_uv(680, 544, 1, 1);
 			characters[i]->move = pair<int, int>(0, 1);
 			characters[i]->state = 1;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 5);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 6);
 			characters[i]->isappear = false;
 		}
 		else if (i == 20)//Hp frame
 		{
-			characters[i]->modelview *= translate(identity, vec3(-0.45f, 0.75f, -1.9f));
-			characters[i]->modelview *= scale(identity, vec3(0.35f, 0.1f, 0.2f));
+			characters[i]->modelview *= translate(identity, vec3(-0.4f, 0.77f, -1.9f));
+			characters[i]->modelview *= scale(identity, vec3(0.48f, 0.12f, 0.2f));
 			characters[i]->action = generate_ani_uv(450, 300, 1, 1);
 			characters[i]->move = pair<int, int>(0, 1);
 			characters[i]->state = 1;
-			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 5);
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 6);
 			characters[i]->isappear = true;
 		}
 	}
@@ -378,7 +380,7 @@ void My_Init()
 	uniform->effect = glGetUniformLocation(sp, "effect");
 	uniform->time = glGetUniformLocation(sp, "time");
 	uniform->darken = glGetUniformLocation(sp, "darken");
-	particle_dir = vec3(-1, 0, 0);
+	
 }
 static unsigned int seed = 0x13371337;
 static inline float random_float()
@@ -476,6 +478,7 @@ void Render(mat4 pm, mat4 mm, int effect, int type,bool darken,vector<vec3> pos,
 			glUniform1i(glGetUniformLocation(sp_particle, "darken"),0);
 		glUniformMatrix4fv(glGetUniformLocation(sp_particle, "pm"), 1, GL_FALSE, &pm[0][0]);		
 		glUniformMatrix4fv(glGetUniformLocation(sp_particle, "mm"), 1, GL_FALSE, &mm[0][0]);
+		glUniform1i(glGetUniformLocation(sp_particle, "d"), particle_density);
 		glUniform1i(glGetUniformLocation(sp_particle, "ps"), particle_size);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), NULL);
 		glEnable(GL_POINT_SPRITE);		
@@ -543,7 +546,7 @@ void My_Display()
 			{
 				if (characters[7]->nextframe == 20)
 				{
-					amount = collisiondetect(vec3(characters[1]->xpos, characters[1]->ypos, 0), vec3(characters[7]->xpos, characters[7]->ypos, 0), characters[7]->damage, characters[7]->attack_distance + 0.2f) * 2;
+					amount = collisiondetect(vec3(characters[1]->xpos, characters[1]->ypos, 0), vec3(characters[7]->xpos, characters[7]->ypos, 0), characters[7]->damage, characters[7]->attack_distance + 0.3f) * 2;
 				}
 			}
 			if (amount > 0 && !characters[1]->isdied)
@@ -624,8 +627,11 @@ void My_Display()
 		if (!characters[i]->isappear)continue;
 		glActiveTexture(GL_TEXTURE0);
 		if (i == 0)
-		{			
-			glBindTexture(GL_TEXTURE_2D, characters[0]->textureidL);
+		{
+			if(scene_change)
+				glBindTexture(GL_TEXTURE_2D, characters[0]->textureidR);
+			else
+				glBindTexture(GL_TEXTURE_2D, characters[0]->textureidL);
 			Render(projection_matrix, characters[0]->modelview,0,0, isdark,square_pos, characters[0]->action[0]);
 		}
 		else
@@ -1084,6 +1090,11 @@ void My_Display()
 							if (characters[i]->state == 4)
 							{
 								characters[i]->modelview *= translate(mat4(1.0), vec3(0.7f, -0.53f + 0.3f, -2));
+								characters[i]->modelview *= translate(mat4(1.0), vec3(spur_dis, 0,0));
+									if (characters[i]->nextframe > 15)
+										spur_dis -= 0.05f;
+									if (characters[i]->nextframe > 24)
+										spur_dis += 0.05f;
 								characters[i]->modelview *= scale(mat4(1.0), vec3(0.6f, 0.6f, 0.6f));
 							}
 							else if (characters[i]->state == 3)
@@ -1140,6 +1151,8 @@ void My_Display()
 									characters[i]->isappear = false;
 									characters[19]->isappear = true;
 									isdark = true;
+									checkpoint = 1;
+									stage = 1;
 								}
 								else
 								{
@@ -1197,15 +1210,39 @@ void My_Display()
 									srand(time(NULL));
 									random_action = (rand() % 4) + 1;
 									characters[i]->state = random_action;
+									spur_dis = 0;
 								}
 								else
 								{
-									characters[i]->nextframe++;
+									characters[i]->nextframe++;									
 								}
 								break;
 							}
 							printf("Magnus posx:%f\n", characters[7]->xpos);
 						}//Appear?
+					}
+					if (i > 7 && i < 11)//Items
+					{
+						if (characters[i]->ypos == 5.0f)
+						{
+							boxMoveUp = false;
+						}
+						else if (characters[i]->ypos == 0.0f)
+						{
+							boxMoveUp = true;
+						}
+						if (boxMoveUp)
+						{
+							characters[i]->ypos += 1.f;
+							characters[i]->modelview *= translate(mat4(1.0), vec3(0, 0.08f, 0));
+						}
+						else
+						{
+							characters[i]->ypos -= 1.f;
+							characters[i]->modelview *= translate(mat4(1.0), vec3(0, -0.08f, 0));
+						}
+						glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
+						Render(projection_matrix, characters[i]->modelview, 0, 0, isdark, square_pos, characters[i]->action[0]);
 					}
 				}								
 			}			
@@ -1220,15 +1257,15 @@ void My_Display()
 	//HP
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, characters[13]->textureidL);
-	Render(projection_matrix, characters[13]->modelview, 0, 0, isdark, square_pos, characters[13]->action[(characters[13]->nextframe)% characters[13]->action.size()]);
+	Render(projection_matrix, characters[13]->modelview, effect, 0, isdark, square_pos, characters[13]->action[(characters[13]->nextframe)% characters[13]->action.size()]);
 	//Map frame
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, characters[14]->textureidL);
-	Render(projection_matrix, characters[14]->modelview, 0, 0, isdark, square_pos, square_uv);
+	Render(projection_matrix, characters[14]->modelview, effect, 0, isdark, square_pos, square_uv);
 	//Hp frame
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, characters[20]->textureidL);
-	Render(projection_matrix, characters[20]->modelview, 0, 0, isdark, square_pos, square_uv);
+	Render(projection_matrix, characters[20]->modelview, effect, 0, isdark, square_pos, square_uv);
 	//Lose
 	if (characters[15]->isappear)
 	{
@@ -1272,11 +1309,11 @@ void My_Display()
 	//Origin
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
-	Render(projection_matrix, origin, 0, 0, isdark, square_pos, square_uv);
+	Render(projection_matrix, origin, effect, 0, isdark, square_pos, square_uv);
 	//Mini
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
-	Render(projection_matrix, characters[12]->modelview, 0, 0,false, square_pos, square_uv);				
+	Render(projection_matrix, characters[12]->modelview, effect, 0,false, square_pos, square_uv);
 	glDisable(GL_BLEND);
 	
 	glutSwapBuffers();
@@ -1315,19 +1352,21 @@ void keyboardevent(unsigned char key,int x,int y)
 	{
 	case 'w':
 	case 'W':		
-		particle_dir = vec3(0,1,0);
+		
 		break;
 	case 'd':
 	case 'D':
-		particle_dir = vec3(1, 0, 0);		
+		if (particle_density > 200)
+			particle_density -= 100;
 		break;
 	case 's':
-	case 'S':
-		particle_dir = vec3(0, -1, 0);		
+	case 'S':			
 		break;
 	case 'a':
 	case 'A':
-		particle_dir = vec3(-1, 0, 0);		
+		
+		if (particle_density < 1500)
+			particle_density += 100;
 		break;
 	case 'z':
 	case 'Z':
@@ -1437,9 +1476,21 @@ void keyboardevent(unsigned char key,int x,int y)
 
 		characters[13]->nextframe = 0;//Hp slider
 		characters[8]->isappear = false;//Item1
+		characters[8]->modelview = mat4(1.0);
+		characters[8]->modelview *= translate(identity, vec3(-0.2, ground - 0.05f, -2));
+		characters[8]->modelview *= scale(identity, vec3(0.04f, 0.04f, 0.04f));
 		characters[9]->isappear = false;//Item2
+		characters[9]->modelview = mat4(1.0);
+		characters[9]->modelview *= translate(identity, vec3(0, ground - 0.05f, -2));
+		characters[9]->modelview *= scale(identity, vec3(0.04f, 0.04f, 0.04f));
 		characters[10]->isappear = false;//Item3
+		characters[10]->modelview = mat4(1.0);
+		characters[10]->modelview *= translate(identity, vec3(0.2, ground - 0.05f, -2));
+		characters[10]->modelview *= scale(identity, vec3(0.04f, 0.04f, 0.04f));
 		characters[15]->isappear = false;//Lose
+		characters[19]->isappear = false;//Win
+
+		scene_change = false;
 		break;
 	default:		
 		break;
@@ -1546,7 +1597,7 @@ void specialkeyevent(int key, int x, int y)
 				{
 					scene_counter++;
 					//printf("xpos:%f\n", characters[1]->xpos);
-					if (characters[1]->xpos > 39 && characters[1]->xpos < 40)
+					if (characters[1]->xpos > 34 && characters[1]->xpos < 35)
 					{
 						characters[1]->xpos = 0;
 						characters[1]->modelview = mat4(1.0);
@@ -1671,10 +1722,11 @@ void specialkeyevent(int key, int x, int y)
 			if (characters[1]->xpos <= 0)
 			{
 				stage = 3;
-				checkpoint = 3;
+				checkpoint = 3;				
 				characters[7]->isappear = true;
 				characters[18]->isappear = true;
 				isdark = true;
+				scene_change = true;
 			}			
 		}
 		break;
@@ -1694,7 +1746,20 @@ void My_Menu(int id)
 	case MENU_EXIT:
 		exit(0);
 		break;
-	default:
+	case 0:
+		effect = id;
+		break;	
+	case 2:
+		effect = id;
+		break;	
+	case 5:
+		effect = id;
+	case 6:
+		effect = id;
+	case 9:
+		effect = id;
+	case 10:
+		effect = id;	
 		break;
 	}
 	glutPostRedisplay();
@@ -1723,7 +1788,12 @@ int main(int argc, char *argv[])
 
 	glutSetMenu(menu_main);
 	glutAddMenuEntry("Exit", MENU_EXIT);
-
+	glutAddMenuEntry("Normal", 0);
+	glutAddMenuEntry("Quantization", 2);	
+	glutAddMenuEntry("Threshold dither", 5);
+	glutAddMenuEntry("FD", 6);
+	glutAddMenuEntry("Nebula smoke", 9);
+	glutAddMenuEntry("Purple halo", 10);
 	glutSetMenu(menu_main);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
