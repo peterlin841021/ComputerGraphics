@@ -65,7 +65,11 @@ struct Character
 {
 	string charactername;
 	mat4 modelview;
-	vector<vector<vec2>> action;
+	vector<vector<vec2>> action;	
+	vector<vector<vec2>> action_die;
+	vector<vector<vec2>> action_blade;
+	vector<vector<vec2>> action_stub;
+	vector<vector<vec2>> action_spur;
 	pair<int, int> idle;
 	pair<int, int> move;
 	pair<int, int> jump;
@@ -87,6 +91,11 @@ struct Character
 	bool isappear = false;
 	GLuint textureidL;
 	GLuint textureidR;
+
+	GLuint textureidD;//Boss
+	GLuint textureidB;
+	GLuint textureidS;
+	GLuint textureidSP;
 	float xpos = 0.f, ypos = 0.f;
 	float attack_distance = 0.f;
 	float jump_distance = 0.f;
