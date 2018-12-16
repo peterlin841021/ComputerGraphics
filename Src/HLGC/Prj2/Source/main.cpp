@@ -120,6 +120,7 @@ void My_Init()
 	characters.push_back(new Character("Lose", identity, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Lose.png", "Lose.png"));
 	characters.push_back(new Character("Hint1", identity, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Hint1.png", "Hint1.png"));
 	characters.push_back(new Character("Hint2", identity, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Hint2.png", "Hint2.png"));
+	characters.push_back(new Character("Hint3", identity, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Hint3.png", "Hint3.png"));
 	for (size_t i = 0; i < characters.size(); i++)
 	{
 		if (i == 0)//Scene
@@ -295,6 +296,16 @@ void My_Init()
 			characters[i]->modelview *= translate(identity, vec3(0.05f, 0.4f, -1.8f));
 			characters[i]->modelview *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
 			characters[i]->action = generate_ani_uv(1024, 700, 1, 1);
+			characters[i]->move = pair<int, int>(0, 1);
+			characters[i]->state = 1;
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 1);
+			characters[i]->isappear = false;
+		}
+		else if (i == 18)//Hint3
+		{
+			characters[i]->modelview *= translate(identity, vec3(0.05f, 0.4f, -1.8f));
+			characters[i]->modelview *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
+			characters[i]->action = generate_ani_uv(570, 381, 1, 1);
 			characters[i]->move = pair<int, int>(0, 1);
 			characters[i]->state = 1;
 			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 1);
@@ -975,6 +986,8 @@ void My_Display()
 								{
 									characters[i]->nextframe = 0;
 									characters[i]->state = 1;
+									characters[18]->isappear = false;
+									isdark = false;
 								}
 								else
 								{
@@ -1047,10 +1060,17 @@ void My_Display()
 			glBindTexture(GL_TEXTURE_2D, characters[16]->textureidL);
 			Render(projection_matrix, characters[16]->modelview, 0, 0, false, square_pos, square_uv);
 		}
+		//Hint2
 		if (characters[17]->isappear)
 		{
 			glBindTexture(GL_TEXTURE_2D, characters[17]->textureidL);
 			Render(projection_matrix, characters[17]->modelview, 0, 0, false, square_pos, characters[17]->action[0]);
+		}
+		//Hint3
+		if (characters[18]->isappear)
+		{
+			glBindTexture(GL_TEXTURE_2D, characters[18]->textureidL);
+			Render(projection_matrix, characters[18]->modelview, 0, 0, false, square_pos, characters[18]->action[0]);
 		}
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, lake);
@@ -1428,7 +1448,9 @@ void specialkeyevent(int key, int x, int y)
 			{
 				stage = 3;
 				checkpoint = 3;
-				characters[7]->isappear = true;				
+				characters[7]->isappear = true;
+				characters[18]->isappear = true;
+				isdark = true;
 			}			
 		}
 		break;
