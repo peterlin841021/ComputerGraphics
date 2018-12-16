@@ -20,10 +20,6 @@ using namespace std;
 #define JUMP_DISTANCE 8
 #define FOOTSTEP 9
 
-#define STAGE1 true
-#define STAGE2 false
-#define STAGE3 false
-
 float currentTime;
 GLuint sp, sp_particle;
 const unsigned int interval = 100;
@@ -34,17 +30,19 @@ size_t current_w = 0;
 size_t current_h = 0;
 size_t particle_num = 100;
 size_t particle_size = 30;
+size_t stage = 1;
 
 int scene_counter = 0;
 mat4 projection_matrix;
 bool boxMoveUp = true;
 bool eatAttackUp = false;
 bool electric_resist = false;
+bool isdark = false;
 GLuint lake;
 GLuint particle;
+size_t checkpoint = 1;
 
-
-void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec2> uv);
+void Render(mat4 pm, mat4 mm, int effect, int type,bool darken, vector<vec3> pos, vector<vec2> uv);
 GLuint generateTexture(const char *image, GLuint id);
 static inline float random_float();
 struct Particle
@@ -61,6 +59,7 @@ struct Uniform
 	GLuint tex;
 	GLuint time;
 	GLuint effect;
+	GLuint darken;
 };
 struct Character
 {
@@ -75,12 +74,11 @@ struct Character
 	pair<int, int> die;
 	size_t nextframe = 0;
 
-	size_t hp = 0;
+	int hp = 0;
 	size_t damage = 0;
 	size_t state = 0;
 	size_t jumpcounter = 0;
-	size_t attackcounter = 0;
-
+	size_t attackcounter = 0;	
 
 	bool isinjured = false;
 	bool left = false;
@@ -134,4 +132,6 @@ vector<vec3> particles_pos;
 vector<vec3> square_pos;
 vector<vec2> square_uv;
 vector<vec2> origin_left;
+vec3 another_move;
+vec3 another_pos;
 vec3 particle_dir;

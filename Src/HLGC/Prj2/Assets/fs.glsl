@@ -5,7 +5,9 @@ out vec4 fragColor;
 uniform sampler2D tex;
 uniform sampler2D water;
 uniform int effect;
+uniform int darken;
 uniform float time;
+
 vec2 img_size = vec2(800., 340.);
 const vec2 iResolution = vec2(800., 600.);
 flat in vec4 color;
@@ -144,8 +146,7 @@ float drawCircle(vec2 uv, vec2 center, float radius)
    return 1.0 - smoothstep(0.0, radius, length(uv - center));
 }
 
-void snow()
-{
+void snow(){
    vec2 uv =  gl_FragCoord.xy  /iResolution.x;
    vec4 color = texture(tex,coord);  
    fragColor = color;  
@@ -156,8 +157,10 @@ void snow()
       j = float(i);      
       float speed = 0.3 + rnd(cos(j)) * (0.7 + 0.5 * cos(j / (float(_SnowflakeAmount) * 0.25)));           
       vec2 center = vec2((-0.25 + uv.y) * _BlizardFactor + rnd(j) + 0.1 * cos(time*0.001 + sin(j)),mod(rnd(j) - speed * (time * 0.001 * (0.1 + _BlizardFactor)),0.95));
-      fragColor += vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008 ))*vec4(0,0,1.0,1.0);	  
-   }   
+      fragColor += vec4(0.9 * drawCircle(uv, center , 0.001 + speed * 0.008 ));
+	  
+   }
+   
 }
 /*---------------------------------藍焰------------------------------------*/
 
@@ -263,65 +266,87 @@ void PurpleHalo()
 	fragColor += vec4(col,0.0);
 }
 /*-----------------------------------------------------*/
+void Reflection(){
+	vec4 texColor = texture(tex,coord);
+	texColor = mix(texColor,texture(water,coord),0.5);
+	fragColor = texColor;
+}
+/*-----------------------------------------------------*/
+void Darken(){	
+	if(darken == 1){
+		fragColor = vec4(fragColor.r-0.5*fragColor.r,fragColor.g-0.5*fragColor.g,fragColor.b-0.5*fragColor.b,fragColor.a); 
+	} 
+}
+/*-----------------------------------------------------*/
 void main(void)
 {				
 	switch (effect)
 	{
 		case(0):
-		{
+		{			
 			Normal();			
+			Darken();
 			break;
 		}
 		case(1):
 		{					
-			Gray();					
+			Gray();	
+			Darken();
 			break;
 		}
 		case(2):
 		{
 			Quantization(0);
+			Darken();
 			break;
 		}
 		case(3):
 		{
 			DoG(0);
+			Darken();
 			break;
 		}		
 		case(4):
 		{
 			TriangleFilter();
+			Darken();
 			break;
 		}
 		case(5):
 		{
 			ThresholdDither();
+			Darken();
 			break;
 		}		
 		case(6):{		
 			FD();
+			Darken();
 			break;
 		}		
 		case(7):{		
 			Phosgene();
+			Darken();
 			break;
 		}
 		case(8):{
 			snow();
+			Darken();
 			break;
 		}		
 		case(9):{		
 			NebulaSmoke();
+			Darken();
 			break;
 		}		
 		case(10):{		
 			PurpleHalo();
+			Darken();
 			break;
 		}
 		case(11)://Reflection
 		{		
-			vec4 texColor = texture(tex,coord);
-			texColor = mix(texColor,texture(water,coord),0.5);
-			fragColor = texColor;
+			Reflection();
+			Darken();
 			break;
 		}
 	}	
