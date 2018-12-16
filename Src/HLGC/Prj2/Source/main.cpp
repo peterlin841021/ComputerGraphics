@@ -116,7 +116,7 @@ void My_Init()
 	characters.push_back(new Character("Particle sys", identity, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, "star.png", "star.png"));
 	characters.push_back(new Character("Minimap", identity, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "",""));
 	characters.push_back(new Character("Hp", identity, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "hp.png", "hp.png"));
-	
+	characters.push_back(new Character("Map frame", identity, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "frame.png", "frame.png"));
 	for (size_t i = 0; i < characters.size(); i++)
 	{
 		if (i == 0)//Scene
@@ -244,15 +244,25 @@ void My_Init()
 		}
 		else if (i == 12)//Minimap
 		{				
-			characters[i]->modelview *= translate(identity, vec3(0.8f, 0.8f, -1.9f));
-			characters[i]->modelview *= scale(identity, vec3(0.2f, 0.2f, 0.2f));
+			characters[i]->modelview *= translate(identity, vec3(0.78f, 0.75f, -1.9f));
+			characters[i]->modelview *= scale(identity, vec3(0.1f, 0.1f, 0.1f));
 		}
 		else if (i == 13)//Hp slider
 		{
-			characters[i]->modelview *= translate(identity, vec3(-0.5f, 0.2f, -2.f));
-			characters[i]->modelview *= scale(identity, vec3(0.3f, 0.15f, 0.15f));
-			characters[i]->action = generate_ani_uv(1250, 300, 11, 1);
+			characters[i]->modelview *= translate(identity, vec3(-0.5f, 0.8f, -2.f));
+			characters[i]->modelview *= scale(identity, vec3(0.3f, 0.08f, 0.08f));
+			characters[i]->action = generate_ani_uv(13750, 300, 11, 1);
 			characters[i]->move = pair<int, int>(0, 11);
+			characters[i]->state = 1;
+			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 1);
+			characters[i]->isappear = true;
+		}
+		else if (i == 14)//Map frame
+		{
+			characters[i]->modelview *= translate(identity, vec3(0.8f, 0.77f, -1.95f));
+			characters[i]->modelview *= scale(identity, vec3(0.12f, 0.14f, 0.12f));
+			characters[i]->action = generate_ani_uv(4500, 3000, 1, 1);
+			characters[i]->move = pair<int, int>(0, 1);
 			characters[i]->state = 1;
 			characters[i]->textureidL = generateTexture(characters[i]->texture_images_L, i + 1);
 			characters[i]->isappear = true;
@@ -325,6 +335,7 @@ GLuint generateTexture(const char *image, GLuint id)
 
 void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec2> uv)
 {
+	glUseProgram(sp);
 	glUniformMatrix4fv(uniform->mv,1, GL_FALSE, &mm[0][0]);
 	glUniformMatrix4fv(uniform->pm, 1, GL_FALSE, &pm[0][0]);
 	
@@ -388,7 +399,7 @@ void Render(mat4 pm, mat4 mm, int effect, int type, vector<vec3> pos, vector<vec
 void My_Display()
 {
 	glBindVertexArray(vao);
-	glUseProgram(sp);
+	//glUseProgram(sp);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -404,17 +415,20 @@ void My_Display()
 				characters[1]->isinjured = true;
 				if (characters[1]->hp > 0)
 					characters[1]->hp -= amount;
-				if (characters[1]->hp == 0)
+				characters[13]->nextframe = (100 - characters[1]->hp)/10;
+				if (characters[1]->hp <= 0)
 				{
 					characters[1]->isdied = true;
 					characters[1]->state = ACTION_STATE_DIE;
+					characters[13]->nextframe = 10;
+					break;
 				}
 				printf("Miku hP:%d\n", characters[1]->hp);
 			}
 		}
 	}
 	//Attack detect
-	if (characters[1]->state == ACTION_STATE_ATTACK && characters[1]->attackcounter == 2)
+	if (characters[1]->state == ACTION_STATE_ATTACK && characters[1]->attackcounter == 2 && characters[1]->state != ACTION_STATE_DIE)
 	{
 		for (size_t i = 2; i < characters.size(); i++)
 		{
@@ -819,48 +833,60 @@ void My_Display()
 					glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
 					Render(projection_matrix, characters[i]->modelview, 0, 0, square_pos, characters[i]->action[0]);
 				}
-				if (i == 13)//Hp slider
-				{
-					size_t action_index = 0;
-					switch (characters[i]->state)
-					{
-					case ACTION_STATE_MOVE:
-						action_index = characters[i]->move.first + characters[i]->nextframe;
-						/*if (characters[i]->nextframe == characters[i]->move.second - 1)
-						{
-							characters[i]->nextframe = 0;
-							characters[i]->state = 1;
-						}
-						else
-						{
-							characters[i]->nextframe++;
-						}*/
-						break;
-					}
-					glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
-					Render(projection_matrix, characters[i]->modelview, 0, 0, square_pos, characters[i]->action[action_index]);
-				}
+				//if (i == 13)//Hp slider
+				//{
+				//	size_t action_index = 0;
+				//	switch (characters[i]->state)
+				//	{
+				//	case ACTION_STATE_MOVE:
+				//		action_index = characters[i]->nextframe;						
+				//		break;
+				//	}
+				//	glBindTexture(GL_TEXTURE_2D, characters[i]->textureidL);
+				//	Render(projection_matrix, characters[i]->modelview, 0, 0, square_pos, characters[i]->action[action_index]);
+				//}
+				//if (i == 14)//Map frame
+				//{
+				//	size_t action_index = 0;
+				//	switch (characters[i]->state)
+				//	{
+				//	case ACTION_STATE_MOVE:
+				//		action_index = 0;
+				//		break;
+				//	}
+				//	
+				//}
 			}
 		}
-	}			
-	glUseProgram(sp);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
-		
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);				
 		mat4 reflection(1.0),identity(1.0),origin(1.0);
 		origin *= translate(identity, vec3(0, 0.6f, -2));
 		reflection *= translate(identity,vec3(0,-1.4f,-2));
 		reflection *= rotate(identity, deg2rad(180.f), vec3(0, 1, 0));
-		reflection *= rotate(identity, deg2rad(180.f), vec3(0, 0, 1));		
-		
+		reflection *= rotate(identity, deg2rad(180.f), vec3(0, 0, 1));
+		//HP
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, characters[13]->textureidL);
+		Render(projection_matrix, characters[13]->modelview, 0, 0, square_pos, characters[13]->action[(characters[13]->nextframe)% characters[13]->action.size()]);
+		//Frame
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, characters[14]->textureidL);
+		Render(projection_matrix, characters[14]->modelview, 0, 0, square_pos, square_uv);
+
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, lake);
 		//Reflection
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
 		Render(projection_matrix, reflection, 11, 0, square_pos, square_uv);
 		//Origin
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
 		Render(projection_matrix, origin, 0, 0, square_pos, square_uv);
-		//Mini		
+		//Mini
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, characters[12]->textureidL);
 		Render(projection_matrix, characters[12]->modelview, 0, 0, square_pos, square_uv);				
 	glDisable(GL_BLEND);
 	
