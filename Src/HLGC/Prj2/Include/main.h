@@ -22,7 +22,7 @@ using namespace std;
 
 float currentTime;
 GLuint sp, sp_particle;
-const unsigned int interval = 100;
+const unsigned int interval = 200;
 GLuint vao, vvbo, fbo, depthrbo, vao_fbo, vbo_fbo;
 const size_t defalut_w = 800;
 const size_t defalut_h = 800;
