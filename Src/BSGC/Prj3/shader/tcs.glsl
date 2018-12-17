@@ -4,10 +4,6 @@ layout(vertices = 4) out;
 in vec2 tc[];
 in vec2 texturecoord[];
 out vec2 tc_out[];
-out vec2 tc_uv[];
-uniform mat4 ProjectionMatrix;
-uniform mat4 ModelViewMatrix;
-
 void main()
 {
     int part = 16;

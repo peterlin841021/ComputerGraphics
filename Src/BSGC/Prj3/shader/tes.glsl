@@ -9,6 +9,7 @@ out vec2 uv;
 uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewMatrix;
 uniform sampler2D heightmap;
+uniform int effect;
 uniform float time;
 void main()
 {  
@@ -20,9 +21,10 @@ void main()
 	vec4 p2 = mix(gl_in[1].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);    	
 	vec4 p = mix(p2, p1, gl_TessCoord.y);	
 	uv = tc3/(30*30);
-	
-    p.y += texture(heightmap,uv).r * 100 * (sin(time+p.x));
-	//p.x += sin(asin(p.y));
+	if(effect == 7)
+    	p.y += texture(heightmap,uv).r * 100 * (sin(time+p.x));
+	else if(effect == 9)
+		p.y += texture(heightmap,uv).r * 150;	
 	gl_Position = ProjectionMatrix * ModelViewMatrix * p;	
 	vpos = vec3(ModelViewMatrix * p);
 	

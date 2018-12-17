@@ -18,7 +18,7 @@ void main(void)
     vec4 pos = ProjectionMatrix * ModelViewMatrix * vec4(position,1.0);
     if(effect == 2)
         gl_Position = pos.xyww;
-    else if(effect == 7)
+    else if(effect == 7 || effect == 9)
         gl_Position = vec4(position,1.0);
     else
         gl_Position = pos;

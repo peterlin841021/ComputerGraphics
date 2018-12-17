@@ -325,7 +325,7 @@ void main(void)
 			fragmentcolor = color;
             break;
 		}
-		case(8)://OuO
+		case(8)://Miku reflection
 		{
 		    vec3 light_direction = normalize(vec3(ModelViewMatrix * vec4(light_position,1.0)) - texturecoord3d.xyz);
 			
@@ -350,14 +350,40 @@ void main(void)
 
 			vec4 RefractColor = texture(texcube,RefractVec);
 			vec4 ReflectColor = texture(texcube,ReflectVec);			
-			ReflectColor = mix(RefractColor,ReflectColor,0.5);
-
+			ReflectColor = mix(RefractColor,ReflectColor,0.5);			
 			vec4 color = texture2D(tex,texturecoord);
-			color *= vec4(light_color,1.0);
+			color += vec4(light_color,0);
 			color = mix(color,ReflectColor,0.5);			
 			if(alpha !=1)
 				color.a = alpha;			
 			fragmentcolor = color;            
+            break;
+		}
+		case(9)://Terrain
+		{		
+			vec3 light_direction = normalize(vec3(ModelViewMatrix * vec4(light_position,1.0)) - vpos.xyz);
+			mat3 normalmatrix = transpose(inverse(mat3(ModelViewMatrix)));
+			vec3 normal = normalize(normalmatrix *nor);
+			vec3 camera = vec3(ModelViewMatrix * vec4(camerapos,1.0));			
+			vec3 cameradir = normalize(camera.xyz - vpos.xyz);
+			float dv = dot(light_direction,normal);
+			float diffuse = max(0.0,dv);
+
+			vec3 halfvector = normalize(light_direction+cameradir);
+			float sv = dot(halfvector,normal);
+			float specular = pow(max(0.0,sv),shininess);
+			vec4 light_color = vec4(min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular,0);						
+			// vec3 RefractVec = refract(cameradir,normal, eta);
+    		// vec3 ReflectVec = reflect(cameradir, normal);			
+			// vec4 RefractColor = texture(texcube,RefractVec);
+			// vec4 ReflectColor = texture(texcube,ReflectVec);			
+			vec4 color = texture2D(tex,uv);
+			//color *= light_color;
+			// color = mix(color,RefractColor,0.7);
+			// color = mix(color,ReflectColor,0.7);					
+			if(alpha !=1)
+				color.a = alpha;
+			fragmentcolor = color;
             break;
 		}
     }

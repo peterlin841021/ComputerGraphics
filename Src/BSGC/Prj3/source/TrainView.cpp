@@ -11,12 +11,14 @@ int uv_size = 0;
 float t_temp = 0;
 float uv[12] = { 0.f , 0.f, 1.f , 0.f, 1.f , 1.f, 1.f , 1.f, 0.f , 1.f, 0.f , 0.f };
 int pos_size = 0;
-float angle = 0;
-float offset = 0.f;
+float rightarmangle = 0;
+float model_rotate = 0;
+float offset = 5.f;
 float wt = 0;
 float shake = 0.5f;
 GLuint highmap_textureid = 0;
 GLuint normalmap_textureid = 0;
+GLuint terrain_textureid = 0;
 struct Model
 {
 private:
@@ -97,7 +99,7 @@ void TrainView::initializeGL()
 	miku = new Obj();
 	miku->Init(2);
 	land = new Obj();
-	land->Init(2);	
+	land->Init(4);	
 	water = new Obj();
 	if(VT_WATER)
 		water->Init(2);
@@ -312,6 +314,8 @@ void TrainView::initializeTexture()
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/heightmap.png")));
 	normalmap_textureid = Textures.size();
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/water_normal.jpg")));
+	terrain_textureid = Textures.size();
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/terrain.jpg")));
 }
 TrainView::TrainView(QWidget *parent) :  
 QGLWidget(parent)  
@@ -384,7 +388,7 @@ void TrainView::paintGL()
 	for (size_t i = 0; i < Textures.size(); i++)
 	{
 		Textures[i]->bind(i);
-	}
+	}	
 	//Draw skybox
 	glDisable(GL_DEPTH_TEST);
 	glPushMatrix();
@@ -477,12 +481,9 @@ void TrainView::paintGL()
 		miku_vts << uv[i];
 	}
 	float mikuSize = 0.5f;
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.1);
 
-	glPushMatrix();
+
+	/*glPushMatrix();
 	glTranslatef(100,0,0);
 	glRotatef(90,0,1,0);
 	glScalef(5,5,5);
@@ -504,7 +505,7 @@ void TrainView::paintGL()
 		miku->End();
 	glPopMatrix();
 	glDisable(GL_ALPHA_TEST);
-	glDisable(GL_BLEND);
+	glDisable(GL_BLEND);*/
 
 	//Draw track and train
 	glPushMatrix();	
@@ -512,29 +513,23 @@ void TrainView::paintGL()
 	glPopMatrix();
 
 	//Draw land
-	float horizon = -30.f;
-	glPushMatrix();
+	float horizon = -200.f;
+	glPushMatrix();	
 	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		land->Begin();
 		land->shaderProgram->setUniformValue("tex", land->textureId);
+		land->shaderProgram->setUniformValue("heightmap",terrain_textureid);
+		land->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx, arcball.posy, arcball.posz));
 		QVector<GLfloat> land_vts;
 		land_vts
 			<< -boxsize << horizon << -boxsize
 			<< boxsize << horizon << -boxsize
-			<< boxsize << horizon << boxsize
-			<< boxsize << horizon << boxsize
-			<< -boxsize << horizon << boxsize
-			<< -boxsize << horizon << -boxsize;
-
-		for (size_t i = 0; i < 12; i++)
-		{
-			land_vts << uv[i];
-		}
+			<< boxsize << horizon << boxsize			
+			<< -boxsize << horizon << boxsize;			
 		buffer_size.clear();
-		buffer_size.push_back(18);
 		buffer_size.push_back(12);
-		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7, clock()*0.001, 7);
-		land->Render(ProjectionMatrex, ModelViewMatrex, land_vts,buffer_size,1,0,1,1,1);
+		buffer_size.push_back(0);
+		land->Render(ProjectionMatrex, ModelViewMatrex, land_vts, buffer_size, 1.f, 0, 9);		
 		land->End();
 	glPopMatrix();
 
@@ -552,12 +547,12 @@ void TrainView::paintGL()
 		float wave_height = 0.f;
 
 		setupFloor();
-		glEnable(GL_BLEND);		
+		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		water->Begin();
 		water->shaderProgram->setUniformValue("tex", water->textureId);
 		water->shaderProgram->setUniformValue("heightmap", highmap_textureid);
-		water->shaderProgram->setUniformValue("normalmap", normalmap_textureid);
+		//water->shaderProgram->setUniformValue("normalmap", normalmap_textureid);
 		water->shaderProgram->setUniformValue("texcube", skybox->textureId);				
 		water->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx,arcball.posy, arcball.posz));
 
@@ -630,13 +625,8 @@ void TrainView::paintGL()
 			<< -min << wy << min
 			<< -min << wy << -min		
 			<< min << wy << -min;
-		buffer_size.push_back(12);
-		water_vertices
-			<< 0 << 1
-			<< 1 << 1
-			<< 1 << 0
-			<< 0 << 0;
-		buffer_size.push_back(8);
+		buffer_size.push_back(12);		
+		buffer_size.push_back(0);
 		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7,clock()*0.001, 7);
 		water->End();
 		water_vertices.clear();
@@ -689,13 +679,15 @@ void TrainView::paintGL()
 		right_position[i][1] *= sr;
 		right_position[i][2] *= sr;
 	}
-	//Draw 3d models
+	//Draw 3d models reflect environment map
 	{
 	glPushMatrix();
-		glTranslatef(0,120,-120);
-		glRotatef(angle,0,1,0);
+		glTranslatef(0,130,0);
+		glRotatef(model_rotate,0,1,0);
 		glScalef(1, 1, 1);
-		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);		
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		miku3d->Begin();
 		for (size_t i = 0; i < models.size(); i++)
 		{
@@ -757,21 +749,18 @@ void TrainView::paintGL()
 			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
 			miku3d->shaderProgram->setUniformValue("texcube", skybox->textureId);
-			if (i == 0)
-				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(),1,1,8);
-			else
-				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(), 1, 1, 8);
+			if(i!=14)
+				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 0.7f, clock(), 1, 1, 8);
 			glPopMatrix();
 		}				
 		miku3d->End();
 	glPopMatrix();
 	}
-	//Draw 3d models again
+	//Draw 3d models
 	{
-	glPushMatrix();
-		glRotatef(180, 0, 1, 0);
-		glTranslatef(0, 120, -120);
-		glRotatef(angle, 0, 1, 0);
+	glPushMatrix();		
+		glTranslatef(-140, 130, 0);
+		glRotatef(90.f, 0, 1, 0);
 		glScalef(1, 1, 1);
 		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		miku3d->Begin();
@@ -788,27 +777,36 @@ void TrainView::paintGL()
 			case 3://Skirt
 				glTranslatef(right_position[3][0], right_position[3][1], right_position[3][2]);
 				break;
-			case 4:
+			case 4://LFA
 				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
+				glRotatef(-30.f, 0, 0, 1);
 				break;
 			case 5:
 				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
+				glRotatef(-30.f, 0, 0, 1);
 				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
 				break;
 			case 6:
 				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
+				glRotatef(-30.f, 0, 0, 1);
 				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
 				glTranslatef(right_position[6][0], right_position[6][1], right_position[6][2]);
 				break;
-			case 7:
+			case 7://RFA
 				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glRotatef(30.f, 0, 0, 1);
+				glRotatef(rightarmangle, 1, 0,0);
 				break;
 			case 8:
 				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glRotatef(30.f, 0, 0, 1);
+				glRotatef(rightarmangle, 1, 0, 0);
 				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
 				break;
 			case 9:
 				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glRotatef(30.f, 0, 0, 1);
+				glRotatef(rightarmangle, 1, 0, 0);
 				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
 				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
 				break;
@@ -828,21 +826,23 @@ void TrainView::paintGL()
 				break;
 			case 14:
 				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glRotatef(30.f, 0, 0, 1);
+				glRotatef(rightarmangle, 1, 0, 0);
 				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
 				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
 				break;
 			}
 			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
-			if(i == 0)
-				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(), 1, 1, 5);
-			else
-				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(), 1, 1, 1);
+			miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(), 1, 1, 4);
 			glPopMatrix();
 		}
 		miku3d->End();
 	glPopMatrix();
+	//*********************************//	
 	}
+	glDisable(GL_BLEND);
+	glDisable(GL_ALPHA_TEST);
 }
 //************************************************************************
 //
@@ -1264,7 +1264,16 @@ void TrainView::drawStuff(bool doingShadows)
 		if ((t_temp - current_time) > 1000.f/(train_speed*2)) 
 		{
 			current_time = t_temp;
-			angle += 1.f;
+			//Scallion slash
+			rightarmangle -= offset;
+			if (rightarmangle < -100.f)
+				offset = -5.f;
+			else if (rightarmangle == 0.f)
+				offset = 5.f;
+
+			model_rotate += 1.f;
+			if (model_rotate > 360.f)
+				model_rotate = 0.f;
 			path_index++;
 		}
 		
