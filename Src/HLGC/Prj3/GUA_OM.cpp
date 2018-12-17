@@ -1,4 +1,4 @@
-#include "../include/GUA_OM.h"
+#include "GUA_OM.h"
 
 namespace OMT
 {

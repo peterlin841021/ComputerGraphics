@@ -511,19 +511,21 @@ void TrainView::paintGL()
 		drawStuff();
 	glPopMatrix();
 
-	//Draw land	
+	//Draw land
+	float horizon = -30.f;
 	glPushMatrix();
-	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);	
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		land->Begin();
 		land->shaderProgram->setUniformValue("tex", land->textureId);
 		QVector<GLfloat> land_vts;
 		land_vts
-			<< -boxsize << 0 << -boxsize
-			<< boxsize << 0 << -boxsize
-			<< boxsize << 0 << boxsize
-			<< boxsize << 0 << boxsize
-			<< -boxsize << 0 << boxsize
-			<< -boxsize << 0 << -boxsize;
+			<< -boxsize << horizon << -boxsize
+			<< boxsize << horizon << -boxsize
+			<< boxsize << horizon << boxsize
+			<< boxsize << horizon << boxsize
+			<< -boxsize << horizon << boxsize
+			<< -boxsize << horizon << -boxsize;
+
 		for (size_t i = 0; i < 12; i++)
 		{
 			land_vts << uv[i];
@@ -531,6 +533,7 @@ void TrainView::paintGL()
 		buffer_size.clear();
 		buffer_size.push_back(18);
 		buffer_size.push_back(12);
+		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7, clock()*0.001, 7);
 		land->Render(ProjectionMatrex, ModelViewMatrex, land_vts,buffer_size,1,0,1,1,1);
 		land->End();
 	glPopMatrix();
@@ -545,7 +548,7 @@ void TrainView::paintGL()
 		float speed = 0.0001f;
 		float step = boxsize / water_size * 2;
 		float old_wave_height = 0;
-		float wy = 100.f;
+		float wy = 0.f;
 		float wave_height = 0.f;
 
 		setupFloor();
@@ -566,65 +569,60 @@ void TrainView::paintGL()
 		float padding = 0;
 	
 		QVector<GLfloat> water_vertices;
-		{
-			if (wt == 0)
-				wt = clock();
-
-			for (int i = 0; i < water_size; i++)
-			{
-				wt = clock();		
-				for (int j = 0; j < water_size; j++)
-				{			
-					if(old_wave_height == 0)
-						old_wave_height = amplitude * sin(step + wt * speed / 5.f);
-					else
-						old_wave_height = wave_height;
-
-					wave_height = amplitude * sin(step + wt*((water_size - i)*(j+1))/5.f* speed/5.f);
-					xfrom = min + step * j + offset;
-					xto = min + step * (j + 1) + offset;
-					zfrom = min + step * i;
-					zto = min + step * (i + 1);
-					//pos
-					water_vertices
-						<< xfrom  << wy + old_wave_height << zto 
-						<< xto  << wy + wave_height << zto 
-						<< xto  << wy + wave_height << zfrom;
-					water_vertices
-						<< xto  << wy + wave_height << zfrom 
-						<< xfrom  << wy + old_wave_height << zfrom 
-						<< xfrom  << wy + old_wave_height << zto ;
-				}		
-			}
-			for (int i = 0; i < water_size; i++)
-			{
-				for (int j = 0; j < water_size; j++)
-				{
-					//uvs
-					water_vertices
-						<< i / ratio << (j + 1) / ratio
-						<< (i + 1) / ratio << (j + 1) / ratio
-						<< (i + 1) / ratio << j / ratio
-
-						<< (i + 1) / ratio << j / ratio
-						<< i / ratio << j / ratio
-						<< i / ratio << (j + 1) / ratio
-
-						<< i / ratio << (j + 1) / ratio
-						<< (i + 1) / ratio << (j + 1) / ratio
-						<< (i + 1) / ratio << j / ratio
-
-						<< (i + 1) / ratio << j / ratio
-						<< i / ratio << j / ratio
-						<< i / ratio << (j + 1) / ratio;
-				}
-			}	
-			buffer_size.clear();
-			buffer_size.push_back(18 * water_size * water_size);
-			buffer_size.push_back(24 * water_size * water_size);
-			if(VT_WATER)
-				water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.7f,0,1,1,1);
-		}
+		//{
+		//	if (wt == 0)
+		//		wt = clock();
+		//	for (int i = 0; i < water_size; i++)
+		//	{
+		//		wt = clock();		
+		//		for (int j = 0; j < water_size; j++)
+		//		{			
+		//			if(old_wave_height == 0)
+		//				old_wave_height = amplitude * sin(step + wt * speed / 5.f);
+		//			else
+		//				old_wave_height = wave_height;
+		//			wave_height = amplitude * sin(step + wt*((water_size - i)*(j+1))/5.f* speed/5.f);
+		//			xfrom = min + step * j + offset;
+		//			xto = min + step * (j + 1) + offset;
+		//			zfrom = min + step * i;
+		//			zto = min + step * (i + 1);
+		//			//pos
+		//			water_vertices
+		//				<< xfrom  << wy + old_wave_height << zto 
+		//				<< xto  << wy + wave_height << zto 
+		//				<< xto  << wy + wave_height << zfrom;
+		//			water_vertices
+		//				<< xto  << wy + wave_height << zfrom 
+		//				<< xfrom  << wy + old_wave_height << zfrom 
+		//				<< xfrom  << wy + old_wave_height << zto ;
+		//		}		
+		//	}
+		//	for (int i = 0; i < water_size; i++)
+		//	{
+		//		for (int j = 0; j < water_size; j++)
+		//		{
+		//			//uvs
+		//			water_vertices
+		//				<< i / ratio << (j + 1) / ratio
+		//				<< (i + 1) / ratio << (j + 1) / ratio
+		//				<< (i + 1) / ratio << j / ratio
+		//				<< (i + 1) / ratio << j / ratio
+		//				<< i / ratio << j / ratio
+		//				<< i / ratio << (j + 1) / ratio
+		//				<< i / ratio << (j + 1) / ratio
+		//				<< (i + 1) / ratio << (j + 1) / ratio
+		//				<< (i + 1) / ratio << j / ratio
+		//				<< (i + 1) / ratio << j / ratio
+		//				<< i / ratio << j / ratio
+		//				<< i / ratio << (j + 1) / ratio;
+		//		}
+		//	}	
+		//	buffer_size.clear();
+		//	buffer_size.push_back(18 * water_size * water_size);
+		//	buffer_size.push_back(24 * water_size * water_size);
+		//	if(VT_WATER)
+		//		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.7f,0,1,1,1);
+		//}
 		water_vertices.clear();
 		buffer_size.clear();
 		water_vertices 

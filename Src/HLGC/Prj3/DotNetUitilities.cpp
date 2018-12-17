@@ -1,4 +1,4 @@
-#include "../include/DotNetUtilities.h"
+#include "DotNetUtilities.h"
 
 void MarshalString(System::String^ s, std::string& os)
 {

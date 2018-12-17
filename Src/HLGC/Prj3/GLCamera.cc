@@ -18,7 +18,7 @@ Manages OpenGL camera and trackball/arcball interaction
  #include <GL/glu.h>
 #endif
 
-#include "../include/GLCamera.h"
+#include "GLCamera.h"
 
 
 #ifndef M_PI
