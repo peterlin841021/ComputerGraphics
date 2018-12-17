@@ -129,7 +129,7 @@ float fworley(vec2 p)
 }
 void Phosgene() 
 {
-	vec4 texColor = texture(tex,coord);	
+	vec4 texColor = texture(water,coord);	
 	fragColor = texColor;
 	vec2 uv = gl_FragCoord.xy / iResolution.xy;
 	float t = fworley(uv * iResolution.xy / 600.);
@@ -355,6 +355,16 @@ void main(void)
 		{		
 			snow();
 			Darken();
+			break;
+		}
+		case(13)://Super
+		{		
+			vec4 texColor = texture(tex,coord);
+			vec4 w = texture(water,coord);
+			if(w.a < 0.1)			
+				discard;
+			Phosgene();
+			//fragColor = w;
 			break;
 		}
 	}	
