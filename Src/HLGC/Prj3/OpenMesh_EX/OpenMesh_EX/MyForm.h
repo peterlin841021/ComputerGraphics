@@ -34,7 +34,7 @@ double prely = 0.0f;
 double lx = 0.0f, lz = -1.0f, ly = 0.0f;
 std::vector<float> meshes_vs;
 std::vector<float> meshes_colors;
-double newCameraPosition[3] = { 0,0,-5};
+double newCameraPosition[3] = { 0,0,-1};
 double cameraDistance = 40;
 double translateDelta[3];
 double targetPosition[3] = { 0,0,0 };
@@ -265,8 +265,8 @@ private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	UpdateViewMatrix();
-
-	Update();
+	if(mesh != NULL)
+		Update();
 }
 //private: System::Void hkoglPanelControl1_MouseDown(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
 //{
