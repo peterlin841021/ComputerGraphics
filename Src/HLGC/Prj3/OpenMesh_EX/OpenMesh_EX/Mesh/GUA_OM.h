@@ -235,9 +235,9 @@ public:
 	std::vector<OMT::VHandle>                  Extrme_Pt   ;
 
 
-	void Render_Solid();
+	/*void Render_Solid();
 	void Render_SolidWireframe();
-	void Render_Wireframe();
+	void Render_Wireframe();*/
 	void Render_Point();
 	std::vector<float> GetMesh(size_t type);
 private:

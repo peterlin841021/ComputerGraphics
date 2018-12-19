@@ -468,28 +468,7 @@ namespace OMP
 	/*======================================================================*/
 };
 /*======================================================================*/
-void Tri_Mesh::Render_Solid()
-{
-		FIter f_it;
-		FVIter	fv_it;
-		//glPushAttrib(GL_LIGHTING_BIT);
-		glEnable(GL_POLYGON_OFFSET_FILL);
-		glEnable(GL_LIGHTING);
-		glPolygonOffset(2.0, 2.0);
-		glBegin(GL_TRIANGLES);
-		glColor4f(0.81, 0.74, 0.33, 0.3);
-		for (f_it = faces_begin(); f_it != faces_end(); ++f_it) 
-		{
-			for (fv_it = fv_iter( f_it ); fv_it; ++fv_it)
-			{						
-				glNormal3dv(normal(fv_it.handle()).data());
-				glVertex3dv(point(fv_it.handle()).data());
-			}
-		}
-		glEnd();	
-		
-		glDisable(GL_POLYGON_OFFSET_FILL);
-}
+
 std::vector<float> Tri_Mesh::GetMesh(size_t type)
 {
 	FIter f_it;
@@ -530,78 +509,100 @@ std::vector<float> Tri_Mesh::GetMesh(size_t type)
 	}
 	return meshes;
 }
-void Tri_Mesh::Render_SolidWireframe()
-{
-	FIter f_it;
-	FVIter	fv_it;
+//void Tri_Mesh::Render_Solid()
+//{
+//	FIter f_it;
+//	FVIter	fv_it;
+//	//glPushAttrib(GL_LIGHTING_BIT);
+//	glEnable(GL_POLYGON_OFFSET_FILL);
+//	glEnable(GL_LIGHTING);
+//	glPolygonOffset(2.0, 2.0);
+//	glBegin(GL_TRIANGLES);
+//	glColor4f(0.81, 0.74, 0.33, 0.3);
+//	for (f_it = faces_begin(); f_it != faces_end(); ++f_it)
+//	{
+//		for (fv_it = fv_iter(f_it); fv_it; ++fv_it)
+//		{
+//			glNormal3dv(normal(fv_it.handle()).data());
+//			glVertex3dv(point(fv_it.handle()).data());
+//		}
+//	}
+//	glEnd();
+//
+//	glDisable(GL_POLYGON_OFFSET_FILL);
+//}
+//void Tri_Mesh::Render_SolidWireframe()
+//{
+//	FIter f_it;
+//	FVIter	fv_it;
+//
+//	/*glPointSize(8.0);
+//	glBegin(GL_POINTS);
+//	glColor4f(1.0, 0.0, 0.0, 1.0);
+//	glVertex3dv(point(vertex_handle(0)));
+//	glEnd();*/
+//    glDisable(GL_LIGHTING);
+//	glPushAttrib(GL_LIGHTING_BIT);
+//	glEnable(GL_POLYGON_OFFSET_FILL);
+//	glEnable(GL_DEPTH_TEST);
+//	glPolygonOffset(2.0, 2.0);
+//	glBegin(GL_TRIANGLES);
+//	glColor4f(1.0, 0.96, 0.49, 1.0);
+//	for (f_it = faces_begin(); f_it != faces_end(); ++f_it) 
+//	{
+//		for (fv_it = fv_iter( f_it ); fv_it; ++fv_it)
+//		{						
+//			//glNormal3dv(normal(fv_it.handle()));
+//			glVertex3dv(point(fv_it.handle()).data());
+//		}
+//	}
+//	glEnd();
+//
+//	
+//	//glDisable(GL_POLYGON_OFFSET_FILL);
+//
+//
+//	glPushAttrib(GL_LIGHTING_BIT);	
+//	glDisable(GL_LIGHTING);
+//	glLineWidth(1.0);
+//	glColor3f(0.0, 0.0, 0.0);	
+//	glBegin(GL_LINES);
+//	for(OMT::EIter e_it = edges_begin(); e_it != edges_end(); ++e_it)
+//	{
+//		OMT::HEHandle _hedge = halfedge_handle(e_it.handle(),1);
+//
+//		OMT::Point curVertex  = point(from_vertex_handle(_hedge));
+//		glVertex3dv(curVertex.data());
+//
+//		curVertex = point(to_vertex_handle(_hedge));
+//		glVertex3dv(curVertex.data());			
+//	}
+//	glEnd();
+//	glPopAttrib();
+//}
+//void Tri_Mesh::Render_Wireframe()
+//{
+//	//glPushAttrib(GL_LIGHTING_BIT);	
+//	glDisable(GL_LIGHTING);
+//	glLineWidth(1.0);
+//
+//	glColor3f(0.0, 0.0, 0.0);
+//
+//	glBegin(GL_LINES);
+//	for (OMT::EIter e_it = edges_begin(); e_it != edges_end(); ++e_it)
+//	{
+//		OMT::HEHandle _hedge = halfedge_handle(e_it.handle(), 1);
+//
+//		OMT::Point curVertex = point(from_vertex_handle(_hedge));
+//		glVertex3dv(curVertex.data());
+//
+//		curVertex = point(to_vertex_handle(_hedge));
+//		glVertex3dv(curVertex.data());
+//	}
+//	glEnd();
+//
+//}
 
-	/*glPointSize(8.0);
-	glBegin(GL_POINTS);
-	glColor4f(1.0, 0.0, 0.0, 1.0);
-	glVertex3dv(point(vertex_handle(0)));
-	glEnd();*/
-    glDisable(GL_LIGHTING);
-	glPushAttrib(GL_LIGHTING_BIT);
-	glEnable(GL_POLYGON_OFFSET_FILL);
-	glEnable(GL_DEPTH_TEST);
-	glPolygonOffset(2.0, 2.0);
-	glBegin(GL_TRIANGLES);
-	glColor4f(1.0, 0.96, 0.49, 1.0);
-	for (f_it = faces_begin(); f_it != faces_end(); ++f_it) 
-	{
-		for (fv_it = fv_iter( f_it ); fv_it; ++fv_it)
-		{						
-			//glNormal3dv(normal(fv_it.handle()));
-			glVertex3dv(point(fv_it.handle()).data());
-		}
-	}
-	glEnd();
-
-	
-	//glDisable(GL_POLYGON_OFFSET_FILL);
-
-
-	glPushAttrib(GL_LIGHTING_BIT);	
-	glDisable(GL_LIGHTING);
-	glLineWidth(1.0);
-	glColor3f(0.0, 0.0, 0.0);	
-	glBegin(GL_LINES);
-	for(OMT::EIter e_it = edges_begin(); e_it != edges_end(); ++e_it)
-	{
-		OMT::HEHandle _hedge = halfedge_handle(e_it.handle(),1);
-
-		OMT::Point curVertex  = point(from_vertex_handle(_hedge));
-		glVertex3dv(curVertex.data());
-
-		curVertex = point(to_vertex_handle(_hedge));
-		glVertex3dv(curVertex.data());			
-	}
-	glEnd();
-	glPopAttrib();
-}
-
-void Tri_Mesh::Render_Wireframe()
-{
-	//glPushAttrib(GL_LIGHTING_BIT);	
-	glDisable(GL_LIGHTING);
-	glLineWidth(1.0);
-	
-	glColor3f(0.0, 0.0, 0.0);	
-
-	glBegin(GL_LINES);
-	for(OMT::EIter e_it = edges_begin(); e_it != edges_end(); ++e_it)
-	{
-		OMT::HEHandle _hedge = halfedge_handle(e_it.handle(),1);
-
-		OMT::Point curVertex  = point(from_vertex_handle(_hedge));
-		glVertex3dv(curVertex.data());
-
-		curVertex = point(to_vertex_handle(_hedge));
-		glVertex3dv(curVertex.data());			
-	}
-	glEnd();
-	
-}
 
 void Tri_Mesh::Render_Point()
 {
