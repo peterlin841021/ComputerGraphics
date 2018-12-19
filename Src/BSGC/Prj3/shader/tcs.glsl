@@ -1,5 +1,5 @@
 #version 430 core
-
+uniform int effect;
 layout(vertices = 4) out;
 in vec2 tc[];
 in vec2 texturecoord[];
@@ -7,6 +7,8 @@ out vec2 tc_out[];
 void main()
 {
     int part = 16;
+    if(effect == 10)
+        part = 64;
     if(gl_InvocationID == 0)
     {        
         gl_TessLevelInner[0] = part;

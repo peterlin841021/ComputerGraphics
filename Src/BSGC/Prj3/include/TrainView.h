@@ -57,7 +57,7 @@ public:
 	void drawTrack(bool shadow);
 	void initializeGL();
 	void initializeTexture();
-	
+	void paint();
 public:
 	ArcBallCam		arcball;			// keep an ArcBall for the UI
 	int				selectedCube;  // simple - just remember which cube is selected
@@ -106,7 +106,8 @@ public:
 	Obj *water;
 	Obj *land;
 	Obj *nendoroid;
-	Obj * miku3d;
+	Obj *miku3d;
+	Obj *mountain;	
 	vector<TrackTrail> path;
 };  
 #endif // TRAINVIEW_H  

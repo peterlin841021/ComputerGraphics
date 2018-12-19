@@ -24,7 +24,7 @@ public:
 	QOpenGLShader* tessellationEvalutionShader;
 	QOpenGLShader* geometryShader;
 	QOpenGLVertexArrayObject vao;
-	QOpenGLBuffer vbo;	
+	QOpenGLBuffer vbo;
 	GLuint textureId;
 public:
 	Obj();

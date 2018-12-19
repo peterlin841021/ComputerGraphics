@@ -19,6 +19,10 @@ float shake = 0.5f;
 GLuint highmap_textureid = 0;
 GLuint normalmap_textureid = 0;
 GLuint terrain_textureid = 0;
+//FBO
+QOpenGLFramebufferObject *fbo;
+QOpenGLTexture *fbo_texture;
+bool useFBO = false;
 struct Model
 {
 private:
@@ -59,22 +63,7 @@ std::vector<Model*> models;
 void loadmodel(string modelname, string texturename, Model *model, QVector<QOpenGLTexture*> *textures);
 char *stringToChar(string str);
 void generateTextureCube(std::vector<QImage> images, QVector<QOpenGLTexture*> *textures)
-{
-	/*GLuint id;
-	glGenTextures(1,&id);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, id);
-	size_t w = images->at(0).width(),h = images->at(0).height();
-	
-	for (int i = 0; i < 6; i++) 
-	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, (void *)images->at(i).bits());
-	}
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	return id;*/	
+{	
 	QOpenGLTexture *t = new QOpenGLTexture(QOpenGLTexture::TargetCubeMap);	
 	t->create();
 	t->setSize(images.at(0).width(), images.at(0).height());
@@ -90,6 +79,7 @@ void generateTextureCube(std::vector<QImage> images, QVector<QOpenGLTexture*> *t
 	t->setWrapMode(QOpenGLTexture::ClampToEdge);
 	textures->push_back(t);
 }
+
 void TrainView::initializeGL()
 {		
 	trackobj = new Obj();
@@ -99,7 +89,9 @@ void TrainView::initializeGL()
 	miku = new Obj();
 	miku->Init(2);
 	land = new Obj();
-	land->Init(4);	
+	land->Init(4);
+	mountain = new Obj();
+	mountain ->Init(4);
 	water = new Obj();
 	if(VT_WATER)
 		water->Init(2);
@@ -117,7 +109,8 @@ void TrainView::initializeGL()
 		*mikuLFM,*mikuLHM,*mikuLH,
 		*mikuRFM,*mikuRHM,*mikuRH,
 		*mikuLT,*mikuLC,*mikuRT,*mikuRC,
-		*scallion;
+		*scallion,
+		*tunnel;
 	{//Model init
 		mikuhair = new Model();
 		mikuface = new Model();
@@ -134,6 +127,9 @@ void TrainView::initializeGL()
 		mikuRT = new Model();
 		mikuRC = new Model();
 		scallion = new Model();
+		//
+		tunnel = new Model();
+
 	}
 	{//Load models
 		loadmodel("./src/BSGC/prj3/3dmodel/mikuhair.obj", "./src/BSGC/prj3/3dmodel/mikuhair.png", mikuhair,&Textures);
@@ -151,6 +147,8 @@ void TrainView::initializeGL()
 		loadmodel("./src/BSGC/prj3/3dmodel/MikuRightThigh.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuRT, &Textures);
 		loadmodel("./src/BSGC/prj3/3dmodel/MikuRightCalf.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuRC, &Textures);
 		loadmodel("./src/BSGC/prj3/3dmodel/scallion.obj", "./src/BSGC/prj3/3dmodel/scallion.png", scallion, &Textures);
+		//
+		loadmodel("./src/BSGC/prj3/3dmodel/tunnel.obj", "./src/BSGC/prj3/3dmodel/tunnel_diffusemap.jpg", tunnel, &Textures);
 	}
 	{//Model vector
 		models.push_back(mikuhair);
@@ -168,7 +166,10 @@ void TrainView::initializeGL()
 		models.push_back(mikuRT);
 		models.push_back(mikuRC);
 		models.push_back(scallion);
+		models.push_back(tunnel);		
 	}
+	fbo = new QOpenGLFramebufferObject(width(), height(), QOpenGLFramebufferObject::Depth);	
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/miku_transparent.png")));//FBO
 }
 char *stringToChar(string str)
 {
@@ -298,12 +299,6 @@ void TrainView::initializeTexture()
 	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_right.jpg"));
 	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_top.jpg"));
 	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_bottom.jpg"));
-	/*skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/ss_ft.png"));
-	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/ss_bk.png"));
-	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/ss_lf.png"));
-	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/ss_rt.png"));
-	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/ss_up.png"));
-	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/ss_dn.png"));*/
 	generateTextureCube(skybox_imgs,&Textures);
 	skybox->textureId = Textures.size()-1;	
 	nendoroid->textureId = Textures.size();
@@ -316,6 +311,8 @@ void TrainView::initializeTexture()
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/water_normal.jpg")));
 	terrain_textureid = Textures.size();
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/terrain.jpg")));
+	mountain->textureId = Textures.size();
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/mountain.jpg")));	
 }
 TrainView::TrainView(QWidget *parent) :  
 QGLWidget(parent)  
@@ -336,38 +333,36 @@ void TrainView::changeSpeed(int speed)
 {
 	train_speed = speed;		
 }
-void TrainView::paintGL()
-{
-	glViewport(0,0,width(),height());
-	glClearColor(0,0,0,0);
-	glClearStencil(0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+void TrainView::paint()
+{	
 	glEnable(GL_DEPTH);
+	if (useFBO)
+	{
+		fbo->bind();
+	}
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 	
-    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);	
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	setProjection();
 	glEnable(GL_COLOR_MATERIAL);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-	
-	if (this->camera == 1) 
+
+	if (this->camera == 1)
 	{
 		glDisable(GL_LIGHT1);
 		glDisable(GL_LIGHT2);
-	} else {
+	}
+	else {
 		glEnable(GL_LIGHT1);
 		glEnable(GL_LIGHT2);
 	}
-	GLfloat lightPosition1[]	= {0,1,1,0}; // {50, 200.0, 50, 1.0};
-	GLfloat lightPosition2[]	= {1, 0, 0, 0};
-	GLfloat lightPosition3[]	= {0, -1, 0, 0};
-	GLfloat yellowLight[]		= {0.5f, 0.5f, .1f, 1.0};
-	GLfloat whiteLight[]		= {1.0f, 1.0f, 1.0f, 1.0};
-	GLfloat blueLight[]			= {.1f,.1f,.3f,1.0};
-	GLfloat grayLight[]			= {.3f, .3f, .3f, 1.0};
+	GLfloat lightPosition1[] = { 0,1,1,0 }; // {50, 200.0, 50, 1.0};
+	GLfloat lightPosition2[] = { 1, 0, 0, 0 };
+	GLfloat lightPosition3[] = { 0, -1, 0, 0 };
+	GLfloat yellowLight[] = { 0.5f, 0.5f, .1f, 1.0 };
+	GLfloat whiteLight[] = { 1.0f, 1.0f, 1.0f, 1.0 };
+	GLfloat blueLight[] = { .1f,.1f,.3f,1.0 };
+	GLfloat grayLight[] = { .3f, .3f, .3f, 1.0 };
 	std::vector<int> buffer_size;
 	float boxsize = 1500;
 
@@ -379,274 +374,253 @@ void TrainView::paintGL()
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, yellowLight);
 
 	glLightfv(GL_LIGHT2, GL_POSITION, lightPosition3);
-	glLightfv(GL_LIGHT2, GL_DIFFUSE, blueLight);	
+	glLightfv(GL_LIGHT2, GL_DIFFUSE, blueLight);
 	glDisable(GL_LIGHTING);
 
 	glEnable(GL_LIGHTING);
 	setupObjects();
+		
 	//All texture	
 	for (size_t i = 0; i < Textures.size(); i++)
 	{
 		Textures[i]->bind(i);
-	}	
+	}
 	//Draw skybox
 	glDisable(GL_DEPTH_TEST);
 	glPushMatrix();
 	glTranslatef(0, 700, 0);
-		glGetFloatv(GL_PROJECTION_MATRIX, ProjectionMatrex);
-		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-		float skyboxVertices[] = 
-		{		
-			/*//////positions//////*/
-			-1.0f,  1.0f, -1.0f,
-			-1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, -1.0f,
-			1.0f,  1.0f, -1.0f,
-			-1.0f,  1.0f, -1.0f,
+	glGetFloatv(GL_PROJECTION_MATRIX, ProjectionMatrex);
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+	float skyboxVertices[] =
+	{
+		/*//////positions//////*/
+		-1.0f,  1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
 
-			-1.0f, -1.0f,  1.0f,
-			-1.0f, -1.0f, -1.0f,
-			-1.0f,  1.0f, -1.0f,
-			-1.0f,  1.0f, -1.0f,
-			-1.0f,  1.0f,  1.0f,
-			-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
 
-			1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f,  1.0f,
-			1.0f,  1.0f,  1.0f,
-			1.0f,  1.0f,  1.0f,
-			1.0f,  1.0f, -1.0f,
-			1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
 
-			-1.0f, -1.0f,  1.0f,
-			-1.0f,  1.0f,  1.0f,
-			1.0f,  1.0f,  1.0f,
-			1.0f,  1.0f,  1.0f,
-			1.0f, -1.0f,  1.0f,
-			-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
 
-			-1.0f,  1.0f, -1.0f,
-			1.0f,  1.0f, -1.0f,
-			1.0f,  1.0f,  1.0f,
-			1.0f,  1.0f,  1.0f,
-			-1.0f,  1.0f,  1.0f,
-			-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		1.0f,  1.0f, -1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
 
-			-1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f,  1.0f,
-			1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f,  1.0f,
-			1.0f, -1.0f,  1.0f
-		};		
-		
-		for (size_t i = 0; i < sizeof(skyboxVertices)/ sizeof(float); i++)
-		{
-			skyboxVertices[i] *= boxsize;
-		}
-		int vt_size = sizeof(skyboxVertices)/sizeof(float);
-		QVector<GLfloat> skybox_vts;
-		skybox->Begin();	
-		
-		skybox->shaderProgram->setUniformValue("texcube", skybox->textureId);
-		
-		for (size_t i = 0; i < vt_size; i++)
-		{
-			skybox_vts << skyboxVertices[i];
-		}
-		
-		buffer_size.push_back(vt_size);
-		buffer_size.push_back(0);
-		skybox->Render(ProjectionMatrex, ModelViewMatrex, skybox_vts, buffer_size, 0.5, clock(), 1, 1, 2);
-		skybox_vts.clear();
-		buffer_size.clear();
-		skybox->End();
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		1.0f, -1.0f,  1.0f
+	};
+
+	for (size_t i = 0; i < sizeof(skyboxVertices) / sizeof(float); i++)
+	{
+		skyboxVertices[i] *= boxsize;
+	}
+	int vt_size = sizeof(skyboxVertices) / sizeof(float);
+	QVector<GLfloat> skybox_vts;
+	skybox->Begin();
+
+	skybox->shaderProgram->setUniformValue("texcube", skybox->textureId);
+
+	for (size_t i = 0; i < vt_size; i++)
+	{
+		skybox_vts << skyboxVertices[i];
+	}
+
+	buffer_size.push_back(vt_size);
+	buffer_size.push_back(0);
+	skybox->Render(ProjectionMatrex, ModelViewMatrex, skybox_vts, buffer_size, 0.5, clock(), 1, 1, 2);
+	skybox_vts.clear();
+	buffer_size.clear();
+	skybox->End();
 	glPopMatrix();
 	glEnable(GL_DEPTH_TEST);
 
-	//Draw Miku 2D
-	QVector<GLfloat> miku_vts;
-	miku_vts
-		<< -15.1f << 40.8f << 0.f
-		<< 15.1f << 40.8f << 0.f
-		<< 15.1f << 3.8f << 0.f
-		<< 15.1f << 3.8f << 0.f
-		<< -15.1f << 3.8f << 0.f
-		<< -15.1f << 40.8f << 0.f;
-	buffer_size.push_back(18);
-	buffer_size.push_back(12);
-	for (size_t i = 0; i < 12; i++)
-	{
-		miku_vts << uv[i];
-	}
-	float mikuSize = 0.5f;
-
-
-	/*glPushMatrix();
-	glTranslatef(100,0,0);
-	glRotatef(90,0,1,0);
-	glScalef(5,5,5);
-	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-		miku->Begin();
-		miku->shaderProgram->setUniformValue("tex", miku->textureId);
-		miku->Render(ProjectionMatrex, ModelViewMatrex, miku_vts, buffer_size,1.f,clock(),1,1,1);
-		miku->End();
-	glPopMatrix();
-
-	glPushMatrix();
-	glTranslatef(-100, 0, 0);
-	glRotatef(-90, 0, 1, 0);
-	glScalef(5, 5, 5);
-	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-		miku->Begin();
-		miku->shaderProgram->setUniformValue("tex", miku->textureId);
-		miku->Render(ProjectionMatrex, ModelViewMatrex, miku_vts, buffer_size, 1.f, clock(), 1, 1, 1);
-		miku->End();
-	glPopMatrix();
-	glDisable(GL_ALPHA_TEST);
-	glDisable(GL_BLEND);*/
-
 	//Draw track and train
-	glPushMatrix();	
-		drawStuff();
+	glPushMatrix();
+	drawStuff();
 	glPopMatrix();
 
 	//Draw land
 	float horizon = -200.f;
-	glPushMatrix();	
+	glPushMatrix();
 	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-		land->Begin();
-		land->shaderProgram->setUniformValue("tex", land->textureId);
-		land->shaderProgram->setUniformValue("heightmap",terrain_textureid);
-		land->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx, arcball.posy, arcball.posz));
-		QVector<GLfloat> land_vts;
-		land_vts
-			<< -boxsize << horizon << -boxsize
-			<< boxsize << horizon << -boxsize
-			<< boxsize << horizon << boxsize			
-			<< -boxsize << horizon << boxsize;			
-		buffer_size.clear();
-		buffer_size.push_back(12);
-		buffer_size.push_back(0);
-		land->Render(ProjectionMatrex, ModelViewMatrex, land_vts, buffer_size, 1.f, 0, 9);		
-		land->End();
+	land->Begin();
+	land->shaderProgram->setUniformValue("tex", land->textureId);
+	land->shaderProgram->setUniformValue("heightmap", terrain_textureid);
+	land->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx, arcball.posy, arcball.posz));
+	QVector<GLfloat> land_vts;
+	land_vts
+		<< -boxsize << horizon << -boxsize
+		<< boxsize << horizon << -boxsize
+		<< boxsize << horizon << boxsize
+		<< -boxsize << horizon << boxsize;
+	buffer_size.clear();
+	buffer_size.push_back(12);
+	buffer_size.push_back(0);
+	land->Render(ProjectionMatrex, ModelViewMatrex, land_vts, buffer_size, 1.f, 0, 9);
+	land->End();
 	glPopMatrix();
 
 	//Draw water
 	glPushMatrix();
-	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);		
-		float wave_t = 0;
-		int water_size = 70;
-		float min = -boxsize;
-		float amplitude = 2.5f;
-		float speed = 0.0001f;
-		float step = boxsize / water_size * 2;
-		float old_wave_height = 0;
-		float wy = 0.f;
-		float wave_height = 0.f;
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+	float wave_t = 0;
+	int water_size = 70;
+	float min = -boxsize;
+	float amplitude = 2.5f;
+	float speed = 0.0001f;
+	float step = boxsize / water_size * 2;
+	float old_wave_height = 0;
+	float wy = 0.f;
+	float wave_height = 0.f;
 
-		setupFloor();
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		water->Begin();
-		water->shaderProgram->setUniformValue("tex", water->textureId);
-		water->shaderProgram->setUniformValue("heightmap", highmap_textureid);
-		//water->shaderProgram->setUniformValue("normalmap", normalmap_textureid);
-		water->shaderProgram->setUniformValue("texcube", skybox->textureId);				
-		water->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx,arcball.posy, arcball.posz));
+	setupFloor();
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	water->Begin();
+	water->shaderProgram->setUniformValue("tex", water->textureId);
+	water->shaderProgram->setUniformValue("heightmap", highmap_textureid);
+	//water->shaderProgram->setUniformValue("normalmap", normalmap_textureid);
+	water->shaderProgram->setUniformValue("texcube", skybox->textureId);
+	water->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx, arcball.posy, arcball.posz));
 
-		float ratio = 25;
-		float xfrom = 0;
-		float zfrom = 0;
-		float xto = 0;
-		float zto = 0;
-		float padding = 0;
-	
-		QVector<GLfloat> water_vertices;
-		//{
-		//	if (wt == 0)
-		//		wt = clock();
-		//	for (int i = 0; i < water_size; i++)
-		//	{
-		//		wt = clock();		
-		//		for (int j = 0; j < water_size; j++)
-		//		{			
-		//			if(old_wave_height == 0)
-		//				old_wave_height = amplitude * sin(step + wt * speed / 5.f);
-		//			else
-		//				old_wave_height = wave_height;
-		//			wave_height = amplitude * sin(step + wt*((water_size - i)*(j+1))/5.f* speed/5.f);
-		//			xfrom = min + step * j + offset;
-		//			xto = min + step * (j + 1) + offset;
-		//			zfrom = min + step * i;
-		//			zto = min + step * (i + 1);
-		//			//pos
-		//			water_vertices
-		//				<< xfrom  << wy + old_wave_height << zto 
-		//				<< xto  << wy + wave_height << zto 
-		//				<< xto  << wy + wave_height << zfrom;
-		//			water_vertices
-		//				<< xto  << wy + wave_height << zfrom 
-		//				<< xfrom  << wy + old_wave_height << zfrom 
-		//				<< xfrom  << wy + old_wave_height << zto ;
-		//		}		
-		//	}
-		//	for (int i = 0; i < water_size; i++)
-		//	{
-		//		for (int j = 0; j < water_size; j++)
-		//		{
-		//			//uvs
-		//			water_vertices
-		//				<< i / ratio << (j + 1) / ratio
-		//				<< (i + 1) / ratio << (j + 1) / ratio
-		//				<< (i + 1) / ratio << j / ratio
-		//				<< (i + 1) / ratio << j / ratio
-		//				<< i / ratio << j / ratio
-		//				<< i / ratio << (j + 1) / ratio
-		//				<< i / ratio << (j + 1) / ratio
-		//				<< (i + 1) / ratio << (j + 1) / ratio
-		//				<< (i + 1) / ratio << j / ratio
-		//				<< (i + 1) / ratio << j / ratio
-		//				<< i / ratio << j / ratio
-		//				<< i / ratio << (j + 1) / ratio;
-		//		}
-		//	}	
-		//	buffer_size.clear();
-		//	buffer_size.push_back(18 * water_size * water_size);
-		//	buffer_size.push_back(24 * water_size * water_size);
-		//	if(VT_WATER)
-		//		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.7f,0,1,1,1);
-		//}
-		water_vertices.clear();
-		buffer_size.clear();
-		water_vertices 
-			<< min << wy << min 
-			<< -min << wy << min
-			<< -min << wy << -min		
-			<< min << wy << -min;
-		buffer_size.push_back(12);		
-		buffer_size.push_back(0);
-		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7,clock()*0.001, 7);
-		water->End();
-		water_vertices.clear();
-		buffer_size.clear();
+	float ratio = 25;
+	float xfrom = 0;
+	float zfrom = 0;
+	float xto = 0;
+	float zto = 0;
+	float padding = 0;
+
+	QVector<GLfloat> water_vertices;
+	//{
+	//	if (wt == 0)
+	//		wt = clock();
+	//	for (int i = 0; i < water_size; i++)
+	//	{
+	//		wt = clock();		
+	//		for (int j = 0; j < water_size; j++)
+	//		{			
+	//			if(old_wave_height == 0)
+	//				old_wave_height = amplitude * sin(step + wt * speed / 5.f);
+	//			else
+	//				old_wave_height = wave_height;
+	//			wave_height = amplitude * sin(step + wt*((water_size - i)*(j+1))/5.f* speed/5.f);
+	//			xfrom = min + step * j + offset;
+	//			xto = min + step * (j + 1) + offset;
+	//			zfrom = min + step * i;
+	//			zto = min + step * (i + 1);
+	//			//pos
+	//			water_vertices
+	//				<< xfrom  << wy + old_wave_height << zto 
+	//				<< xto  << wy + wave_height << zto 
+	//				<< xto  << wy + wave_height << zfrom;
+	//			water_vertices
+	//				<< xto  << wy + wave_height << zfrom 
+	//				<< xfrom  << wy + old_wave_height << zfrom 
+	//				<< xfrom  << wy + old_wave_height << zto ;
+	//		}		
+	//	}
+	//	for (int i = 0; i < water_size; i++)
+	//	{
+	//		for (int j = 0; j < water_size; j++)
+	//		{
+	//			//uvs
+	//			water_vertices
+	//				<< i / ratio << (j + 1) / ratio
+	//				<< (i + 1) / ratio << (j + 1) / ratio
+	//				<< (i + 1) / ratio << j / ratio
+	//				<< (i + 1) / ratio << j / ratio
+	//				<< i / ratio << j / ratio
+	//				<< i / ratio << (j + 1) / ratio
+	//				<< i / ratio << (j + 1) / ratio
+	//				<< (i + 1) / ratio << (j + 1) / ratio
+	//				<< (i + 1) / ratio << j / ratio
+	//				<< (i + 1) / ratio << j / ratio
+	//				<< i / ratio << j / ratio
+	//				<< i / ratio << (j + 1) / ratio;
+	//		}
+	//	}	
+	//	buffer_size.clear();
+	//	buffer_size.push_back(18 * water_size * water_size);
+	//	buffer_size.push_back(24 * water_size * water_size);
+	//	if(VT_WATER)
+	//		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.7f,0,1,1,1);
+	//}
+	water_vertices.clear();
+	buffer_size.clear();
+	water_vertices
+		<< min << wy << min
+		<< -min << wy << min
+		<< -min << wy << -min
+		<< min << wy << -min;
+	buffer_size.push_back(12);
+	buffer_size.push_back(0);
+	water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7, clock()*0.001, 7);
+	water->End();
+	water_vertices.clear();
+	buffer_size.clear();
 	glPopMatrix();
-	
+
 	//Draw shadows
-	glPushMatrix();	
-		if (this->camera != 1)
-		{
-			if(isrun)
-				glTranslatef(0, shake, 0);
-			setupShadows();
-			drawStuff(true);
-			unsetupShadows();
-			if (shake > 0)
-				shake = -shake;
-			else
-				shake = -shake;
-		}
+	glPushMatrix();
+	if (this->camera != 1)
+	{
+		if (isrun)
+			glTranslatef(0, shake, 0);
+		setupShadows();
+		drawStuff(true);
+		unsetupShadows();
+		if (shake > 0)
+			shake = -shake;
+		else
+			shake = -shake;
+	}
+	glPopMatrix();
+	//Draw mountains
+	float mountain_h = 100.f;
+	glPushMatrix();
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+	mountain->Begin();
+	mountain->shaderProgram->setUniformValue("tex", mountain->textureId);
+	mountain->shaderProgram->setUniformValue("heightmap", terrain_textureid);
+	mountain->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx, arcball.posy, arcball.posz));
+	QVector<GLfloat> mountain_vts;
+	mountain_vts
+		<< -200.f << horizon << -200.f
+		<< 200.f << horizon << -200.f
+		<< 200.f << horizon << 200.f
+		<< -200.f << horizon << 200.f;
+	buffer_size.clear();
+	buffer_size.push_back(12);
+	buffer_size.push_back(0);
+	mountain->Render(ProjectionMatrex, ModelViewMatrex, mountain_vts, buffer_size, 1.f, 0, 10);
+	mountain->End();
 	glPopMatrix();
 	float right_position[15][3]
 	{
@@ -673,7 +647,7 @@ void TrainView::paintGL()
 		{0, 0, 0}
 	};
 	float sr = 20;
-	for (size_t i = 0; i < models.size(); i++)
+	for (size_t i = 0; i < models.size() - 1; i++)
 	{
 		right_position[i][0] *= sr;
 		right_position[i][1] *= sr;
@@ -681,15 +655,15 @@ void TrainView::paintGL()
 	}
 	//Draw 3d models reflect environment map
 	{
-	glPushMatrix();
-		glTranslatef(0,130,0);
-		glRotatef(model_rotate,0,1,0);
+		glPushMatrix();
+		glTranslatef(0, 130, 0);
+		glRotatef(model_rotate, 0, 1, 0);
 		glScalef(1, 1, 1);
 		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		miku3d->Begin();
-		for (size_t i = 0; i < models.size(); i++)
+		for (size_t i = 0; i < models.size() - 1; i++)
 		{
 			glPushMatrix();
 			switch (i)
@@ -703,10 +677,10 @@ void TrainView::paintGL()
 				glTranslatef(right_position[3][0], right_position[3][1], right_position[3][2]);
 				break;
 			case 4:
-				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);				
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
 				break;
 			case 5:
-				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);				
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
 				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
 				break;
 			case 6:
@@ -733,7 +707,7 @@ void TrainView::paintGL()
 				glTranslatef(right_position[10][0], right_position[10][1], right_position[10][2]);
 				glTranslatef(right_position[11][0], right_position[11][1], right_position[11][2]);
 				break;
-			case 12:				
+			case 12:
 				glTranslatef(right_position[12][0], right_position[12][1], right_position[12][2]);
 				break;
 			case 13:
@@ -745,26 +719,26 @@ void TrainView::paintGL()
 				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
 				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
 				break;
-			}						
+			}
 			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
 			miku3d->shaderProgram->setUniformValue("texcube", skybox->textureId);
-			if(i!=14)
+			if (i != 14)
 				miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 0.7f, clock(), 1, 1, 8);
 			glPopMatrix();
-		}				
+		}
 		miku3d->End();
-	glPopMatrix();
+		glPopMatrix();
 	}
 	//Draw 3d models
 	{
-	glPushMatrix();		
+		glPushMatrix();
 		glTranslatef(-140, 130, 0);
 		glRotatef(90.f, 0, 1, 0);
 		glScalef(1, 1, 1);
 		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		miku3d->Begin();
-		for (size_t i = 0; i < models.size(); i++)
+		for (size_t i = 0; i < models.size() - 1; i++)
 		{
 			glPushMatrix();
 			switch (i)
@@ -795,7 +769,7 @@ void TrainView::paintGL()
 			case 7://RFA
 				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
 				glRotatef(30.f, 0, 0, 1);
-				glRotatef(rightarmangle, 1, 0,0);
+				glRotatef(rightarmangle, 1, 0, 0);
 				break;
 			case 8:
 				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
@@ -834,15 +808,85 @@ void TrainView::paintGL()
 			}
 			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
-			miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(), 1, 1, 4);
+			miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(), 1, 1, 1);
 			glPopMatrix();
 		}
 		miku3d->End();
-	glPopMatrix();
-	//*********************************//	
+		glPopMatrix();
+		//*********************************//	
+	}
+	//3D tunnel
+	{
+		glPushMatrix();
+		glTranslatef(95, 95, 0);
+		glScalef(0.2f, 0.2f, 0.2f);
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		miku3d->Begin();
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		miku3d->shaderProgram->setUniformValue("tex", models[models.size() - 1]->getTextureid());
+		miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[models.size() - 1]->getValues(), models[models.size() - 1]->getBufferOffset(), 1, clock(), 1, 1, 1);
+		miku3d->End();
+		glPopMatrix();
+	}
+	fbo->bindDefault();
+	if (useFBO)
+	{
+		fbo->release();
+		fbo_texture = new QOpenGLTexture(fbo->toImage());
+		QVector<GLfloat> fbo_vts;
+		std::vector<int>buffer_size;
+		float frame_size = 200.f;		
+		fbo_texture->bind(0);
+		glPushMatrix();
+			glTranslatef(0, 0, 0);
+			glScalef(1, 1, 1);
+			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			miku->Begin();
+				glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+				fbo_vts.clear();
+				fbo_vts
+					<< -frame_size << -frame_size << 300
+					<< frame_size << -frame_size << 300
+					<< frame_size << frame_size << 300
+					<< frame_size << frame_size << 300
+					<< -frame_size << frame_size << 300
+					<< -frame_size << -frame_size << 300;
+				buffer_size.clear();
+				buffer_size.push_back(18);
+				fbo_vts
+					<< 0 << 1
+					<< 1 << 1
+					<< 1 << 0
+					<< 1 << 0
+					<< 0 << 0
+					<< 0 << 1;
+				buffer_size.push_back(12);
+				miku->shaderProgram->setUniformValue("tex", 0);
+				miku->Render(ProjectionMatrex, ModelViewMatrex, fbo_vts, buffer_size, 1, clock(), 1, 1, 6);
+			miku->End();
+		glPopMatrix();		
 	}
 	glDisable(GL_BLEND);
 	glDisable(GL_ALPHA_TEST);
+}
+void TrainView::paintGL()
+{
+	glViewport(0, 0, width(), height());
+	glClearColor(0, 0, 0, 0);
+	glClearStencil(0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	setProjection();
+	/*useFBO = true;
+	paint();*/
+
+	useFBO = false;
+	paint();
 }
 //************************************************************************
 //
@@ -1275,16 +1319,14 @@ void TrainView::drawStuff(bool doingShadows)
 			if (model_rotate > 360.f)
 				model_rotate = 0.f;
 			path_index++;
-		}
-		
-		drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients,doingShadows);		
-		
+		}		
+		drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients,doingShadows);	
 		if (path_index == path.size() - 1)
 			path_index = 0;		
 	}
 	else if (!isrun && path.size() > 0) 
 	{		
-		drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients, doingShadows);				
+		drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients, doingShadows);		
 	}
 	
 #ifdef EXAMPLE_SOLUTION
@@ -1348,7 +1390,7 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	QVector<float> train_vts;
 	train_vts.clear();
 		
-	pos.y += 3;
+	pos.y += 6;
 	glTranslatef(pos.x, pos.y, pos.z);
 	angle = -radiansToDegrees(atan2(orient_cross.z, orient_cross.x));
 	glRotatef(angle, 0, 1, 0);
@@ -1365,77 +1407,78 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 		glCullFace(GL_FRONT);
 		glFrontFace(GL_CW);
 	}	
-	
-
-	train_vts
-		<< -width + 1 << height << -width + 1 - length
-		<< width - 1 << height << -width + 1 - length
-		<< width - 1 << height + 3 << width - 3
-		<< width - 1 << height + 3 << width - 3
-		<< -width + 1 << height + 3 << width - 3
-		<< -width + 1 << height << -width + 1 - length;
-	train_vts
-		<< -width + 1 <<  height + 3 <<  width - 3
-		<< -width + 1 <<  height <<  -width + 1 - length
-		<< -width + 1 <<  height <<  width - 3
-		<< -width + 1 <<  height <<  width - 3
-		<< -width + 1 <<  height + 3 <<  width - 3
-		<< -width + 1 <<  height + 3 <<  width - 3;
-	train_vts
-		<< width - 1 <<  height + 3 <<  width - 3
-		<< width - 1 <<  height <<  -width + 1 - length
-		<< width - 1 <<  height <<  width - 3
-		<< width - 1 <<  height <<  width - 3
-		<< width - 1 <<  height + 3 <<  width - 3
-		<< width - 1 <<  height + 3 <<  width - 3;			
-	//Bottom
-	train_vts
-		<< -width <<  -height <<  -width - length
-		<< width <<  -height <<  -width - length
-		<< width <<  -height <<  width + length
-		<< width <<  -height <<  width + length
-		<< -width <<  -height <<  width + length
-		<< -width <<  -height <<  -width - length;		
-	//Top
-	train_vts
-		<< -width <<  height <<  -width - length
-		<< width <<  height <<  -width - length
-		<< width <<  height <<  width + length
-		<< width <<  height <<  width + length
-		<< -width <<  height <<  width + length
-		<< -width <<  height <<  -width - length;	
-	//Right
-	train_vts
-		<< -width <<  height <<  -width - length
-		<< -width <<  -height <<  -width - length
-		<< -width <<  -height <<  width + length
-		<< -width <<  -height <<  width + length
-		<< -width <<  height <<  width + length
-		<< -width <<  height <<  -width - length;	
-	//Left
-	train_vts
-		<< width <<  height <<  -width - length
-		<< width <<  -height <<  -width - length
-		<< width <<  -height <<  width + length
-		<< width <<  -height <<  width + length
-		<< width <<  height <<  width + length
-		<< width <<  height <<  -width - length;
-	//Front
-	train_vts
-		<< width <<  height <<  width
-		<< -width <<  height <<  width
-		<< -width <<  -height <<  width
-		<< -width <<  -height <<  width
-		<< width <<  -height <<  width
-		<< width <<  height <<  width;
-	//Rear
-	train_vts
-		<< width <<  height <<  -width
-		<< -width <<  height <<  -width
-		<< -width <<  -height <<  -width
-		<< -width <<  -height <<  -width
-		<< width <<  -height <<  -width
-		<< width <<  height <<  -width;	
+	//Train body
+	{
+		train_vts
+			<< -width + 1 << height << -width + 1 - length
+			<< width - 1 << height << -width + 1 - length
+			<< width - 1 << height + 3 << width - 3
+			<< width - 1 << height + 3 << width - 3
+			<< -width + 1 << height + 3 << width - 3
+			<< -width + 1 << height << -width + 1 - length;
+		train_vts
+			<< -width + 1 << height + 3 << width - 3
+			<< -width + 1 << height << -width + 1 - length
+			<< -width + 1 << height << width - 3
+			<< -width + 1 << height << width - 3
+			<< -width + 1 << height + 3 << width - 3
+			<< -width + 1 << height + 3 << width - 3;
+		train_vts
+			<< width - 1 << height + 3 << width - 3
+			<< width - 1 << height << -width + 1 - length
+			<< width - 1 << height << width - 3
+			<< width - 1 << height << width - 3
+			<< width - 1 << height + 3 << width - 3
+			<< width - 1 << height + 3 << width - 3;
+		//Bottom
+		train_vts
+			<< -width << -height << -width - length
+			<< width << -height << -width - length
+			<< width << -height << width + length
+			<< width << -height << width + length
+			<< -width << -height << width + length
+			<< -width << -height << -width - length;
+		//Top
+		train_vts
+			<< -width << height << -width - length
+			<< width << height << -width - length
+			<< width << height << width + length
+			<< width << height << width + length
+			<< -width << height << width + length
+			<< -width << height << -width - length;
+		//Right
+		train_vts
+			<< -width << height << -width - length
+			<< -width << -height << -width - length
+			<< -width << -height << width + length
+			<< -width << -height << width + length
+			<< -width << height << width + length
+			<< -width << height << -width - length;
+		//Left
+		train_vts
+			<< width << height << -width - length
+			<< width << -height << -width - length
+			<< width << -height << width + length
+			<< width << -height << width + length
+			<< width << height << width + length
+			<< width << height << -width - length;
+		//Front
+		train_vts
+			<< width << height << width
+			<< -width << height << width
+			<< -width << -height << width
+			<< -width << -height << width
+			<< width << -height << width
+			<< width << height << width;
+		//Rear
+		train_vts
+			<< width << height << -width
+			<< -width << height << -width
+			<< -width << -height << -width
+			<< -width << -height << -width
+			<< width << -height << -width
+			<< width << height << -width;
+	}
 	int p = train_vts.size();
 	buffersize.push_back(p);
 	for (size_t i = 0; i < 54; i++)
@@ -1458,6 +1501,8 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	{
 		glDisable(GL_CULL_FACE);
 	}
+	glTranslatef(0,7.f,0);
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 	//Draw nenoroid
 	h = 10.f;
 	w = 9.f;	
@@ -1498,3 +1543,4 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	glDisable(GL_BLEND);
 	glDisable(GL_CULL_FACE);	
 }
+

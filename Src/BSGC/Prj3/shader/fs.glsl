@@ -386,5 +386,26 @@ void main(void)
 			fragmentcolor = color;
             break;
 		}
+		case(10)://Mountain
+		{		
+			vec3 light_direction = normalize(vec3(ModelViewMatrix * vec4(light_position,1.0)) - vpos.xyz);
+			mat3 normalmatrix = transpose(inverse(mat3(ModelViewMatrix)));
+			vec3 normal = normalize(normalmatrix *nor);
+			vec3 camera = vec3(ModelViewMatrix * vec4(camerapos,1.0));			
+			vec3 cameradir = normalize(camera.xyz - vpos.xyz);
+			float dv = dot(light_direction,normal);
+			float diffuse = max(0.0,dv);
+
+			vec3 halfvector = normalize(light_direction+cameradir);
+			float sv = dot(halfvector,normal);
+			float specular = pow(max(0.0,sv),shininess);
+			vec4 light_color = vec4(min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular,0);								
+			vec4 color = texture2D(tex,uv);
+			color = mix(color,light_color,0.3);
+			if(alpha !=1)
+				color.a = alpha;
+			fragmentcolor = color;
+            break;
+		}
     }
 }

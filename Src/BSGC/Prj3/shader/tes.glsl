@@ -24,8 +24,10 @@ void main()
 	if(effect == 7)
     	p.y += texture(heightmap,uv).r * 100 * (sin(time+p.x));
 	else if(effect == 9)
-		p.y += texture(heightmap,uv).r * 150;	
-	gl_Position = ProjectionMatrix * ModelViewMatrix * p;	
+		p.y += texture(heightmap,uv).r * 150;
+	else if(effect == 10)
+		p.y += texture(heightmap,uv).r * 300;
+	gl_Position = ProjectionMatrix * ModelViewMatrix * p;
 	vpos = vec3(ModelViewMatrix * p);
 	
 	//	
