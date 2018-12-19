@@ -149,7 +149,7 @@ void NebulaSmoke()
 void main()
 {
     fragColor = vec4(VertexColor,1.0);
-    NebulaSmoke();
+    //NebulaSmoke();
     //Phosgene();
     //PurpleHalo();
 }

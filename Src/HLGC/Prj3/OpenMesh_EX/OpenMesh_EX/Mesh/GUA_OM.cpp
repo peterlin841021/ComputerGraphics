@@ -580,40 +580,67 @@ std::vector<float> Tri_Mesh::GetMesh(size_t type)
 //	glEnd();
 //	glPopAttrib();
 //}
+
 //void Tri_Mesh::Render_Wireframe()
 //{
 //	//glPushAttrib(GL_LIGHTING_BIT);	
 //	glDisable(GL_LIGHTING);
 //	glLineWidth(1.0);
-//
-//	glColor3f(0.0, 0.0, 0.0);
+//	
+//	glColor3f(0.0, 0.0, 0.0);	
 //
 //	glBegin(GL_LINES);
-//	for (OMT::EIter e_it = edges_begin(); e_it != edges_end(); ++e_it)
+//	for(OMT::EIter e_it = edges_begin(); e_it != edges_end(); ++e_it)
 //	{
-//		OMT::HEHandle _hedge = halfedge_handle(e_it.handle(), 1);
+//		OMT::HEHandle _hedge = halfedge_handle(e_it.handle(),1);
 //
-//		OMT::Point curVertex = point(from_vertex_handle(_hedge));
+//		OMT::Point curVertex  = point(from_vertex_handle(_hedge));
 //		glVertex3dv(curVertex.data());
 //
 //		curVertex = point(to_vertex_handle(_hedge));
-//		glVertex3dv(curVertex.data());
+//		glVertex3dv(curVertex.data());			
 //	}
 //	glEnd();
-//
+//	
 //}
-
-
+glm::vec3 Tri_Mesh::nearest_point(glm::vec3 p, glm::mat4 pm)
+{
+	float min_dis = 100.f;
+	glm::vec3 nearest;
+	for (OMT::VIter v_it = vertices_begin() ; v_it != vertices_end() ; ++v_it)
+	{		 
+		glm::vec4 pp = glm::vec4(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2],1);
+		//pp = pm * pp;
+		float dis = sqrtf(pow(p.x-pp.x,2)+ pow(p.y-pp.y, 2)+ pow(p.z-pp.z, 2));
+		if (dis < min_dis)
+		{
+			min_dis = dis;
+			nearest = glm::vec3(pp.x,pp.y,pp.z);
+		}
+	}
+	return nearest;
+}
 void Tri_Mesh::Render_Point()
 {
-	glPointSize ( 8.0 ) ;				  
+	/*glPointSize ( 8.0 ) ;				  
 	glColor3f( 1.0, 0.0, 0.0 ) ;
-	glBegin(GL_POINTS);
-	for (OMT::VIter v_it = vertices_begin() ; v_it != vertices_end() ; ++v_it)
-	{
-		  glVertex3dv(point(v_it).data());
-	}
-	glEnd();
+	glBegin(GL_POINTS);*/
+	//float min_dis = 10000.f;
+	//glm::vec3 nearest;
+	//for (OMT::VIter v_it = vertices_begin() ; v_it != vertices_end() ; ++v_it)
+	//{
+	//	  //glVertex3dv(point(v_it).data());
+	//	glm::vec4 pp = glm::vec4(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2],1);
+	//	pp = pm * pp;
+	//	float dis = sqrtf(pow(p.x-pp.x,2)+ pow(p.y-pp.y, 2)+ pow(p.z-pp.z, 2));
+	//	if (dis < min_dis)
+	//	{
+	//		min_dis = dis;
+	//		nearest = glm::vec3(pp.x,pp.y,pp.z);
+	//	}
+	//}
+	//printf("x/y/z:%f,%f,%f\n", nearest.x, nearest.y, nearest.z);
+	//glEnd();
 }
 
 bool ReadFile(std::string _fileName,Tri_Mesh *_mesh)

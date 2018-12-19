@@ -13,7 +13,7 @@ xform xf;
 GLCamera camera;
 float fov = 0.7f;
 //For shader
-object model_tri,model_wire;
+object model_tri,model_wire,model_point;
 size_t window_width = 0;
 size_t window_height = 0;
 glm::mat4 ProjectionMatrix;
@@ -186,7 +186,7 @@ namespace OpenMesh_EX
 			this->hkoglPanelControl1->MouseWheel += gcnew System::Windows::Forms::MouseEventHandler(this, &MyForm::hkoglPanelControl1_MouseWheel);
 			// 
 			// timer1
-			//
+			// 
 			this->timer1->Enabled = true;
 			this->timer1->Interval = 10;
 			this->timer1->Tick += gcnew System::EventHandler(this, &MyForm::timer1_Tick);
@@ -201,6 +201,7 @@ namespace OpenMesh_EX
 			this->MainMenuStrip = this->menuStrip1;
 			this->Name = L"MyForm";
 			this->Text = L"OpenMesh_EX";
+			this->Resize += gcnew System::EventHandler(this, &MyForm::MyForm_Resize);
 			this->menuStrip1->ResumeLayout(false);
 			this->menuStrip1->PerformLayout();
 			this->ResumeLayout(false);
@@ -250,6 +251,8 @@ private: System::Void hkoglPanelControl1_Load(System::Object^  sender, System::E
 	model_tri.setShader("vs.glsl", "fs.glsl");
 	model_wire.initialize();
 	model_wire.setShader("vs.glsl", "fs.glsl");
+	model_point.initialize();
+	model_point.setShader("vs.glsl", "fs.glsl");
 }
 void Update()
 {
@@ -344,7 +347,9 @@ private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::
 			{
 				isRotate = true;
 				xOrigin = e->X;
+				//printf("X:%d\n", xOrigin);
 				yOrigin = e->Y;
+				//printf("Y:%d\n", yOrigin);
 			}
 			if (e->Button == System::Windows::Forms::MouseButtons::Middle)
 			{
@@ -352,6 +357,23 @@ private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::
 				xOrigin = e->X;
 				yOrigin = e->Y;
 			}
+			float x = (float)xOrigin / this->Width;			
+			float y = (float)yOrigin / this->Height;
+			if (mesh != NULL)
+			{
+				glm::mat4 mm(1.0);
+				mm *= translate(mat4(1.0), glm::vec3(0, 0, 0));
+				mm *= scale(mat4(1.0), glm::vec3(100, 100, 100));
+				glm::vec3 nearest = mesh->nearest_point(glm::vec3(newCameraPosition[0], newCameraPosition[1], newCameraPosition[2]), ProjectionMatrix);
+				model_point.setPoint(nearest);
+				model_point.setColor(glm::vec3(1,1,1));
+				glEnable(GL_PROGRAM_POINT_SIZE);
+				glPointSize(8.0);
+				model_point.render(GL_POINTS, ProjectionMatrix,mm, ViewMatrix);
+				model_point.clear();
+				printf("(X,Y,Z):(%f,%f,%f)\n", nearest.x, nearest.y, nearest.z);
+			}
+			//printf("x/y:%f/%f\n", x,y);
 		}
 		private: System::Void hkoglPanelControl1_MouseUp(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
 		{
@@ -473,5 +495,10 @@ private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::
 				countTime += 1.0f;
 			hkoglPanelControl1->Invalidate();
 		}
-	};
+		private: System::Void MyForm_Resize(System::Object^  sender, System::EventArgs^  e) 
+		{
+			window_width = this->Width;
+			window_height = this->Height;			
+		}
+};
 }
