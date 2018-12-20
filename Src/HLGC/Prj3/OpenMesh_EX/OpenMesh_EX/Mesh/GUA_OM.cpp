@@ -603,20 +603,24 @@ std::vector<float> Tri_Mesh::GetMesh(size_t type)
 //	glEnd();
 //	
 //}
-glm::vec3 Tri_Mesh::nearest_point(glm::vec3 p, glm::mat4 pm)
+glm::vec3 Tri_Mesh::nearest_point(glm::vec3 p, glm::mat4 pm, glm::mat4 mm)
 {
 	float min_dis = 100.f;
 	glm::vec3 nearest;
 	for (OMT::VIter v_it = vertices_begin() ; v_it != vertices_end() ; ++v_it)
-	{		 
-		glm::vec4 pp = glm::vec4(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2],1);
-		//pp = pm * pp;
+	{	
+		glm::vec3 ori = glm::vec3(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2]);
+		glm::vec4 pp = glm::vec4(ori,1);
+
+		//pp = pm * mm * pp;
 		float dis = sqrtf(pow(p.x-pp.x,2)+ pow(p.y-pp.y, 2)+ pow(p.z-pp.z, 2));
 		if (dis < min_dis)
 		{
-			min_dis = dis;
-			nearest = glm::vec3(pp.x,pp.y,pp.z);
+			
 		}
+		min_dis = dis;
+		nearest = glm::vec3(pp);
+		break;
 	}
 	return nearest;
 }

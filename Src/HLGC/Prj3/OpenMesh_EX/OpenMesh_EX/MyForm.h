@@ -261,6 +261,7 @@ void Update()
 	mm *= scale(mat4(1.0), glm::vec3(10, 10, 10));
 	model_tri.render(GL_TRIANGLES, ProjectionMatrix, mm, ViewMatrix);
 	model_wire.render(GL_LINES, ProjectionMatrix, mm, ViewMatrix);
+	model_point.render(GL_LINES, ProjectionMatrix, mm, ViewMatrix);	
 }
 private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::Windows::Forms::PaintEventArgs^  e)
 {
@@ -362,16 +363,23 @@ private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::
 			if (mesh != NULL)
 			{
 				glm::mat4 mm(1.0);
+				glm::vec3 line_color = glm::vec3(1,1,0);
 				mm *= translate(mat4(1.0), glm::vec3(0, 0, 0));
-				mm *= scale(mat4(1.0), glm::vec3(100, 100, 100));
-				glm::vec3 nearest = mesh->nearest_point(glm::vec3(newCameraPosition[0], newCameraPosition[1], newCameraPosition[2]), ProjectionMatrix);
+				mm *= scale(mat4(1.0), glm::vec3(10, 10, 10));
+				glm::vec3 camerapos = glm::vec3(newCameraPosition[0], newCameraPosition[1], newCameraPosition[2]);				
+				camerapos = glm::vec3( ProjectionMatrix * ViewMatrix * mm * glm::vec4(camerapos,1.0));
+				glm::vec3 nearest = mesh->nearest_point(camerapos, ProjectionMatrix, ViewMatrix);
+				
+			/*	model_point.clear();
 				model_point.setPoint(nearest);
-				model_point.setColor(glm::vec3(1,1,1));
-				glEnable(GL_PROGRAM_POINT_SIZE);
+				model_point.setPoint(camerapos);
+				model_point.setColor(line_color);
+				model_point.setColor(line_color);*/
+				/*glEnable(GL_PROGRAM_POINT_SIZE);
 				glPointSize(8.0);
-				model_point.render(GL_POINTS, ProjectionMatrix,mm, ViewMatrix);
-				model_point.clear();
-				printf("(X,Y,Z):(%f,%f,%f)\n", nearest.x, nearest.y, nearest.z);
+				model_point.render(GL_POINTS, ProjectionMatrix,mm, ViewMatrix);*/				
+				printf("N:(X,Y,Z):(%f,%f,%f)\n", nearest.x, nearest.y, nearest.z);				
+				//printf("C:(X,Y,Z):(%f,%f,%f)\n", camerapos.x, camerapos.y, camerapos.z);
 			}
 			//printf("x/y:%f/%f\n", x,y);
 		}
