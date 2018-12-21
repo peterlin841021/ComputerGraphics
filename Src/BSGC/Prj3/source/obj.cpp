@@ -228,3 +228,121 @@ void Obj::InitShader(size_t shaders)
 	}			
 	shaderProgram->link();
 }
+void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelMatrix, GLfloat* ModelViewMatrix, QVector<GLfloat> values, std::vector<int> buffersize, float alpha, float time, int linetype, int colorMode, int effect)
+{
+	GLfloat P[4][4];
+	GLfloat MV[4][4];
+	GLfloat M[4][4];
+	DimensionTransformation(ProjectionMatrix, P);
+	DimensionTransformation(ModelViewMatrix, MV);
+	DimensionTransformation(ModelMatrix, M);
+	shaderProgram->setUniformValue("ProjectionMatrix", P);
+	shaderProgram->setUniformValue("ModelViewMatrix", MV);
+	shaderProgram->setUniformValue("ModelMatrix", M);	
+	shaderProgram->setUniformValue("effect", effect);
+	shaderProgram->setUniformValue("colormode", colorMode);
+	shaderProgram->setUniformValue("alpha", alpha);
+	shaderProgram->setUniformValue("time", time);
+	QVector<GLfloat> positions, colors, texturecoords, indexes, normals;
+
+	for (size_t i = 0; i < buffersize[0] + buffersize[1]; i++)
+	{
+		if (i < buffersize[0])
+			positions << values[i];
+		else
+			positions << 0;
+	}
+	if (buffersize.size() == 2)
+	{
+		for (size_t i = buffersize[0]; i < buffersize[0] + buffersize[1]; i++)
+		{
+			colors << values[i];
+		}
+	}
+	if (buffersize.size() == 3)
+	{
+		for (size_t i = buffersize[0] + buffersize[1]; i < buffersize[0] + buffersize[1] + buffersize[2]; i++)
+		{
+			normals << values[i];
+		}
+	}
+	vbo.bind();
+	vbo.allocate(positions.constData(), (buffersize[0] + buffersize[1]) * sizeof(GLfloat));
+	shaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 3, 0);
+	shaderProgram->enableAttributeArray(0);
+	if (colorMode == 0)
+	{
+		vbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
+		shaderProgram->setAttributeBuffer(2, GL_FLOAT, buffersize[0] * sizeof(GLfloat), 3, 0);
+		shaderProgram->enableAttributeArray(2);
+		if (buffersize.size() == 3)
+		{
+			vbo.write((buffersize[0] + buffersize[1]) * sizeof(GLfloat), normals.constData(), buffersize[2] * sizeof(GLfloat));
+			shaderProgram->setAttributeBuffer(3, GL_FLOAT, (buffersize[0] + buffersize[1]) * sizeof(GLfloat), 3, 0);
+			shaderProgram->enableAttributeArray(3);
+		}
+	}
+	else if (colorMode == 1)
+	{
+		if (buffersize[1] != 0)
+		{
+			vbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
+			shaderProgram->setAttributeBuffer(1, GL_FLOAT, buffersize[0] * sizeof(GLfloat), 2, 0);
+			shaderProgram->enableAttributeArray(1);
+		}
+	}
+	switch (linetype)
+	{
+	case 0:
+		glDrawArrays(GL_LINES, 0, positions.size() / 2);
+		break;
+	case 1:
+		glDrawArrays(GL_TRIANGLES, 0, positions.size() / 3);
+		break;
+	default:
+		break;
+	}
+	vbo.release();
+}
+void Obj::Render(GLfloat* ProjectionMatrix, GLfloat* ModelMatrix, GLfloat* ModelViewMatrix, QVector<GLfloat> values, std::vector<int> buffersize, float alpha, float time, int effect)
+{
+	GLfloat P[4][4];
+	GLfloat MV[4][4];
+	GLfloat M[4][4];
+	DimensionTransformation(ProjectionMatrix, P);
+	DimensionTransformation(ModelViewMatrix, MV);
+	DimensionTransformation(ModelMatrix, M);
+	shaderProgram->setUniformValue("ProjectionMatrix", P);
+	shaderProgram->setUniformValue("ModelViewMatrix", MV);
+	shaderProgram->setUniformValue("ModelMatrix", M);
+	shaderProgram->setUniformValue("effect", effect);
+	shaderProgram->setUniformValue("alpha", alpha);
+	shaderProgram->setUniformValue("time", time);
+	QVector<GLfloat> positions, colors, texturecoords, indexes;
+
+	for (size_t i = 0; i < buffersize[0] + buffersize[1]; i++)
+	{
+		if (i < buffersize[0])
+			positions << values[i];
+		else
+			positions << 0;
+	}
+	for (size_t i = buffersize[0]; i < buffersize[0] + buffersize[1]; i++)
+	{
+		colors << values[i];
+	}
+
+	vbo.bind();
+	vbo.allocate(positions.constData(), (buffersize[0] + buffersize[1]) * sizeof(GLfloat));
+	shaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 3, 0);
+	shaderProgram->enableAttributeArray(0);
+	if (buffersize[1] != 0)
+	{
+		vbo.write(buffersize[0] * sizeof(GLfloat), colors.constData(), buffersize[1] * sizeof(GLfloat));
+		shaderProgram->setAttributeBuffer(1, GL_FLOAT, buffersize[0] * sizeof(GLfloat), 2, 0);
+		shaderProgram->enableAttributeArray(1);
+	}
+	shaderProgram->setPatchVertexCount(4);
+	glDrawArrays(GL_PATCHES, 0, 4);
+	vbo.release();
+}

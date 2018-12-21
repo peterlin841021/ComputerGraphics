@@ -11,6 +11,7 @@ uniform mat4 ModelViewMatrix;
 uniform sampler2D heightmap;
 uniform int effect;
 uniform float time;
+uniform mat4 ModelMatrix;
 void main()
 {  
     vec2 tc1 = mix(tc_out[0], tc_out[3], gl_TessCoord.x);

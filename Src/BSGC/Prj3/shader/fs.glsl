@@ -9,14 +9,17 @@ in vec3 vpos;
 in vec3 vs_normal;
 in vec3 nor;
 in vec2 uv;
+in vec3 light_vector;
 out vec4 fragmentcolor;
-vec3 color_diffuse = vec3(0.3,0.3,0.3);
+vec3 color_diffuse = vec3(0.8,0.8,0.8);
 vec3 color_specular = vec3(1.0,1.0,1.0);
-//vec3 color_ambient = vec3(0.5,0.5,1.0);
-vec3 color_ambient = vec3(0.7,0.7,1.0);
+vec3 color_ambient = vec3(0.3,0.3,0.3);
+//vec3 color_ambient = vec3(0.4,0.4,0.4);
+//vec3 color_border = vec3(0,0,0);
 vec3 light_position = vec3(30.f,50.f,560.f);
+//vec3 light_position = vec3(0,1,1);
 vec3 c = vec3(0.6,0.6,0.6);
-float shininess = 20.f;
+float shininess = 77.f;
 float reflectivity = 0.6f;
 float eta = 0.66;
 uniform int effect;
@@ -26,6 +29,8 @@ uniform sampler2D normalmap;
 uniform samplerCube texcube;
 uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewMatrix;
+uniform mat4 ModelMatrix;
+
 uniform float time;
 
 /***********Nebula smoke**************/
@@ -291,77 +296,80 @@ void main(void)
 		    DanceFloor();
             break;
 		}
-		case(7)://Tessellation
-		{			
-			//vec3 light_direction = normalize(vpos.xyz - vec3(ModelViewMatrix * vec4(light_position,1.0)));
-			vec3 light_direction = normalize(vec3(ModelViewMatrix * vec4(light_position,1.0)) - vpos.xyz);
-			vec4 normalmapcolor = texture(normalmap,uv);
+		case(7)://Water
+		{
+			vec3 light_vector = normalize(light_position - vpos.xyz);
+			//vec4 normalmapcolor = texture(normalmap,uv);
+			vec4 black = vec4(0,0,0,1);
 			//vec3 normal = vec3(normalmapcolor.r * 2 - 1,normalmapcolor.b,normalmapcolor.g * 2 - 1);			
-			mat3 normalmatrix = transpose(inverse(mat3(ModelViewMatrix)));
-			vec3 normal = normalize(normalmatrix *nor);			
-
+			//mat3 normalmatrix = transpose(inverse(mat3(ModelViewMatrix)));
+			vec3 normal = normalize((ModelViewMatrix *vec4(nor,0))).xyz;
+			//vec3 normal = nor;
 			vec3 camera = vec3(ModelViewMatrix * vec4(camerapos,1.0));			
 			vec3 cameradir = normalize(camera.xyz - vpos.xyz);
-			float dv = dot(light_direction,normal);
+			float dv = dot(light_vector,normal);
 			float diffuse = max(0.0,dv);
 
-			vec3 halfvector = normalize(light_direction+cameradir);
-			float sv = dot(halfvector,normal);
+			vec3 light_reflect = normalize(reflect(-light_vector,normal));
+			vec3 halfvector = normalize(light_vector+cameradir);
+			float sv = dot(light_reflect,normal);
 			float specular = pow(max(0.0,sv),shininess);
-			vec4 light_color = vec4(min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular,0);
-						
+			
+			//vec4 light_color = vec4(min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular,0);						
 			vec3 RefractVec = refract(cameradir,normal, eta);
     		vec3 ReflectVec = reflect(cameradir, normal);	
 		
 			vec4 RefractColor = texture(texcube,RefractVec);
 			vec4 ReflectColor = texture(texcube,ReflectVec);			
-			vec4 color = texture2D(tex,uv);//Water
-			color *= light_color;
-			color = mix(color,RefractColor,0.7);
-			color = mix(color,ReflectColor,0.7);
-			color += vec4(0,0,0.1,0);			
+			vec4 water_color = texture2D(tex,uv);//Water
+			water_color = mix(water_color,RefractColor,0.4);
+			water_color = mix(water_color,ReflectColor,0.4);
+			water_color += vec4(0,0,0.1,0);
+			black += water_color * vec4(color_ambient,1);
+			black += water_color * diffuse * vec4(color_diffuse,1);
+			black += water_color * specular * vec4(color_specular,1);
+									
 			if(alpha !=1)
-				color.a = alpha;			
-			fragmentcolor = color;
+				black.a = alpha;			
+			fragmentcolor = black;
             break;
 		}
 		case(8)://Miku reflection
 		{
-		    vec3 light_direction = normalize(vec3(ModelViewMatrix * vec4(light_position,1.0)) - texturecoord3d.xyz);
-			
 			vec3 normal = vs_normal;
-			mat3 normalmatrix = transpose(inverse(mat3(ModelViewMatrix)));			
-			normal = normalize(normalmatrix * normal);
-
 			vec3 camera = vec3(ModelViewMatrix * vec4(camerapos,1.0));			
-			vec3 cameradir = normalize(camera.xyz - vec3(ModelViewMatrix * vec4(texturecoord3d,1.0)));			
-			float dv = dot(light_direction,vs_normal);
+			vec3 cameradir = normalize(camera.xyz - vec3(ModelViewMatrix * vec4(texturecoord3d,1.0)));
+			vec4 black = vec4(0,0,0,1);
+			float dv = dot(light_vector,normal);
 			float diffuse = max(0.0,dv);
 
-			vec3 halfvector = normalize(light_direction+cameradir);
-			float sv = dot(halfvector,vs_normal);			
-			float specular = pow(max(0.0,sv),shininess);
-			vec3 light_color = min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular;			
-						
-			vec3 RefractVec = refract(cameradir,vs_normal, eta);
-    		vec3 ReflectVec = reflect(cameradir,vs_normal);	
+			vec3 light_reflect = normalize(reflect(-light_vector,normal));
+			vec3 halfvector = normalize(light_vector+cameradir);
+			float sv = dot(light_reflect,normal);			
+			float specular = pow(max(0.0,sv),shininess);				
+			vec3 RefractVec = refract(cameradir,normal, eta);
+    		vec3 ReflectVec = reflect(cameradir,normal);	
 			RefractVec = vec3(RefractVec.x,-RefractVec.y,-RefractVec.z);
 			ReflectVec = vec3(ReflectVec.x,-ReflectVec.y,-ReflectVec.z);
-
+			
 			vec4 RefractColor = texture(texcube,RefractVec);
 			vec4 ReflectColor = texture(texcube,ReflectVec);			
-			ReflectColor = mix(RefractColor,ReflectColor,0.5);			
+												
 			vec4 color = texture2D(tex,texturecoord);
-			color += vec4(light_color,0);
-			color = mix(color,ReflectColor,0.5);			
+			// color = mix(color,RefractColor,0.7);
+			// color = mix(color,ReflectColor,0.7);
+			
+			black += color * vec4(color_ambient,1);
+			black += color * diffuse * vec4(color_diffuse,1);
+			black += color * specular * vec4(color_specular,1);
 			if(alpha !=1)
-				color.a = alpha;			
-			fragmentcolor = color;            
+				black.a = alpha;			
+			fragmentcolor = black;            
             break;
 		}
 		case(9)://Terrain
 		{		
-			vec3 light_direction = normalize(vec3(ModelViewMatrix * vec4(light_position,1.0)) - vpos.xyz);
+			vec3 light_direction = normalize(light_position.xyz - vpos.xyz);
 			mat3 normalmatrix = transpose(inverse(mat3(ModelViewMatrix)));
 			vec3 normal = normalize(normalmatrix *nor);
 			vec3 camera = vec3(ModelViewMatrix * vec4(camerapos,1.0));			
@@ -388,23 +396,40 @@ void main(void)
 		}
 		case(10)://Mountain
 		{		
-			vec3 light_direction = normalize(vec3(ModelViewMatrix * vec4(light_position,1.0)) - vpos.xyz);
-			mat3 normalmatrix = transpose(inverse(mat3(ModelViewMatrix)));
-			vec3 normal = normalize(normalmatrix *nor);
-			vec3 camera = vec3(ModelViewMatrix * vec4(camerapos,1.0));			
-			vec3 cameradir = normalize(camera.xyz - vpos.xyz);
-			float dv = dot(light_direction,normal);
+			vec3 light_vector = normalize(light_position.xyz - vpos.xyz);
+			vec4 black = vec4(0,0,0,1);		
+			vec3 normal = normalize(ModelViewMatrix * vec4(nor,0)).xyz;			
+			float dv = dot(light_vector,normal);
+			float diffuse = max(0.0,dv);		
+			float sv = dot(light_vector,normal);
+			float specular = pow(max(0.0,sv),shininess);			;								
+			vec4 color = texture2D(tex,uv);				
+			black += color * vec4(color_ambient,1);
+			black += color * diffuse * vec4(color_diffuse,1);
+			black += color * specular * vec4(color_specular,1);
+			if(alpha !=1)
+				black.a = alpha;
+			fragmentcolor = black;
+            break;
+		}
+		case(11)://Model with lighting
+		{
+			vec3 normal = vs_normal;		
+			vec4 black = vec4(0,0,0,1);
+			float dv = dot(light_vector,normal);
 			float diffuse = max(0.0,dv);
 
-			vec3 halfvector = normalize(light_direction+cameradir);
-			float sv = dot(halfvector,normal);
-			float specular = pow(max(0.0,sv),shininess);
-			vec4 light_color = vec4(min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular,0);								
-			vec4 color = texture2D(tex,uv);
-			color = mix(color,light_color,0.3);
+			vec3 light_reflect = normalize(reflect(-light_vector,normal));
+		
+			float sv = dot(light_reflect,normal);			
+			float specular = pow(max(0.0,sv),shininess);																										
+			vec4 color = texture2D(tex,texturecoord);		
+			black += color * vec4(color_ambient,1);
+			black += color * diffuse * vec4(color_diffuse,1);
+			black += color * specular * vec4(color_specular,1);
 			if(alpha !=1)
-				color.a = alpha;
-			fragmentcolor = color;
+				black.a = alpha;			
+			fragmentcolor = black;            
             break;
 		}
     }
