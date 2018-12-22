@@ -7,8 +7,6 @@ out vec2 tc_out[];
 void main()
 {
     int part = 16;
-    if(effect == 10)
-        part = 64;
     if(gl_InvocationID == 0)
     {        
         gl_TessLevelInner[0] = part;

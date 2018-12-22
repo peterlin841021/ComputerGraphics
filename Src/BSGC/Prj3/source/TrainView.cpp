@@ -5,24 +5,28 @@
 #define VT_WATER false
 #define SLEEPER false
 
-bool trackupdate = true;
-int train_speed = 5;
+//bool trackupdate = true;
+//int train_speed = 5;
 int uv_size = 0;
-float t_temp = 0;
-float uv[12] = { 0.f , 0.f, 1.f , 0.f, 1.f , 1.f, 1.f , 1.f, 0.f , 1.f, 0.f , 0.f };
+//float t_temp = 0;
+//float uv[12] = { 0.f , 0.f, 1.f , 0.f, 1.f , 1.f, 1.f , 1.f, 0.f , 1.f, 0.f , 0.f };
 int pos_size = 0;
-float rightarmangle = 0;
-float model_rotate = 0;
-float offset = 5.f;
-float wt = 0;
-float shake = 0.5f;
+int normal_size = 0;
+//float rightarmangle = 0;
+//float model_rotate = 0;
+//float offset = 5.f;
+//float wt = 0;
+//float shake = 0.5f;
 GLuint highmap_textureid = 0;
 GLuint normalmap_textureid = 0;
 GLuint terrain_textureid = 0;
 //FBO
 QOpenGLFramebufferObject *fbo;
 QOpenGLTexture *fbo_texture;
-bool useFBO = false;
+void TrainView::changeEffect(size_t effectNum)
+{
+	this->effectNum = effectNum;	
+}
 struct Model
 {
 private:
@@ -79,7 +83,35 @@ void generateTextureCube(std::vector<QImage> images, QVector<QOpenGLTexture*> *t
 	t->setWrapMode(QOpenGLTexture::ClampToEdge);
 	textures->push_back(t);
 }
+void TrainView::myTimer()
+{
+	clock_t currentTime = clock();
+	float effect_interval = 100.f;
+	float model_interval = 100.f;
+	if (isrun && (currentTime - train_clock) > train_interval)
+	{
+		train_clock = currentTime;
+		path_index++;
+		if (path_index == path.size())
+			path_index = 0;
+	}
+	if ((currentTime - effect_clock) > effect_interval)
+	{
+		effect_clock = currentTime;
+	}
+	if ((currentTime - model_clock) > model_interval)
+	{
+		model_clock = currentTime;
+		wholeRotateAngle = (wholeRotateAngle < 360.f) ? wholeRotateAngle+=changeAngle:0.f;
+		if (rightArmAngle < -100.f)
+			angleTemp = changeAngle;
+		else if (rightArmAngle > 0.f)
+			angleTemp = changeAngleOpposite;
 
+		rightArmAngle += angleTemp;		
+		shadowShake = (shadowShake < 10.f) ? shadowShake += 1.f : (shadowShake > -10.f) ? shadowShake -= 1.f : shadowShake += 1.f;
+	}
+}
 void TrainView::initializeGL()
 {		
 	trackobj = new Obj();
@@ -148,7 +180,7 @@ void TrainView::initializeGL()
 		loadmodel("./src/BSGC/prj3/3dmodel/MikuRightCalf.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuRC, &Textures);
 		loadmodel("./src/BSGC/prj3/3dmodel/scallion.obj", "./src/BSGC/prj3/3dmodel/scallion.png", scallion, &Textures);
 		//
-		//loadmodel("./src/BSGC/prj3/3dmodel/tunnel.obj", "./src/BSGC/prj3/3dmodel/tunnel_diffusemap.jpg", tunnel, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/tunnel.obj", "./src/BSGC/prj3/3dmodel/tunnel_diffusemap.jpg", tunnel, &Textures);
 	}
 	{//Model vector
 		models.push_back(mikuhair);
@@ -166,7 +198,7 @@ void TrainView::initializeGL()
 		models.push_back(mikuRT);
 		models.push_back(mikuRC);
 		models.push_back(scallion);
-		//models.push_back(tunnel);		
+		models.push_back(tunnel);		
 	}
 	fbo = new QOpenGLFramebufferObject(width(), height(), QOpenGLFramebufferObject::Depth);	
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/miku_transparent.png")));//FBO
@@ -267,11 +299,12 @@ void loadmodel(string modelname,string texturename, Model *model, QVector<QOpenG
 	{
 		model_vts << vt[f[i].y()-1].x() << vt[f[i].y()-1].y();
 	}
+	uv_size = (model_vts.size() - pos_size);
 	for (size_t i = 0; i < f.size(); i++)
 	{
 		model_vts << vn[f[i].z() - 1].x() << vn[f[i].z() - 1].y() << vn[f[i].z() - 1].z();;
 	}
-	uv_size = (model_vts.size() - pos_size);
+	normal_size = (model_vts.size() - pos_size - uv_size);
 	model->setValues(model_vts);
 	QOpenGLTexture *tex = new QOpenGLTexture(QImage(stringToChar(texturename)));
 	tex->setMinificationFilter(QOpenGLTexture::Linear);
@@ -282,6 +315,7 @@ void loadmodel(string modelname,string texturename, Model *model, QVector<QOpenG
 	std::vector<int> bufferoffset;
 	bufferoffset.push_back(pos_size);
 	bufferoffset.push_back(uv_size);
+	bufferoffset.push_back(normal_size);
 	model->setBufferOffset(bufferoffset);	
 }
 void TrainView::initializeTexture()
@@ -312,7 +346,9 @@ void TrainView::initializeTexture()
 	terrain_textureid = Textures.size();
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/terrain.jpg")));
 	mountain->textureId = Textures.size();
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/mountain.jpg")));	
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/mountain.jpg")));
+	trackobj->textureId = Textures.size();
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/train.png")));
 }
 TrainView::TrainView(QWidget *parent) :  
 QGLWidget(parent)  
@@ -331,10 +367,12 @@ void TrainView:: resetArcball()
 }
 void TrainView::changeSpeed(int speed) 
 {
-	train_speed = speed;		
+	train_interval = 1000.f - 999.f * (float)(speed/100.f);
 }
 void TrainView::paint()
-{	
+{
+	//Update time
+	myTimer();
 	glEnable(GL_DEPTH);
 	if (useFBO)
 	{
@@ -352,9 +390,10 @@ void TrainView::paint()
 		glDisable(GL_LIGHT1);
 		glDisable(GL_LIGHT2);
 	}
-	else {
-		//glEnable(GL_LIGHT1);
-		//glEnable(GL_LIGHT2);
+	else 
+	{
+		glEnable(GL_LIGHT1);
+		glEnable(GL_LIGHT2);
 	}
 	GLfloat lightPosition1[] = { 0,1,1,0 }; // {50, 200.0, 50, 1.0};
 	GLfloat lightPosition2[] = { 1, 0, 0, 0 };
@@ -452,9 +491,8 @@ void TrainView::paint()
 		skybox_vts << skyboxVertices[i];
 	}
 
-	buffer_size.push_back(vt_size);
-	buffer_size.push_back(0);
-	skybox->Render(ProjectionMatrex, ModelViewMatrex, skybox_vts, buffer_size, 0.5, clock(), 1, 1, 2);
+	buffer_size.push_back(vt_size);	
+	skybox->Render(GL_TRIANGLES,false,1,ProjectionMatrex, ModelViewMatrex, skybox_vts, buffer_size, 1.f, effect_clock,(effectNum == 0?2: effectNum));
 	skybox_vts.clear();
 	buffer_size.clear();
 	skybox->End();
@@ -467,7 +505,7 @@ void TrainView::paint()
 	glPopMatrix();
 
 	//Draw land
-	float horizon = -230.f;
+	float horizon = -250.f;
 	glPushMatrix();
 	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 	land->Begin();
@@ -481,9 +519,8 @@ void TrainView::paint()
 		<< boxsize << horizon << boxsize
 		<< -boxsize << horizon << boxsize;
 	buffer_size.clear();
-	buffer_size.push_back(12);
-	buffer_size.push_back(0);
-	land->Render(ProjectionMatrex, ModelViewMatrex, land_vts, buffer_size, 1.f, 0, 9);
+	buffer_size.push_back(12);	
+	land->Render(GL_PATCHES,true,0,ProjectionMatrex, ModelViewMatrex, land_vts, buffer_size, 1.f, effect_clock, effectNum);
 	land->End();
 	glPopMatrix();
 
@@ -505,8 +542,7 @@ void TrainView::paint()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	water->Begin();
 	water->shaderProgram->setUniformValue("tex", water->textureId);
-	water->shaderProgram->setUniformValue("heightmap", highmap_textureid);
-	//water->shaderProgram->setUniformValue("normalmap", normalmap_textureid);
+	water->shaderProgram->setUniformValue("heightmap", highmap_textureid);	
 	water->shaderProgram->setUniformValue("texcube", skybox->textureId);
 	water->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx, arcball.posy, arcball.posz));
 
@@ -518,60 +554,6 @@ void TrainView::paint()
 	float padding = 0;
 
 	QVector<GLfloat> water_vertices;
-	//{
-	//	if (wt == 0)
-	//		wt = clock();
-	//	for (int i = 0; i < water_size; i++)
-	//	{
-	//		wt = clock();		
-	//		for (int j = 0; j < water_size; j++)
-	//		{			
-	//			if(old_wave_height == 0)
-	//				old_wave_height = amplitude * sin(step + wt * speed / 5.f);
-	//			else
-	//				old_wave_height = wave_height;
-	//			wave_height = amplitude * sin(step + wt*((water_size - i)*(j+1))/5.f* speed/5.f);
-	//			xfrom = min + step * j + offset;
-	//			xto = min + step * (j + 1) + offset;
-	//			zfrom = min + step * i;
-	//			zto = min + step * (i + 1);
-	//			//pos
-	//			water_vertices
-	//				<< xfrom  << wy + old_wave_height << zto 
-	//				<< xto  << wy + wave_height << zto 
-	//				<< xto  << wy + wave_height << zfrom;
-	//			water_vertices
-	//				<< xto  << wy + wave_height << zfrom 
-	//				<< xfrom  << wy + old_wave_height << zfrom 
-	//				<< xfrom  << wy + old_wave_height << zto ;
-	//		}		
-	//	}
-	//	for (int i = 0; i < water_size; i++)
-	//	{
-	//		for (int j = 0; j < water_size; j++)
-	//		{
-	//			//uvs
-	//			water_vertices
-	//				<< i / ratio << (j + 1) / ratio
-	//				<< (i + 1) / ratio << (j + 1) / ratio
-	//				<< (i + 1) / ratio << j / ratio
-	//				<< (i + 1) / ratio << j / ratio
-	//				<< i / ratio << j / ratio
-	//				<< i / ratio << (j + 1) / ratio
-	//				<< i / ratio << (j + 1) / ratio
-	//				<< (i + 1) / ratio << (j + 1) / ratio
-	//				<< (i + 1) / ratio << j / ratio
-	//				<< (i + 1) / ratio << j / ratio
-	//				<< i / ratio << j / ratio
-	//				<< i / ratio << (j + 1) / ratio;
-	//		}
-	//	}	
-	//	buffer_size.clear();
-	//	buffer_size.push_back(18 * water_size * water_size);
-	//	buffer_size.push_back(24 * water_size * water_size);
-	//	if(VT_WATER)
-	//		water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size,0.7f,0,1,1,1);
-	//}
 	water_vertices.clear();
 	buffer_size.clear();
 	water_vertices
@@ -581,7 +563,7 @@ void TrainView::paint()
 		<< min << wy << -min;
 	buffer_size.push_back(12);
 	buffer_size.push_back(0);
-	water->Render(ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7, clock()*0.001, 7);
+	water->Render(GL_PATCHES,true,2,ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7, effect_clock*0.001f, effectNum);
 	water->End();
 	water_vertices.clear();
 	buffer_size.clear();
@@ -591,19 +573,14 @@ void TrainView::paint()
 	glPushMatrix();
 	if (this->camera != 1)
 	{
-		if (isrun)
-			glTranslatef(0, shake, 0);
+		glTranslatef(0, shadowShake, 0);
 		setupShadows();
 		drawStuff(true);
-		unsetupShadows();
-		if (shake > 0)
-			shake = -shake;
-		else
-			shake = -shake;
+		unsetupShadows();		
 	}
 	glPopMatrix();
 	//Draw mountains
-	float mountain_h = 200.f;
+	float mountain_h = -125.f;
 	glPushMatrix();
 	QMatrix4x4 m;
 	m.setToIdentity();
@@ -614,14 +591,14 @@ void TrainView::paint()
 	mountain->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx, arcball.posy, arcball.posz));
 	QVector<GLfloat> mountain_vts;
 	mountain_vts
-		<< -200.f << horizon << -200.f
-		<< 200.f << horizon << -200.f
-		<< 200.f << horizon << 200.f
-		<< -200.f << horizon << 200.f;
+		<< -200.f << mountain_h << -200.f
+		<< 200.f << mountain_h << -200.f
+		<< 200.f << mountain_h << 200.f
+		<< -200.f << mountain_h << 200.f;
 	buffer_size.clear();
 	buffer_size.push_back(12);
 	buffer_size.push_back(0);
-	mountain->Render(ProjectionMatrex,m.data(), ModelViewMatrex, mountain_vts, buffer_size, 1.f, 0, 10);
+	mountain->Render(GL_PATCHES,true,0,ProjectionMatrex,ModelViewMatrex, mountain_vts, buffer_size, 1.f, effect_clock, effectNum);
 	mountain->End();
 	glPopMatrix();
 	float right_position[15][3]
@@ -661,10 +638,10 @@ void TrainView::paint()
 		QMatrix4x4 m;
 		m.setToIdentity();
 		glTranslatef(0, 130, 0);
-		glRotatef(model_rotate, 0, 1, 0);
+		glRotatef(wholeRotateAngle, 0, 1, 0);
 		glScalef(1, 1, 1);
 		m.translate(QVector3D(0, 130, 0));
-		m.rotate(model_rotate,QVector3D(0, 1, 0));
+		m.rotate(wholeRotateAngle,QVector3D(0, 1, 0));
 		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -754,12 +731,13 @@ void TrainView::paint()
 			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
 			miku3d->shaderProgram->setUniformValue("texcube", skybox->textureId);
 			if (i != 14)
-				miku3d->Render(ProjectionMatrex, m.data(), ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 0.6f, clock(), 1, 1, 8);
+				miku3d->Render(GL_TRIANGLES,false,3,ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 0.6f,effect_clock, effectNum);
 			glPopMatrix();
 		}
 		miku3d->End();
 		glPopMatrix();
 	}
+
 	//Draw 3d models
 	{
 		glPushMatrix();
@@ -799,18 +777,18 @@ void TrainView::paint()
 			case 7://RFA
 				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
 				glRotatef(30.f, 0, 0, 1);
-				glRotatef(rightarmangle, 1, 0, 0);
+				glRotatef(rightArmAngle, 1, 0, 0);
 				break;
 			case 8:
 				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
 				glRotatef(30.f, 0, 0, 1);
-				glRotatef(rightarmangle, 1, 0, 0);
+				glRotatef(rightArmAngle, 1, 0, 0);
 				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
 				break;
 			case 9:
 				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
 				glRotatef(30.f, 0, 0, 1);
-				glRotatef(rightarmangle, 1, 0, 0);
+				glRotatef(rightArmAngle, 1, 0, 0);
 				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
 				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
 				break;
@@ -831,20 +809,20 @@ void TrainView::paint()
 			case 14:
 				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
 				glRotatef(30.f, 0, 0, 1);
-				glRotatef(rightarmangle, 1, 0, 0);
+				glRotatef(rightArmAngle, 1, 0, 0);
 				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
 				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
 				break;
 			}
 			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
-			miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1, clock(), 1, 1, 11);
+			miku3d->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1.f, effect_clock, effectNum);
 			glPopMatrix();
 		}
 		miku3d->End();
 		glPopMatrix();
-		//*********************************//	
 	}
+	
 	//3D tunnel
 	{
 		glPushMatrix();
@@ -856,7 +834,7 @@ void TrainView::paint()
 		miku3d->Begin();
 		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		miku3d->shaderProgram->setUniformValue("tex", models[models.size() - 1]->getTextureid());
-		miku3d->Render(ProjectionMatrex, ModelViewMatrex, models[models.size() - 1]->getValues(), models[models.size() - 1]->getBufferOffset(), 1, clock(), 1, 1, 1);
+		miku3d->Render(GL_TRIANGLES, false, 0,ProjectionMatrex, ModelViewMatrex, models[models.size() - 1]->getValues(), models[models.size() - 1]->getBufferOffset(),1.f, effect_clock, effectNum);
 		miku3d->End();
 		glPopMatrix();
 	}
@@ -896,7 +874,7 @@ void TrainView::paint()
 					<< 0 << 1;
 				buffer_size.push_back(12);
 				miku->shaderProgram->setUniformValue("tex", 0);
-				miku->Render(ProjectionMatrex, ModelViewMatrex, fbo_vts, buffer_size, 1, clock(), 1, 1, 6);
+				miku->Render(GL_TRIANGLES,false,0,ProjectionMatrex, ModelViewMatrex, fbo_vts, buffer_size, 1, effect_clock, effectNum);
 			miku->End();
 		glPopMatrix();		
 	}
@@ -914,7 +892,6 @@ void TrainView::paintGL()
 	setProjection();
 	/*useFBO = true;
 	paint();*/
-
 	useFBO = false;
 	paint();
 }
@@ -1250,63 +1227,69 @@ void TrainView::drawTrack(bool doingShadows)
 	buffer_size.push_back(color_counts);//Colors
 	trackobj->Begin();
 	if (!doingShadows)
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size,1.f,clock(),1,0,3);
+		trackobj->Render(GL_TRIANGLES,false,0,ProjectionMatrex, ModelViewMatrex, tracks, buffer_size,1.f,effect_clock,(effectNum == 0?3: effectNum));
 	else
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 0.4f, clock(),1, 0, 0);
+		trackobj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 0.4f, effect_clock, effectNum);
 	trackobj->End();
 	buffer_size.clear();
 	tracks.clear();
 	//Draw connects
-	for (size_t i = 0; i < connect_tail.size() - 1; i += 2)
-	{		
-		tracks
-			<< connect_tail[i].x << connect_tail[i].y << connect_tail[i].z
-			<< connect_head[(i + 2) % connect_head.size()].x << connect_head[(i + 2) % connect_head.size()].y << connect_head[(i + 2) % connect_head.size()].z
-			<< connect_tail[i + 1].x << connect_tail[i + 1].y << connect_tail[i + 1].z
-			<< connect_head[(i + 3) % connect_head.size()].x << connect_head[(i + 3) % connect_head.size()].y << connect_head[(i + 3) % connect_head.size()].z;
-	}
-	buffer_size.push_back(tracks.size());
-	color_counts = tracks.size();
-	for (size_t i = 0; i < color_counts; i++)
+	if (track != 0)
 	{
-		tracks << 0;
-	}
-	buffer_size.push_back(color_counts);
-	trackobj->Begin();
-	if (!doingShadows)
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 1.f, clock(), 0, 0, 3);
-	else
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 0.4f, clock(), 0, 0, 0);
-	trackobj->End();
-
-	//Draw sleepers
-	buffer_size.clear();
-	color_counts = sleepers.size();
-	buffer_size.push_back(sleepers.size());
-	for (size_t i = 0; i < color_counts; i++)
-	{
-		sleepers << 1.f;
-	}	
-	buffer_size.push_back(color_counts);
-	trackobj->Begin();
-	if (SLEEPER)
-	{
+		for (size_t i = 0; i < connect_tail.size() - 1; i += 2)
+		{
+			tracks
+				<< connect_tail[i].x << connect_tail[i].y << connect_tail[i].z
+				<< connect_head[(i + 2) % connect_head.size()].x << connect_head[(i + 2) % connect_head.size()].y << connect_head[(i + 2) % connect_head.size()].z
+				<< connect_tail[i + 1].x << connect_tail[i + 1].y << connect_tail[i + 1].z
+				<< connect_head[(i + 3) % connect_head.size()].x << connect_head[(i + 3) % connect_head.size()].y << connect_head[(i + 3) % connect_head.size()].z;
+		}
+		buffer_size.push_back(tracks.size());
+		color_counts = tracks.size();
+		for (size_t i = 0; i < color_counts; i++)
+		{
+			tracks << 0;
+		}
+		buffer_size.push_back(color_counts);
+		trackobj->Begin();
 		if (!doingShadows)
-			trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 1.f, clock(), 0, 0, 3);
+			trackobj->Render(GL_LINES,false,0,ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 1.f, effect_clock,(effectNum == 0?3: effectNum));
 		else
-			trackobj->Render(ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 0.4f, clock(), 0, 0, 0);
+			trackobj->Render(GL_LINES, false, 0,ProjectionMatrex, ModelViewMatrex, tracks, buffer_size, 0.4f, effect_clock, effectNum);
 		trackobj->End();
-	}	
+
+		//Draw sleepers
+		buffer_size.clear();
+		color_counts = sleepers.size();
+		buffer_size.push_back(sleepers.size());
+		for (size_t i = 0; i < color_counts; i++)
+		{
+			sleepers << 1.f;
+		}
+		buffer_size.push_back(color_counts);
+		trackobj->Begin();
+		if (SLEEPER)
+		{
+			if (!doingShadows)
+				trackobj->Render(GL_LINES, false, 0,ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 1.f, effect_clock, effectNum);
+			else
+				trackobj->Render(GL_LINES, false, 0,ProjectionMatrex, ModelViewMatrex, sleepers, buffer_size, 0.4f, effect_clock, effectNum);
+			trackobj->End();
+		}
+	}
+	
 	//Generate path	
-	path.clear();
-	trackupdate = false;
-	float track_distance = 0.f;
-	for (size_t i = 0; i < track_path.size(); i++)
+	if (trackUpdate)
 	{
-		TrackTrail t1 = TrackTrail(track_path[i], track_orient[i], track_orient_cross[i]);
-		TrackTrail t2 = TrackTrail(track_path[(i + 1) % track_path.size()],track_orient[(i + 1) % track_orient.size()],track_orient_cross[(i + 1) % track_orient_cross.size()]);		
-		path.push_back(t1);
-	}	
+		path.clear();
+		for (size_t i = 0; i < track_path.size(); i++)
+		{
+			TrackTrail t1 = TrackTrail(track_path[i], track_orient[i], track_orient_cross[i]);
+			TrackTrail t2 = TrackTrail(track_path[(i + 1) % track_path.size()], track_orient[(i + 1) % track_orient.size()], track_orient_cross[(i + 1) % track_orient_cross.size()]);
+			path.push_back(t1);
+		}
+		trackUpdate = false;
+	}
 }
 void TrainView::drawStuff(bool doingShadows)
 {	
@@ -1331,34 +1314,11 @@ void TrainView::drawStuff(bool doingShadows)
 #ifdef EXAMPLE_SOLUTION
 	//drawTrack(this, doingShadows);
 	
-#endif	
-	t_temp = clock();
-	if (isrun && path.size() > 0) 
-	{		
-		if ((t_temp - current_time) > 1000.f/(train_speed*2)) 
-		{
-			current_time = t_temp;
-			//Scallion slash
-			rightarmangle -= offset;
-			if (rightarmangle < -100.f)
-				offset = -5.f;
-			else if (rightarmangle == 0.f)
-				offset = 5.f;
-
-			model_rotate += 1.f;
-			if (model_rotate > 360.f)
-				model_rotate = 0.f;
-			path_index++;
-		}		
-		drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients,doingShadows);	
-		if (path_index == path.size() - 1)
-			path_index = 0;		
+#endif		
+	if (path.size() > 0) 
+	{
+		drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients,doingShadows);
 	}
-	else if (!isrun && path.size() > 0) 
-	{		
-		drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients, doingShadows);		
-	}
-	
 #ifdef EXAMPLE_SOLUTION
 	// don't draw the train if you're looking out the front window
 	if (!tw->trainCam->value())
@@ -1511,20 +1471,29 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	}
 	int p = train_vts.size();
 	buffersize.push_back(p);
-	for (size_t i = 0; i < 54; i++)
+	float blackUv[] = {0,1,1,1,1,0.5,1,0.5,0,0.5,0,1};
+	float grayUv[] =  {0,0.5,1,0.5,1,0,1,0,0,0,0,0.5};
+	float normal[] = {0,1,0};
+	for (size_t i = 0; i < 18*2; i++)
 	{
-		train_vts << 127 / 255.f;
+		train_vts << blackUv[i%12];
 	}
-	for (size_t i = 0; i < 108; i++)
+	for (size_t i = 0; i < 36*2; i++)
 	{
-		train_vts << 0;
+		train_vts << grayUv[i%12];
 	}
-	buffersize.push_back(train_vts.size() - p);
+	for (size_t i = 0; i < p; i++)
+	{
+		train_vts << normal[i%3];
+	}
+	buffersize.push_back(108);
+	buffersize.push_back(p);
 	trackobj->Begin();
+	trackobj->shaderProgram->setUniformValue("tex", trackobj->textureId);
 	if (!shadow)
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 1.f,clock(),1,0,0);
+		trackobj->Render(GL_TRIANGLES,false,0,ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 1.f,effect_clock, effectNum);
 	else
-		trackobj->Render(ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 0.3f, clock(), 1, 0, 0);
+		trackobj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 0.3f, effect_clock, effectNum);
 	trackobj->End();
 
 	if (shadow) 
@@ -1544,32 +1513,37 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 		<< w << -h << 2
 		<< -w << -h << 2
 		<< -w << h << 2;
-	for (size_t i = 0; i < 12; i++)
+	nendoroid_vts
+		<< 0.f << 0.f
+		<< 1.f << 0.f
+		<< 1.f << 1.f
+		<< 1.f << 1.f
+		<< 0.f << 1.f
+		<< 0.f << 0.f;	
+	for (size_t i = 0; i < 18; i++)
 	{
-		nendoroid_vts << uv[i];
-	}	
+		nendoroid_vts << normal[i % 3];
+	}
 	buffersize.clear();
 	buffersize.push_back(18);
 	buffersize.push_back(12);
-	
+	buffersize.push_back(18);
+
 	glEnable(GL_BLEND);
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_ALPHA_TEST);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);	
-	glAlphaFunc(GL_GREATER, 0.1);	
+	glEnable(GL_CULL_FACE);	
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);		
 	glCullFace(GL_FRONT);
 	glFrontFace(GL_CW);		
 	nendoroid->Begin();
 	nendoroid->shaderProgram->setUniformValue("tex", nendoroid->textureId);
-	nendoroid->Render(ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize,1,0,1,1,1);
+	nendoroid->Render(GL_TRIANGLES, false, 0,ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize,1.f,effect_clock, effectNum);
 	nendoroid->End();
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CW);		
 	nendoroid->Begin();
 	nendoroid->shaderProgram->setUniformValue("tex", nendoroid->textureId + 1);
-	nendoroid->Render(ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize, 1, 0, 1, 1, 1);
-	nendoroid->End();
-	glDisable(GL_ALPHA_TEST);
+	nendoroid->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize, 1.f, effect_clock, effectNum);
+	nendoroid->End();	
 	glDisable(GL_BLEND);
 	glDisable(GL_CULL_FACE);	
 }

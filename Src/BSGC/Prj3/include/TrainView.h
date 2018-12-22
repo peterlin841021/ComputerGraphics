@@ -58,16 +58,20 @@ public:
 	void initializeGL();
 	void initializeTexture();
 	void paint();
+	void myTimer();
+	void changeEffect(size_t effectNum);
 public:
 	ArcBallCam		arcball;			// keep an ArcBall for the UI
 	int				selectedCube;  // simple - just remember which cube is selected
 
 	CTrack*			m_pTrack;		// The track of the entire scene
-	float t_time;	
+	//float t_time;	
 	int camera;
 	int curve;
 	int track;
 	bool isrun;
+	bool useFBO = false;
+	bool trackUpdate = true;
 	typedef enum 
 	{
 		spline_Linear = 0,
@@ -97,11 +101,16 @@ public:
 	vector<Pnt3f> track_orient_cross;
 	vector<Pnt3f> track_orient;	
 	int path_index = 0;	
-	float current_time = 0;	
+	//float current_time = 0;	
 	Pnt3f trainStart, trainEnd;
 	Obj *trackobj;
 	Obj *trainobj;
 	Obj *miku;
+	float rightArmAngle = 0.f;
+	float wholeRotateAngle = 0.f;
+	float changeAngle = 5.f;	
+	float changeAngleOpposite = -5.f;
+	float angleTemp = changeAngleOpposite;
 	Obj *skybox;
 	Obj *water;
 	Obj *land;
@@ -109,5 +118,12 @@ public:
 	Obj *miku3d;
 	Obj *mountain;	
 	vector<TrackTrail> path;
+	//Timer clock
+	clock_t effect_clock;
+	clock_t train_clock;
+	clock_t model_clock;
+	float train_interval = 1000.f;
+	float shadowShake = 0.f;
+	size_t effectNum  = 0;
 };  
 #endif // TRAINVIEW_H  

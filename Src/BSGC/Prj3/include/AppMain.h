@@ -86,8 +86,8 @@ private:
 		void RotateControlPointAddX();
 		void RotateControlPointSubX();
 		void RotateControlPointAddZ();
-		void RotateControlPointSubZ();
-
+		void RotateControlPointSubZ();		
+		void changeEffect();
 protected:
 	bool eventFilter(QObject *watched, QEvent *e); 
 };

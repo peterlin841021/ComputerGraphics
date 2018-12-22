@@ -8,8 +8,7 @@
 
 
 AppMain* AppMain::Instance = NULL;
-AppMain::AppMain(QWidget *parent)
-	: QMainWindow(parent)
+AppMain::AppMain(QWidget *parent): QMainWindow(parent)
 {
 	ui.setupUi(this);
 	trainview = new TrainView();  
@@ -24,7 +23,7 @@ AppMain::AppMain(QWidget *parent)
 	this->trainview->curve = 0;
 	this->trainview->isrun = false;
 
-	setWindowTitle( "OuO" );
+	setWindowTitle( "Miku amusement park" );
 
 	connect( ui.aLoadPath	,SIGNAL(triggered()),this,SLOT(LoadTrackPath()));
 	connect( ui.aSavePath	,SIGNAL(triggered()),this,SLOT(SaveTrackPath()));
@@ -34,7 +33,7 @@ AppMain::AppMain(QWidget *parent)
 	connect( ui.aWorld		,SIGNAL(triggered()),this,SLOT(ChangeCamToWorld()));
 	connect( ui.aTop		,SIGNAL(triggered()),this,SLOT(ChangeCamToTop()));
 	connect( ui.aTrain		,SIGNAL(triggered()),this,SLOT(ChangeCamToTrain()));
-
+	
 	connect( ui.comboCurve	,SIGNAL(currentIndexChanged(QString)),this,SLOT(ChangeCurveType(QString)));
 	connect( ui.aLinear		,SIGNAL(triggered()),this,SLOT(ChangeCurveToLinear()));
 	connect( ui.aCardinal	,SIGNAL(triggered()),this,SLOT(ChangeCurveToCardinal()));
@@ -50,20 +49,35 @@ AppMain::AppMain(QWidget *parent)
 	connect( ui.bAdd		,SIGNAL(clicked()),this,SLOT(AddControlPoint()));
 	connect( ui.bDelete		,SIGNAL(clicked()),this,SLOT(DeleteControlPoint()));
 
-	connect(ui.rcpxadd, SIGNAL(clicked()), this, SLOT(RotateControlPointAddX()));
+	connect( ui.rcpxadd, SIGNAL(clicked()), this, SLOT(RotateControlPointAddX()));
 	connect( ui.rcpxsub		,SIGNAL(clicked()),this,SLOT(RotateControlPointSubX()));
 	connect( ui.rcpzadd		,SIGNAL(clicked()),this,SLOT(RotateControlPointAddZ()));
 	connect( ui.rcpzsub		,SIGNAL(clicked()),this,SLOT(RotateControlPointSubZ()));
-	LoadTrackPath_Default();
-	this->trainview->curve = 2;
-	//this->ChangeTrackToTrack();
-	this->trainview->track = 1;	
-	//this->ChangeCurveToCubic();
+	//********************EFFECT************************//	
+	connect(ui.normal, SIGNAL(triggered()), this, SLOT(changeEffect()));
+	connect(ui.gray, SIGNAL(triggered()), this, SLOT(changeEffect()));
+	connect(ui.nebula, SIGNAL(triggered()), this, SLOT(changeEffect()));
+	connect(ui.phosgene, SIGNAL(triggered()), this, SLOT(changeEffect()));
+	connect(ui.purplehalo, SIGNAL(triggered()), this, SLOT(changeEffect()));
+	connect(ui.dancefloor, SIGNAL(triggered()), this, SLOT(changeEffect()));
+	connect(ui.threshold, SIGNAL(triggered()), this, SLOT(changeEffect()));
+	connect(ui.textspeak, SIGNAL(triggered()), this, SLOT(changeEffect()));
+	connect(ui.voronoi, SIGNAL(triggered()), this, SLOT(changeEffect()));
+	//********************EFFECT************************//
+	LoadTrackPath_Default();	
+	ChangeTrackType("Track");	
+	ChangeCurveType("Cubic");	
 }
 
 AppMain::~AppMain()
 {
 
+}
+void AppMain::changeEffect()
+{
+	QAction *act = qobject_cast<QAction *>(sender());
+	QVariant v = act->data();
+	this->trainview->changeEffect(v.toInt());
 }
 
 bool AppMain::eventFilter(QObject *watched, QEvent *e) 
@@ -191,7 +205,7 @@ void AppMain::LoadTrackPath_Default()
 	QByteArray byteArray = fileName.toLocal8Bit();
 	const char* fname = byteArray.data();
 	if ( !fileName.isEmpty() )
-	{
+	{		
 		this->m_Track.readPoints(fname);
 	}	
 }
@@ -209,6 +223,7 @@ void AppMain::LoadTrackPath()
 	{
 		this->m_Track.readPoints(fname);		
 		this->trainview->path_index = 0;
+		this->trainview->trackUpdate = true;
 	}
 }
 
@@ -282,6 +297,7 @@ void AppMain::ChangeCurveType( QString type )
 	{
 		this->trainview->curve = 2;
 	}
+	this->trainview->trackUpdate = true;
 }
 
 void AppMain::ChangeTrackType( QString type )
@@ -292,12 +308,13 @@ void AppMain::ChangeTrackType( QString type )
 	}
 	else if( type == "Track" )
 	{
-		this->trainview->track = 1;
+		this->trainview->track = 1;		
 	}
 	else if( type == "Road" )
 	{
 		this->trainview->track = 2;
 	}
+	this->trainview->trackUpdate = true;
 }
 
 static unsigned long lastRedraw = 0;
@@ -433,12 +450,12 @@ void AppMain::ChangeCamToTrain()
 
 void AppMain::ChangeCurveToLinear()
 {
-	this->trainview->curve = 0;
+	this->trainview->curve = 0;	
 }
 
 void AppMain::ChangeCurveToCardinal()
 {
-	this->trainview->curve = 1;
+	this->trainview->curve = 1;	
 }
 
 void AppMain::ChangeCurveToCubic()
@@ -448,17 +465,17 @@ void AppMain::ChangeCurveToCubic()
 
 void AppMain::ChangeTrackToLine()
 {
-	this->trainview->track = 0;
+	this->trainview->track = 0;	
 }
 
 void AppMain::ChangeTrackToTrack()
 {
-	this->trainview->track = 1;
+	this->trainview->track = 1;	
 }
 
 void AppMain::ChangeTrackToRoad()
 {
-	this->trainview->track = 2;
+	this->trainview->track = 2;	
 }
 
 void AppMain::UpdateCameraState( int index )
@@ -472,14 +489,14 @@ void AppMain::UpdateCurveState( int index )
 {
 	ui.aLinear	->setChecked( (index==0)?true:false );
 	ui.aCardinal->setChecked( (index==1)?true:false );
-	ui.aCubic	->setChecked( (index==2)?true:false );
+	ui.aCubic	->setChecked( (index==2)?true:false );	
 }
 
 void AppMain::UpdateTrackState( int index )
 {
 	ui.aLine ->setChecked( (index==0)?true:false );
 	ui.aTrack->setChecked( (index==1)?true:false );
-	ui.aRoad ->setChecked( (index==2)?true:false );
+	//ui.aRoad ->setChecked( (index==2)?true:false );	
 }
 
 //************************************************************************

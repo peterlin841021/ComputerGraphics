@@ -4,24 +4,22 @@ uniform vec3 camerapos;
 in vec2 texturecoord;
 in vec3 texturecoord3d;
 in vec3 fcolor;
-in vec2 tc;
-in vec3 vpos;
-in vec3 vs_normal;
-in vec3 nor;
 in vec2 uv;
+in vec3 vpos;
+in vec3 nor;
+in vec3 vs_normal;
 in vec3 light_vector;
 out vec4 fragmentcolor;
+
 vec3 color_diffuse = vec3(0.8,0.8,0.8);
 vec3 color_specular = vec3(1.0,1.0,1.0);
 vec3 color_ambient = vec3(0.3,0.3,0.3);
-//vec3 color_ambient = vec3(0.4,0.4,0.4);
-//vec3 color_border = vec3(0,0,0);
 vec3 light_position = vec3(30.f,50.f,560.f);
-//vec3 light_position = vec3(0,1,1);
-vec3 c = vec3(0.6,0.6,0.6);
+
 float shininess = 77.f;
 float reflectivity = 0.6f;
 float eta = 0.66;
+
 uniform int effect;
 uniform float alpha;
 uniform sampler2D tex;
@@ -30,9 +28,12 @@ uniform samplerCube texcube;
 uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewMatrix;
 uniform mat4 ModelMatrix;
-
 uniform float time;
+uniform int objType;
+uniform bool useTessllation;
 
+float rand(float x) { return fract(sin(x) * 4358.5453); }
+float rand(vec2 co) { return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 3758.5357); }
 /***********Nebula smoke**************/
 #define HASHSCALE1 443.8975
 #define HASHSCALE3 vec3(.1031, .1030, .0973)
@@ -57,9 +58,6 @@ vec2 hash21(float p)
 
 void NebulaSmoke()
 {
-	//vec3 texColor = texture(tex,texturecoord).rgb;
-    vec3 texColor = fcolor;
-	fragmentcolor = vec4(texColor, 1.0);	
 	vec2 uv = vec2(0.5) - (gl_FragCoord.xy / iResolution.xy);
     uv.x *= iResolution.x / iResolution.y;
     
@@ -112,9 +110,7 @@ float fworley(vec2 p)
 		sqrt(sqrt(worley(p * 128. + 7.3))))));
 }
 void Phosgene() 
-{
-	vec3 texColor = texture(tex,texturecoord).rgb;	
-	fragmentcolor = vec4(texColor, 1.0);
+{	
 	vec2 uv = gl_FragCoord.xy / iResolution.xy;
 	float t = fworley(uv * iResolution.xy / 600.);
 	t *= exp(-length2(abs(2.*uv - 1.)));
@@ -134,10 +130,7 @@ float drawCircle(vec2 uv, vec2 center, float radius)
 
 void snow()
 {
-   vec2 uv =  gl_FragCoord.xy  / iResolution.x;
-   vec3 color = texture(texcube,texturecoord3d).rgb;  
-   fragmentcolor = vec4(color, 1.0);  
-   
+   vec2 uv =  gl_FragCoord.xy  / iResolution.x; 
    float j;   
    for (int i = 0; i < _SnowflakeAmount; i++)
    {
@@ -159,10 +152,7 @@ vec2 rotateUV(vec2 uv, float rotation)
 void gold_particle()
 {
    vec2 uv =  gl_FragCoord.xy / iResolution.y;
-   uv = rotateUV(uv,180);
-   //vec3 color = texture(tex,vertexData.texcoord).rgb;
-   
-   fragmentcolor = vec4(fcolor, alpha);
+   uv = rotateUV(uv,180);  
    float j;   
    for (int i = 0; i < _SnowflakeAmount; i++)
    {
@@ -207,9 +197,7 @@ float circc(vec2 p)
 
 }
 void PurpleHalo()
-{   
-    vec3 texColor = texture(tex,texturecoord).rgb;	
-	fragmentcolor = vec4(texColor, 1.0);	
+{
 	vec2 p = gl_FragCoord.xy / iResolution.xy-0.5;
 	p.x *= iResolution.x/iResolution.y;
 	p*=4.;
@@ -238,8 +226,6 @@ float randd (in vec2 seed)
 
 void DanceFloor() 
 {
-	vec3 texColor = texture(tex,texturecoord).rgb;	
-	fragmentcolor = vec4(texColor, 1.0);
 	vec2 frag = (2.0 * gl_FragCoord.xy - iResolution.xy) / iResolution.y;
 	frag *= 1.0 - 0.2 * cos (frag.yx) * sin (3.14159 * 0.5 * texture (tex, vec2 (0.0)).x);
 	frag *= 5.0;
@@ -251,27 +237,228 @@ void DanceFloor()
 	fragmentcolor += vec4 (color, 1.0);
 }
 /************Dance floor**************/
+/************Gray**************/
+void Grayscale()
+{	
+	float grayValue = fragmentcolor.r*0.3+fragmentcolor.g*0.6+fragmentcolor.b*0.1;
+	fragmentcolor = vec4(grayValue,grayValue,grayValue,alpha);
+}
+/************Gray**************/
+
+/************ThresholdDither**************/
+void ThresholdDither()
+{
+	
+	float grayColor = 0.299 * fragmentcolor.r + 0.587 * fragmentcolor.g + 0.114 * fragmentcolor.b;
+	if(grayColor < 0.5)
+		grayColor = 0;
+	else
+		grayColor = 1;
+	fragmentcolor = vec4(grayColor,grayColor,grayColor, 1.0);
+}
+/************ThresholdDither**************/
+/************Textspeak**************/
+float invader(vec2 p, float n)
+{
+   p.x = abs(p.x);
+   p.y = -floor(p.y - 5.0);   
+   return step(p.x, 2.0) * step(1.0, floor(mod(n/(exp2(floor(p.x + p.y*3.0))),2.0)));
+}
+void Textspeak()
+{
+	vec3 color = vec3(0.2, 0.42, 0.68); 	
+	float width = 8.0;
+
+	vec2 p = gl_FragCoord.xy;
+    vec2 uv = p / iResolution.xy - 0.5;
+    
+    float id1 = rand(floor(p.x / width));             
+    float id2 = rand(floor((p.x - 1.0) / width));   
+    
+    float a = 0.3*id1;                                       
+    a += 0.1*step(id2, id1 - 0.08);                    
+    a -= 0.1*step(id1 + 0.08, id2);                     
+    a -= 0.3*smoothstep(0.0, 0.7, length(uv));   
+ 
+   
+    p.y += 20.0*time*0.002;
+    float r = rand(floor(p/8.0));
+    float inv = invader(mod(p,8.0)-4.0, 809999.0*r);
+    a += (0.06 + max(0.0, 0.2*sin(10.0*r*time*0.002))) * inv * step(id1, .3);            
+    fragmentcolor += vec4(color+a, 1.0);
+}
+/************Textspeak**************/
+/************VoronoiDiagram**************/
+vec2 hash( vec2 p ) 
+{ 
+   p=vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3))); 
+   
+   return fract(sin(p)*18.5453);
+}
+vec2 voronoi( in vec2 x )
+{
+    vec2 n = floor( x );              
+    vec2 f = fract( x );              
+
+   vec3 m = vec3( 8. );               
+   
+   
+    for( int j=-1; j<=1; j++ )
+    {
+       for( int i=-1; i<=1; i++ )
+       {
+           vec2  g = vec2( float(i), float(j) );            
+           vec2  o = hash( n + g );                       
+           vec2  r = g - f + (0.5+0.5*sin(time*0.001+6.2831*o));                          
+           float d = dot( r, r );           
+           if( d<m.x )
+           {
+              m = vec3( d, o );
+           }
+       }
+    }
+    return vec2( sqrt(m.x), m.y+m.z );
+}
+void VoronoiDiagram()
+{	
+	vec2 iResolution = vec2(512., 512.);
+    vec2 p = gl_FragCoord.xy/max(iResolution.x,iResolution.y);      
+    vec2 c = voronoi( (14.0+6.0*sin(0.2*time*0.001))*p );    
+    vec3 col = 0.5 + 0.5*cos( c.y*6.2831 + vec3(0.0,1.0,2.0) );        
+    col *= clamp(1.0 - 0.6*c.x*c.x, 0.0, 1.0);
+    col -= (1.0-smoothstep( 0.05, 0.06, c.x));                   
+    fragmentcolor += vec4( col, 0.0 );
+}
+/************VoronoiDiagram**************/
 void main(void)
 {
+	if(useTessllation)
+	{
+		if(objType == 2)//WATER
+		{
+			vec4 lp = ModelViewMatrix * vec4(light_position,1.0);
+			vec3 light_vector = normalize(lp.xyz - vpos.xyz);
+			//vec4 normalmapcolor = texture(normalmap,uv);
+			//vec3 normal = vec3(normalmapcolor.r * 2 - 1,normalmapcolor.b,normalmapcolor.g * 2 - 1);
+			//mat3 normalmatrix = transpose(inverse(mat3(ModelViewMatrix)));
+			vec4 black = vec4(0,0,0,1);						
+			//vec3 normal = normalize((ModelViewMatrix *vec4(nor,0))).xyz;
+			vec3 normal = nor;			
+			vec3 camera = vec3(ModelViewMatrix * vec4(camerapos,1.0));			
+			vec3 cameradir = normalize(camera.xyz - vpos.xyz);
+			float dv = dot(light_vector,normal);
+			float diffuse = max(0.0,dv);
+
+			vec3 light_reflect = normalize(reflect(-light_vector,normal));
+			//vec3 halfvector = normalize(light_vector+cameradir);
+			float sv = dot(light_reflect,normal);
+			float specular = pow(max(0.0,sv),shininess);
+			//vec4 light_color = vec4(min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular,0);						
+			vec3 RefractVec = refract(cameradir,normal, eta);
+    		vec3 ReflectVec = reflect(cameradir, normal);	
+		
+			vec4 RefractColor = texture(texcube,RefractVec);
+			vec4 ReflectColor = texture(texcube,ReflectVec);			
+			vec4 water_color = texture2D(tex,uv);//Water
+			water_color = mix(water_color,RefractColor,0.4);
+			water_color = mix(water_color,ReflectColor,0.4);
+			water_color += vec4(0,0,0.1,0);
+			black += water_color * vec4(color_ambient,1);
+			black += water_color * diffuse * vec4(color_diffuse,1);
+			black += water_color * specular * vec4(color_specular,1);									
+			if(alpha !=1)
+				black.a = alpha;			
+			fragmentcolor = black;
+		}
+		else//Terrain
+		{
+			vec4 lp = ModelViewMatrix * vec4(light_position,1.0);
+			vec3 light_vector = normalize(lp.xyz - vpos.xyz);
+			vec4 black = vec4(0,0,0,1);	
+			//vec3 normal = normalize((ModelViewMatrix *vec4(nor,0))).xyz;
+			vec3 normal = nor;
+			float dv = dot(light_vector,normal);
+			float diffuse = max(0.0,dv);
+			vec3 light_reflect = normalize(reflect(-light_vector,normal));
+			float sv = dot(light_reflect,normal);
+			float specular = pow(max(0.0,sv),shininess);
+			//vec4 light_color = vec4(min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular,0);
+			vec4 color = texture2D(tex,uv);
+			black += color * vec4(color_ambient,1);
+			black += color * diffuse * vec4(color_diffuse,1);
+			black += color * specular * vec4(color_specular,1);
+			if(alpha !=1)
+				black.a = alpha;
+			fragmentcolor = black;
+		}
+	}else
+	{
+		if(objType == 3)//Model reflect environment map
+		{
+			vec3 normal = vs_normal;
+			vec3 camera = vec3(ModelViewMatrix * vec4(camerapos,1.0));
+			vec3 cameradir = normalize(camera.xyz - vec3(ModelViewMatrix * vec4(texturecoord3d,1.0)));			
+			float dv = dot(light_vector,normal);
+			float diffuse = max(0.0,dv);
+
+			vec3 light_reflect = normalize(reflect(-light_vector,normal));			
+			float sv = dot(light_reflect,normal);			
+			float specular = pow(max(0.0,sv),shininess);				
+			vec3 RefractVec = refract(cameradir,normal, eta);
+    		vec3 ReflectVec = reflect(cameradir,normal);	
+			RefractVec = vec3(RefractVec.x,-RefractVec.y,-RefractVec.z);
+			ReflectVec = vec3(ReflectVec.x,-ReflectVec.y,-ReflectVec.z);			
+			vec4 RefractColor = texture(texcube,RefractVec);
+			vec4 ReflectColor = texture(texcube,ReflectVec);			
+												
+			vec4 color = texture2D(tex,texturecoord);
+			vec4 black = vec4(0,0,0,1);
+			color = mix(color,RefractColor,0.7);
+			color = mix(color,ReflectColor,0.7);
+			
+			black += color * vec4(color_ambient,1);
+			black += color * diffuse * vec4(color_diffuse,1);
+			black += color * specular * vec4(color_specular,1);
+			if(alpha !=1)
+				black.a = alpha;			
+			fragmentcolor = black;
+		}
+		else if(objType == 0)
+		{
+			vec3 normal = vs_normal;		
+			vec4 black = vec4(0,0,0,1);
+			float dv = dot(light_vector,normal);
+			float diffuse = max(0.0,dv);
+			vec3 light_reflect = normalize(reflect(-light_vector,normal));		
+			float sv = dot(light_reflect,normal);			
+			float specular = pow(max(0.0,sv),shininess);																										
+			vec4 color = texture2D(tex,texturecoord);
+			if(color.a < 0.1)
+				discard;
+			black += color * vec4(color_ambient,1);
+			black += color * diffuse * vec4(color_diffuse,1);
+			black += color * specular * vec4(color_specular,1);
+			if(alpha !=1)
+				black.a = alpha;
+			fragmentcolor = black;
+		}
+		else if(objType == 1)//Skybox
+		{
+			fragmentcolor = texture(texcube,texturecoord3d);
+		}
+	}
 	switch(effect)
     {
-        case(0)://Origin color
-        {			
-            if(alpha !=1)			    
-				fragmentcolor = vec4(fcolor,alpha);
-			else
-				fragmentcolor = vec4(fcolor,1.0);
+        case(0)://Normal
+        {						
             break;
         }
-        case(1)://Draw texture        
+        case(1)://Gray
         {
-			vec4 color = texture2D(tex,texturecoord);
-            if(alpha !=1)
-			    color.a = alpha;
-			fragmentcolor = color;			
+			Grayscale();
             break;
         }
-		case(2)://Draw skybox
+		case(2)://Snow
 		{
 			snow();			
             break;
@@ -296,141 +483,20 @@ void main(void)
 		    DanceFloor();
             break;
 		}
-		case(7)://Water
+		case(7)://Threshold dithering
 		{
-			vec3 light_vector = normalize(light_position - vpos.xyz);
-			//vec4 normalmapcolor = texture(normalmap,uv);
-			vec4 black = vec4(0,0,0,1);
-			//vec3 normal = vec3(normalmapcolor.r * 2 - 1,normalmapcolor.b,normalmapcolor.g * 2 - 1);			
-			//mat3 normalmatrix = transpose(inverse(mat3(ModelViewMatrix)));
-			vec3 normal = normalize((ModelViewMatrix *vec4(nor,0))).xyz;
-			//vec3 normal = nor;
-			vec3 camera = vec3(ModelViewMatrix * vec4(camerapos,1.0));			
-			vec3 cameradir = normalize(camera.xyz - vpos.xyz);
-			float dv = dot(light_vector,normal);
-			float diffuse = max(0.0,dv);
-
-			vec3 light_reflect = normalize(reflect(-light_vector,normal));
-			vec3 halfvector = normalize(light_vector+cameradir);
-			float sv = dot(light_reflect,normal);
-			float specular = pow(max(0.0,sv),shininess);
-			
-			//vec4 light_color = vec4(min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular,0);						
-			vec3 RefractVec = refract(cameradir,normal, eta);
-    		vec3 ReflectVec = reflect(cameradir, normal);	
-		
-			vec4 RefractColor = texture(texcube,RefractVec);
-			vec4 ReflectColor = texture(texcube,ReflectVec);			
-			vec4 water_color = texture2D(tex,uv);//Water
-			water_color = mix(water_color,RefractColor,0.4);
-			water_color = mix(water_color,ReflectColor,0.4);
-			water_color += vec4(0,0,0.1,0);
-			black += water_color * vec4(color_ambient,1);
-			black += water_color * diffuse * vec4(color_diffuse,1);
-			black += water_color * specular * vec4(color_specular,1);
-									
-			if(alpha !=1)
-				black.a = alpha;			
-			fragmentcolor = black;
+		    ThresholdDither();
             break;
 		}
-		case(8)://Miku reflection
+		case(8)://Text speak
 		{
-			vec3 normal = vs_normal;
-			vec3 camera = vec3(ModelViewMatrix * vec4(camerapos,1.0));			
-			vec3 cameradir = normalize(camera.xyz - vec3(ModelViewMatrix * vec4(texturecoord3d,1.0)));
-			vec4 black = vec4(0,0,0,1);
-			float dv = dot(light_vector,normal);
-			float diffuse = max(0.0,dv);
-
-			vec3 light_reflect = normalize(reflect(-light_vector,normal));
-			vec3 halfvector = normalize(light_vector+cameradir);
-			float sv = dot(light_reflect,normal);			
-			float specular = pow(max(0.0,sv),shininess);				
-			vec3 RefractVec = refract(cameradir,normal, eta);
-    		vec3 ReflectVec = reflect(cameradir,normal);	
-			RefractVec = vec3(RefractVec.x,-RefractVec.y,-RefractVec.z);
-			ReflectVec = vec3(ReflectVec.x,-ReflectVec.y,-ReflectVec.z);
-			
-			vec4 RefractColor = texture(texcube,RefractVec);
-			vec4 ReflectColor = texture(texcube,ReflectVec);			
-												
-			vec4 color = texture2D(tex,texturecoord);
-			// color = mix(color,RefractColor,0.7);
-			// color = mix(color,ReflectColor,0.7);
-			
-			black += color * vec4(color_ambient,1);
-			black += color * diffuse * vec4(color_diffuse,1);
-			black += color * specular * vec4(color_specular,1);
-			if(alpha !=1)
-				black.a = alpha;			
-			fragmentcolor = black;            
+		    Textspeak();
             break;
 		}
-		case(9)://Terrain
-		{		
-			vec3 light_direction = normalize(light_position.xyz - vpos.xyz);
-			mat3 normalmatrix = transpose(inverse(mat3(ModelViewMatrix)));
-			vec3 normal = normalize(normalmatrix *nor);
-			vec3 camera = vec3(ModelViewMatrix * vec4(camerapos,1.0));			
-			vec3 cameradir = normalize(camera.xyz - vpos.xyz);
-			float dv = dot(light_direction,normal);
-			float diffuse = max(0.0,dv);
-
-			vec3 halfvector = normalize(light_direction+cameradir);
-			float sv = dot(halfvector,normal);
-			float specular = pow(max(0.0,sv),shininess);
-			vec4 light_color = vec4(min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular,0);						
-			// vec3 RefractVec = refract(cameradir,normal, eta);
-    		// vec3 ReflectVec = reflect(cameradir, normal);			
-			// vec4 RefractColor = texture(texcube,RefractVec);
-			// vec4 ReflectColor = texture(texcube,ReflectVec);			
-			vec4 color = texture2D(tex,uv);
-			//color *= light_color;
-			// color = mix(color,RefractColor,0.7);
-			// color = mix(color,ReflectColor,0.7);					
-			if(alpha !=1)
-				color.a = alpha;
-			fragmentcolor = color;
-            break;
-		}
-		case(10)://Mountain
-		{		
-			vec3 light_vector = normalize(light_position.xyz - vpos.xyz);
-			vec4 black = vec4(0,0,0,1);		
-			vec3 normal = normalize(ModelViewMatrix * vec4(nor,0)).xyz;			
-			float dv = dot(light_vector,normal);
-			float diffuse = max(0.0,dv);		
-			float sv = dot(light_vector,normal);
-			float specular = pow(max(0.0,sv),shininess);			;								
-			vec4 color = texture2D(tex,uv);				
-			black += color * vec4(color_ambient,1);
-			black += color * diffuse * vec4(color_diffuse,1);
-			black += color * specular * vec4(color_specular,1);
-			if(alpha !=1)
-				black.a = alpha;
-			fragmentcolor = black;
-            break;
-		}
-		case(11)://Model with lighting
+		case(9)://Voronoi diagram
 		{
-			vec3 normal = vs_normal;		
-			vec4 black = vec4(0,0,0,1);
-			float dv = dot(light_vector,normal);
-			float diffuse = max(0.0,dv);
-
-			vec3 light_reflect = normalize(reflect(-light_vector,normal));
-		
-			float sv = dot(light_reflect,normal);			
-			float specular = pow(max(0.0,sv),shininess);																										
-			vec4 color = texture2D(tex,texturecoord);		
-			black += color * vec4(color_ambient,1);
-			black += color * diffuse * vec4(color_diffuse,1);
-			black += color * specular * vec4(color_specular,1);
-			if(alpha !=1)
-				black.a = alpha;			
-			fragmentcolor = black;            
+		    VoronoiDiagram();
             break;
-		}
+		}		
     }
 }

@@ -45,6 +45,17 @@ public:
     QAction *aLine;
     QAction *aTrack;
     QAction *aRoad;
+	//********************EFFECT************************//
+	QAction *normal;
+	QAction *gray;
+	QAction *nebula;
+	QAction *phosgene;
+	QAction *purplehalo;
+	QAction *dancefloor;
+	QAction *threshold;
+	QAction *textspeak;
+	QAction *voronoi;
+	//********************EFFECT************************//
     QWidget *centralWidget;
     QVBoxLayout *verticalLayout;
     QVBoxLayout *mainLayout;
@@ -77,7 +88,7 @@ public:
     QMenu *menuCamera;
     QMenu *menuCurve;
     QMenu *menuTrack;
-    QMenu *menuVelocity;
+    QMenu *menuEffect;
     QStatusBar *statusBar;
     QToolBar *mainToolBar;
 
@@ -111,6 +122,61 @@ public:
         QIcon icon1;
         icon1.addFile(QStringLiteral(":/AppMain/Resources/Icons/savefile.ico"), QSize(), QIcon::Normal, QIcon::Off);
         aSavePath->setIcon(icon1);
+		//********************EFFECT************************//
+		normal = new QAction(AppMainClass);
+		normal->setObjectName(QStringLiteral("Normal"));
+		normal->setData(0);
+		normal->setCheckable(false);
+		normal->setChecked(false);
+
+		gray = new QAction(AppMainClass);
+		gray->setObjectName(QStringLiteral("Gray"));
+		gray->setData(1);
+		gray->setCheckable(true);
+		gray->setChecked(false);
+
+		nebula = new QAction(AppMainClass);
+		nebula->setObjectName(QStringLiteral("Nebula"));
+		nebula->setData(3);
+		nebula->setCheckable(true);
+		nebula->setChecked(false);
+		
+		phosgene = new QAction(AppMainClass);
+		phosgene->setObjectName(QStringLiteral("Phosgene"));
+		phosgene->setData(4);
+		phosgene->setCheckable(true);
+		phosgene->setChecked(false);
+
+		purplehalo = new QAction(AppMainClass);
+		purplehalo->setObjectName(QStringLiteral("Purplehalo"));
+		purplehalo->setData(5);
+		purplehalo->setCheckable(true);
+		purplehalo->setChecked(false);
+
+		dancefloor = new QAction(AppMainClass);
+		dancefloor->setObjectName(QStringLiteral("Dancefloor"));
+		dancefloor->setData(6);
+		dancefloor->setCheckable(true);
+		dancefloor->setChecked(false);
+	
+		threshold = new QAction(AppMainClass);
+		threshold->setObjectName(QStringLiteral("Threshold"));
+		threshold->setData(7);
+		threshold->setCheckable(true);
+		threshold->setChecked(false);
+		
+		textspeak = new QAction(AppMainClass);
+		textspeak->setObjectName(QStringLiteral("Textspeak"));
+		textspeak->setData(8);
+		textspeak->setCheckable(true);
+		textspeak->setChecked(false);
+		
+		voronoi = new QAction(AppMainClass);
+		voronoi->setObjectName(QStringLiteral("Voronoi"));
+		voronoi->setData(9);
+		voronoi->setCheckable(true);
+		voronoi->setChecked(false);		
+		//********************EFFECT************************//
         aWorld = new QAction(AppMainClass);
         aWorld->setObjectName(QStringLiteral("aWorld"));
         aWorld->setCheckable(false);
@@ -185,8 +251,7 @@ public:
         font1.setWeight(75);
         groupCamera->setFont(font1);
         groupCamera->setAutoFillBackground(false);
-        groupCamera->setStyleSheet(QLatin1String("background-color: rgb(249, 249, 249);\n"
-"border-radius: 5px;"));
+        groupCamera->setStyleSheet(QLatin1String("background-color: rgb(249, 249, 249);\nborder-radius: 5px;"));
         groupCamera->setAlignment(Qt::AlignCenter);
         comboCamera = new QComboBox(groupCamera);
         comboCamera->setObjectName(QStringLiteral("comboCamera"));
@@ -556,8 +621,8 @@ public:
         menuCurve->setObjectName(QStringLiteral("menuCurve"));
         menuTrack = new QMenu(menuBar);
         menuTrack->setObjectName(QStringLiteral("menuTrack"));
-        menuVelocity = new QMenu(menuBar);
-        menuVelocity->setObjectName(QStringLiteral("menuVelocity"));
+		menuEffect = new QMenu(menuBar);
+		menuEffect->setObjectName(QStringLiteral("menuEffect"));
         AppMainClass->setMenuBar(menuBar);
         statusBar = new QStatusBar(AppMainClass);
         statusBar->setObjectName(QStringLiteral("statusBar"));
@@ -570,7 +635,18 @@ public:
         menuBar->addAction(menuCamera->menuAction());
         menuBar->addAction(menuTrack->menuAction());
         menuBar->addAction(menuCurve->menuAction());
-        menuBar->addAction(menuVelocity->menuAction());
+		//********************EFFECT************************//
+        menuBar->addAction(menuEffect->menuAction());
+		menuEffect->addAction(normal);
+		menuEffect->addAction(gray);
+		menuEffect->addAction(nebula);
+		menuEffect->addAction(phosgene);
+		menuEffect->addAction(purplehalo);
+		menuEffect->addAction(dancefloor);
+		menuEffect->addAction(threshold);
+		menuEffect->addAction(textspeak);
+		menuEffect->addAction(voronoi);
+		//********************EFFECT************************//
         menuFile->addAction(aLoadPath);
         menuFile->addAction(aSavePath);
         menuFile->addSeparator();
@@ -600,6 +676,17 @@ public:
         aSavePath->setText(QApplication::translate("AppMainClass", "Save Path", Q_NULLPTR));
         aWorld->setText(QApplication::translate("AppMainClass", "World", Q_NULLPTR));
         aTop->setText(QApplication::translate("AppMainClass", "Top", Q_NULLPTR));
+		//********************EFFECT************************//
+		normal->setText(QApplication::translate("AppMainClass", "Normal", Q_NULLPTR));
+		gray->setText(QApplication::translate("AppMainClass", "Gray", Q_NULLPTR));
+		nebula->setText(QApplication::translate("AppMainClass", "Nebula", Q_NULLPTR));
+		phosgene->setText(QApplication::translate("AppMainClass", "Phosgene", Q_NULLPTR));
+		purplehalo->setText(QApplication::translate("AppMainClass", "Purplehalo", Q_NULLPTR));
+		dancefloor->setText(QApplication::translate("AppMainClass", "Dancefloor", Q_NULLPTR));
+		threshold->setText(QApplication::translate("AppMainClass", "Threshold", Q_NULLPTR));
+		textspeak->setText(QApplication::translate("AppMainClass", "Textspeak", Q_NULLPTR));
+		voronoi->setText(QApplication::translate("AppMainClass", "Voronoi", Q_NULLPTR));
+		//********************EFFECT************************//
         aTrain->setText(QApplication::translate("AppMainClass", "Train", Q_NULLPTR));
         aLinear->setText(QApplication::translate("AppMainClass", "Linear", Q_NULLPTR));
         aCardinal->setText(QApplication::translate("AppMainClass", "Cardinal", Q_NULLPTR));
@@ -643,7 +730,7 @@ public:
         menuCamera->setTitle(QApplication::translate("AppMainClass", "Camera", Q_NULLPTR));
         menuCurve->setTitle(QApplication::translate("AppMainClass", "Curve", Q_NULLPTR));
         menuTrack->setTitle(QApplication::translate("AppMainClass", "Track", Q_NULLPTR));
-        menuVelocity->setTitle(QApplication::translate("AppMainClass", "Velocity", Q_NULLPTR));
+		menuEffect->setTitle(QApplication::translate("AppMainClass", "Effect", Q_NULLPTR));
     } // retranslateUi
 
 };

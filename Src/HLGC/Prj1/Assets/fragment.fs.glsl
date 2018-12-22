@@ -97,7 +97,8 @@ void gold(){
 	fragColor = vec4(255.0 / 255.0 , 215.0 / 255.0, 0 / 255.0, 0.5);
 }
 
-void mosaic(){
+void mosaic()
+{
 	const vec2 TexSize = vec2(800.0, 800.0);	
 	const vec2 mosaicSize = vec2(30.0, 30.0);
 	vec2 intXY = vec2(vertexData.texcoord.x*TexSize.x, vertexData.texcoord.y*TexSize.y);
