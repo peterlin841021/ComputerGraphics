@@ -21,7 +21,7 @@ void main(void)
     vs_normal = normalize(ModelViewMatrix*vec4(normal,0)).xyz;
     vec4 mp = ModelViewMatrix * vec4(position,1.0);
     vec4 lp = ModelViewMatrix * vec4(light_position,1.0);
-    light_vector = normalize(lp.xyz - mp.xyz);
+    light_vector = normalize(light_position.xyz - mp.xyz);
     
     if(useTessllation)    
     {

@@ -63,6 +63,8 @@ AppMain::AppMain(QWidget *parent): QMainWindow(parent)
 	connect(ui.threshold, SIGNAL(triggered()), this, SLOT(changeEffect()));
 	connect(ui.textspeak, SIGNAL(triggered()), this, SLOT(changeEffect()));
 	connect(ui.voronoi, SIGNAL(triggered()), this, SLOT(changeEffect()));
+	connect(ui.gold, SIGNAL(triggered()), this, SLOT(changeEffect()));
+	connect(ui.abstraction, SIGNAL(triggered()), this, SLOT(changeEffect()));
 	//********************EFFECT************************//
 	LoadTrackPath_Default();	
 	ChangeTrackType("Track");	

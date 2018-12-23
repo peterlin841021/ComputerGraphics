@@ -122,8 +122,10 @@ public:
 	clock_t effect_clock;
 	clock_t train_clock;
 	clock_t model_clock;
-	float train_interval = 1000.f;
+	float train_interval = 0.f;
 	float shadowShake = 0.f;
 	size_t effectNum  = 0;
+	size_t train_speed = 5;
+	size_t train_effect = 0;
 };  
 #endif // TRAINVIEW_H  

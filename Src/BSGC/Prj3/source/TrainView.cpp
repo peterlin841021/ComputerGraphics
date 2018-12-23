@@ -91,8 +91,8 @@ void TrainView::myTimer()
 	if (isrun && (currentTime - train_clock) > train_interval)
 	{
 		train_clock = currentTime;
-		path_index++;
-		if (path_index == path.size())
+		path_index+=train_speed;
+		if (path_index >= path.size())
 			path_index = 0;
 	}
 	if ((currentTime - effect_clock) > effect_interval)
@@ -367,7 +367,14 @@ void TrainView:: resetArcball()
 }
 void TrainView::changeSpeed(int speed) 
 {
-	train_interval = 1000.f - 999.f * (float)(speed/100.f);
+	//train_interval = 1000.f - 999.f * (float)(speed/100.f);
+	train_speed = 10 * (float)(speed / 100.f);
+	if (speed > 70 && speed < 85)
+		train_effect = 5;
+	else if(speed > 85)
+		train_effect = 4;
+	else
+		train_effect = 0;
 }
 void TrainView::paint()
 {
@@ -948,28 +955,27 @@ void TrainView::setProjection()
 		if (path.size() > 0) 
 		{		
 		glPushMatrix();
-		glMatrixMode(GL_PROJECTION);				
-		gluPerspective(120, 1, 1, 200);
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();		
-		Pnt3f p1 = path[path_index].points;
-		Pnt3f p2 = path[(path_index + 1) % path.size()].points;
-		Pnt3f dec = trainEnd - trainStart;
-		dec.normalize();
-		
-		float angle = -radiansToDegrees(atan2(path[(path_index)].orients.z, path[(path_index)].orients.x));
-		//glRotatef(angle, 0, 1, 0);
-		if (angle > 0)
-			angle = -radiansToDegrees(acos(path[(path_index)].orients.y));
-		else
-			angle = radiansToDegrees(acos(path[(path_index)].orients.y));
-		glRotatef(-angle, 0, 0, path[(path_index)].orients.z);
-		gluLookAt
-		(
-			p1.x, p1.y + 30.0, p1.z,//camera coordinates
-			p2.x + dec.x, p2.y + 30, p2.z + dec.z,//look for
-			0, 1, 0
-		);		
+			glMatrixMode(GL_PROJECTION);				
+			gluPerspective(120, 1, 1, 200);
+			glMatrixMode(GL_MODELVIEW);
+			glLoadIdentity();		
+			Pnt3f p1 = path[path_index].points;
+			Pnt3f p2 = path[(path_index + 1) % path.size()].points;
+			Pnt3f dec = trainEnd - trainStart;
+			dec.normalize();
+			
+			float angle = -radiansToDegrees(atan2(path[(path_index)].orients.z, path[(path_index)].orients.x));			
+			if (angle > 0)
+				angle = -radiansToDegrees(acos(path[(path_index)].orients.y));
+			else
+				angle = radiansToDegrees(acos(path[(path_index)].orients.y));
+			glRotatef(-angle, 0, 0, dec.z);
+			gluLookAt
+			(
+				p1.x, p1.y + 25, p1.z ,//camera coordinates
+				p2.x, p2.y + 25, p2.z,//look for
+				-path[(path_index)].orients.x, path[(path_index)].orients.y, -path[(path_index)].orients.z
+			);		
 		glPopMatrix();
 		update();
 		}		
@@ -1282,11 +1288,29 @@ void TrainView::drawTrack(bool doingShadows)
 	if (trackUpdate)
 	{
 		path.clear();
+		size_t divide = 10;
 		for (size_t i = 0; i < track_path.size(); i++)
 		{
 			TrackTrail t1 = TrackTrail(track_path[i], track_orient[i], track_orient_cross[i]);
 			TrackTrail t2 = TrackTrail(track_path[(i + 1) % track_path.size()], track_orient[(i + 1) % track_orient.size()], track_orient_cross[(i + 1) % track_orient_cross.size()]);
-			path.push_back(t1);
+			Pnt3f pos_divided = t2.points - t1.points;
+				pos_divided.x /= (float)divide;
+				pos_divided.y /= (float)divide;
+				pos_divided.z /= (float)divide;
+			Pnt3f orient_divided = t2.orients - t1.orients;
+				orient_divided.x /= (float)divide;
+				orient_divided.y /= (float)divide;
+				orient_divided.z /= (float)divide;
+			Pnt3f cross_divided = t2.orients_cross - t1.orients_cross;
+				cross_divided.x /= (float)divide;
+				cross_divided.y /= (float)divide;
+				cross_divided.z /= (float)divide;
+			for (size_t j = 1; j < divide; j++)
+			{
+				TrackTrail t3 = TrackTrail(t1.points+ pos_divided*j, t1.orients+ orient_divided * j,t1.orients_cross+ cross_divided * j);
+				path.push_back(t3);
+			}
+			//path.push_back(t1);
 		}
 		trackUpdate = false;
 	}
@@ -1491,9 +1515,9 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	trackobj->Begin();
 	trackobj->shaderProgram->setUniformValue("tex", trackobj->textureId);
 	if (!shadow)
-		trackobj->Render(GL_TRIANGLES,false,0,ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 1.f,effect_clock, effectNum);
+		trackobj->Render(GL_TRIANGLES,false,0,ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 1.f,effect_clock, (effectNum==0)? train_effect: effectNum);
 	else
-		trackobj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 0.3f, effect_clock, effectNum);
+		trackobj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 0.3f, effect_clock, (effectNum == 0) ? train_effect : effectNum);
 	trackobj->End();
 
 	if (shadow) 

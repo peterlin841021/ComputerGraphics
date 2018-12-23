@@ -55,6 +55,8 @@ public:
 	QAction *threshold;
 	QAction *textspeak;
 	QAction *voronoi;
+	QAction *gold;
+	QAction *abstraction;
 	//********************EFFECT************************//
     QWidget *centralWidget;
     QVBoxLayout *verticalLayout;
@@ -175,7 +177,19 @@ public:
 		voronoi->setObjectName(QStringLiteral("Voronoi"));
 		voronoi->setData(9);
 		voronoi->setCheckable(true);
-		voronoi->setChecked(false);		
+		voronoi->setChecked(false);
+
+		gold = new QAction(AppMainClass);
+		gold->setObjectName(QStringLiteral("Gold"));
+		gold->setData(10);
+		gold->setCheckable(true);
+		gold->setChecked(false);
+
+		abstraction = new QAction(AppMainClass);
+		abstraction->setObjectName(QStringLiteral("Abstraction"));
+		abstraction->setData(11);
+		abstraction->setCheckable(true);
+		abstraction->setChecked(false);
 		//********************EFFECT************************//
         aWorld = new QAction(AppMainClass);
         aWorld->setObjectName(QStringLiteral("aWorld"));
@@ -646,6 +660,8 @@ public:
 		menuEffect->addAction(threshold);
 		menuEffect->addAction(textspeak);
 		menuEffect->addAction(voronoi);
+		menuEffect->addAction(gold);
+		menuEffect->addAction(abstraction);
 		//********************EFFECT************************//
         menuFile->addAction(aLoadPath);
         menuFile->addAction(aSavePath);
@@ -686,6 +702,8 @@ public:
 		threshold->setText(QApplication::translate("AppMainClass", "Threshold", Q_NULLPTR));
 		textspeak->setText(QApplication::translate("AppMainClass", "Textspeak", Q_NULLPTR));
 		voronoi->setText(QApplication::translate("AppMainClass", "Voronoi", Q_NULLPTR));
+		gold->setText(QApplication::translate("AppMainClass", "Gold", Q_NULLPTR));
+		abstraction->setText(QApplication::translate("AppMainClass", "Abstraction", Q_NULLPTR));
 		//********************EFFECT************************//
         aTrain->setText(QApplication::translate("AppMainClass", "Train", Q_NULLPTR));
         aLinear->setText(QApplication::translate("AppMainClass", "Linear", Q_NULLPTR));

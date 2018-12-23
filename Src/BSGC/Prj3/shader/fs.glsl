@@ -1,5 +1,7 @@
 #version 430 core
 const vec2 iResolution = vec2(800., 800.);
+
+vec2 img_size = vec2(800., 800.);
 uniform vec3 camerapos;
 in vec2 texturecoord;
 in vec3 texturecoord3d;
@@ -34,6 +36,60 @@ uniform bool useTessllation;
 
 float rand(float x) { return fract(sin(x) * 4358.5453); }
 float rand(vec2 co) { return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 3758.5357); }
+/************Abstraction**************/
+void AverageFilter()
+{
+	fragmentcolor = vec4(0,0,0,0);
+	int n = 0;
+	int half_size = 3;
+	for (int i = -half_size; i <= half_size; ++i) 
+	{
+		for (int j = -half_size; j <= half_size; ++j) 
+		{
+			vec4 texColor = texture(tex,texturecoord + vec2(i, j) / img_size);
+			fragmentcolor += texColor;
+			n++;
+		}
+	}
+	fragmentcolor /= n;
+}
+void Quantization()
+{
+	vec4 texColor=fragmentcolor;	
+	float r = floor(texColor.r * float(8)) / float(8);
+	float g = floor(texColor.g * float(8)) / float(8);
+	float b = floor(texColor.b * float(8)) / float(8);
+	fragmentcolor = vec4(r, g, b, alpha);
+}
+void DoG()
+{		
+	int halfWidth = int(ceil(2.0 * 2.8f)); 
+	vec2 sum = vec2(0.0); 
+	vec2 norm = vec2(0.0); 	
+	for (int i = -halfWidth; i <= halfWidth; ++i) 
+	{	
+		for (int j = -halfWidth; j <= halfWidth; ++j) 
+		{	
+			float d = length(vec2(i, j)); 
+			vec2 kernel = vec2(exp(-d * d / (2.0 * 2.0f * 2.0f)),exp(-d * d / (2.0 * 2.8f * 2.8f))); 
+			vec4 texColor = texture(tex, texturecoord + vec2(i, j) / img_size); 
+			vec2 L = vec2(0.299 * texColor.r + 0.587 * texColor.g + 0.114 * texColor.b); 				
+			norm += 2.0 * kernel; 
+			sum += kernel * L; 
+		}
+	}
+	sum /= norm; 
+	float H = 100.0 * (sum.x - 0.99f * sum.y); 
+	float edge = (H > 0.0) ? 1.0 : 2.0 * smoothstep(-2.0, 2.0, 3.4f * H);
+	fragmentcolor *= vec4(edge, edge, edge, alpha);
+}
+void Abstraction()
+{
+	AverageFilter();
+	Quantization();
+	DoG();
+}
+/************Abstraction**************/
 /***********Nebula smoke**************/
 #define HASHSCALE1 443.8975
 #define HASHSCALE3 vec3(.1031, .1030, .0973)
@@ -337,7 +393,7 @@ void main(void)
 		if(objType == 2)//WATER
 		{
 			vec4 lp = ModelViewMatrix * vec4(light_position,1.0);
-			vec3 light_vector = normalize(lp.xyz - vpos.xyz);
+			vec3 light_vector = normalize(light_position.xyz - vpos.xyz);
 			//vec4 normalmapcolor = texture(normalmap,uv);
 			//vec3 normal = vec3(normalmapcolor.r * 2 - 1,normalmapcolor.b,normalmapcolor.g * 2 - 1);
 			//mat3 normalmatrix = transpose(inverse(mat3(ModelViewMatrix)));
@@ -360,12 +416,15 @@ void main(void)
 			vec4 RefractColor = texture(texcube,RefractVec);
 			vec4 ReflectColor = texture(texcube,ReflectVec);			
 			vec4 water_color = texture2D(tex,uv);//Water
-			water_color = mix(water_color,RefractColor,0.4);
-			water_color = mix(water_color,ReflectColor,0.4);
-			water_color += vec4(0,0,0.1,0);
-			black += water_color * vec4(color_ambient,1);
-			black += water_color * diffuse * vec4(color_diffuse,1);
-			black += water_color * specular * vec4(color_specular,1);									
+			fragmentcolor = water_color;
+			fragmentcolor = mix(fragmentcolor,RefractColor,0.4);
+			fragmentcolor = mix(fragmentcolor,ReflectColor,0.4);
+			fragmentcolor += vec4(0,0,0.1,0);
+			if(effect == 11)
+				Abstraction();
+			black += fragmentcolor * vec4(color_ambient,1);
+			black += fragmentcolor * diffuse * vec4(color_diffuse,1);
+			black += fragmentcolor * specular * vec4(color_specular,1);									
 			if(alpha !=1)
 				black.a = alpha;			
 			fragmentcolor = black;
@@ -373,7 +432,7 @@ void main(void)
 		else//Terrain
 		{
 			vec4 lp = ModelViewMatrix * vec4(light_position,1.0);
-			vec3 light_vector = normalize(lp.xyz - vpos.xyz);
+			vec3 light_vector = normalize(light_position.xyz - vpos.xyz);
 			vec4 black = vec4(0,0,0,1);	
 			//vec3 normal = normalize((ModelViewMatrix *vec4(nor,0))).xyz;
 			vec3 normal = nor;
@@ -384,9 +443,12 @@ void main(void)
 			float specular = pow(max(0.0,sv),shininess);
 			//vec4 light_color = vec4(min(c * color_ambient,vec3(1.0)) + diffuse * color_diffuse + specular*color_specular,0);
 			vec4 color = texture2D(tex,uv);
-			black += color * vec4(color_ambient,1);
-			black += color * diffuse * vec4(color_diffuse,1);
-			black += color * specular * vec4(color_specular,1);
+			fragmentcolor = color;
+			if(effect == 11)
+				Abstraction();
+			black += fragmentcolor * vec4(color_ambient,1);
+			black += fragmentcolor * diffuse * vec4(color_diffuse,1);
+			black += fragmentcolor * specular * vec4(color_specular,1);
 			if(alpha !=1)
 				black.a = alpha;
 			fragmentcolor = black;
@@ -412,13 +474,16 @@ void main(void)
 			vec4 ReflectColor = texture(texcube,ReflectVec);			
 												
 			vec4 color = texture2D(tex,texturecoord);
+			fragmentcolor = color;
+			if(effect == 11)
+				Abstraction();
 			vec4 black = vec4(0,0,0,1);
-			color = mix(color,RefractColor,0.7);
-			color = mix(color,ReflectColor,0.7);
+			fragmentcolor = mix(fragmentcolor,RefractColor,0.7);
+			fragmentcolor = mix(fragmentcolor,ReflectColor,0.7);
 			
-			black += color * vec4(color_ambient,1);
-			black += color * diffuse * vec4(color_diffuse,1);
-			black += color * specular * vec4(color_specular,1);
+			black += fragmentcolor * vec4(color_ambient,1);
+			black += fragmentcolor * diffuse * vec4(color_diffuse,1);
+			black += fragmentcolor * specular * vec4(color_specular,1);
 			if(alpha !=1)
 				black.a = alpha;			
 			fragmentcolor = black;
@@ -435,9 +500,12 @@ void main(void)
 			vec4 color = texture2D(tex,texturecoord);
 			if(color.a < 0.1)
 				discard;
-			black += color * vec4(color_ambient,1);
-			black += color * diffuse * vec4(color_diffuse,1);
-			black += color * specular * vec4(color_specular,1);
+			fragmentcolor = color;
+			if(effect == 11)
+				Abstraction();
+			black += fragmentcolor * vec4(color_ambient,1);
+			black += fragmentcolor * diffuse * vec4(color_diffuse,1);
+			black += fragmentcolor * specular * vec4(color_specular,1);
 			if(alpha !=1)
 				black.a = alpha;
 			fragmentcolor = black;
@@ -497,6 +565,12 @@ void main(void)
 		{
 		    VoronoiDiagram();
             break;
-		}		
+		}
+		case(10)://Gold
+		{
+			if(!useTessllation)
+				gold_particle();
+            break;
+		}
     }
 }
