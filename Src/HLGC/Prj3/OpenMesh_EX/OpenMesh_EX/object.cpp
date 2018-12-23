@@ -1,6 +1,5 @@
 #include "object.h"
-#include <time.h>
-
+#include<time.h>
 object::object()
 {
 }
@@ -73,12 +72,14 @@ mat4 object::setScale(float x, float y, float z)
 
 void object::render(GLenum type, mat4 projectionMatrix, mat4 modelMatrix, mat4 viewMatrix)
 {
+	if (Points.size() < 1)return;
 	glUseProgram(shaderProgram);
 	glBindVertexArray(VAO);
 
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "ModelMatrix"), 1, GL_FALSE, &modelMatrix[0][0]);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "ViewMatrix"), 1, GL_FALSE, &viewMatrix[0][0]);
-	glUniform1f(glGetUniformLocation(shaderProgram, "time"),clock());
+	glUniform1f(glGetUniformLocation(shaderProgram, "time"), clock());
+	//glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "ModelViewMatrix"), 1, GL_FALSE, &modelviewMatrix[0][0]);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "ProjectionMatrix"), 1, GL_FALSE, &projectionMatrix[0][0]);
 
 	glBindBuffer(GL_ARRAY_BUFFER, pVBOs);
