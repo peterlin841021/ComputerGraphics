@@ -18,6 +18,7 @@ size_t window_width = 0;
 size_t window_height = 0;
 glm::mat4 ProjectionMatrix;
 glm::mat4 ViewMatrix;
+glm::mat4 ModelMatrix;
 bool reTime = false;
 float countTime = 0;
 bool isRotate = false;
@@ -35,10 +36,10 @@ double lx = 0.0f, lz = -1.0f, ly = 0.0f;
 std::vector<float> meshes_vs;
 std::vector<float> meshes_colors;
 double newCameraPosition[3] = { 0,0,-1};
-double cameraDistance = 40;
+double cameraDistance = 5;
 double translateDelta[3];
 double targetPosition[3] = { 0,0,0 };
-double ZoomValue = 0.08;
+double ZoomValue = 0.5;
 
 static const Mouse::button physical_to_logical_map[] = 
 {
@@ -61,45 +62,45 @@ namespace OpenMesh_EX
 	/// </summary>
 	public ref class MyForm : public System::Windows::Forms::Form
 	{
-	public:
-		MyForm(void)
-		{
-			InitializeComponent();
-			//
-			//TODO:  在此加入建構函式程式碼
-			//
-		}
-
-	protected:
-		/// <summary>
-		/// 清除任何使用中的資源。
-		/// </summary>
-		~MyForm()
-		{
-			if (components)
+		public:
+			MyForm(void)
 			{
-				delete components;
+				InitializeComponent();
+				//
+				//TODO:  在此加入建構函式程式碼
+				//
 			}
-		}
 
-	private: System::Windows::Forms::MenuStrip^  menuStrip1;
-	private: System::Windows::Forms::ToolStripMenuItem^  fileToolStripMenuItem;
-	private: System::Windows::Forms::ToolStripMenuItem^  loadModelToolStripMenuItem;
-	private: System::Windows::Forms::OpenFileDialog^  openModelDialog;
-	private: System::Windows::Forms::SaveFileDialog^  saveModelDialog;
-	private: System::Windows::Forms::ToolStripMenuItem^  saveModelToolStripMenuItem;
-	private: HKOGLPanel::HKOGLPanelControl^  hkoglPanelControl1;
-	private: System::Windows::Forms::Timer^  timer1;
-	private: System::ComponentModel::IContainer^  components;
-	protected:
+		protected:
+			/// <summary>
+			/// 清除任何使用中的資源。
+			/// </summary>
+			~MyForm()
+			{
+				if (components)
+				{
+					delete components;
+				}
+			}
 
-	private:
-		/// <summary>
-		/// 設計工具所需的變數。
-		/// </summary>
+		private: System::Windows::Forms::MenuStrip^  menuStrip1;
+		private: System::Windows::Forms::ToolStripMenuItem^  fileToolStripMenuItem;
+		private: System::Windows::Forms::ToolStripMenuItem^  loadModelToolStripMenuItem;
+		private: System::Windows::Forms::OpenFileDialog^  openModelDialog;
+		private: System::Windows::Forms::SaveFileDialog^  saveModelDialog;
+		private: System::Windows::Forms::ToolStripMenuItem^  saveModelToolStripMenuItem;
+		private: HKOGLPanel::HKOGLPanelControl^  hkoglPanelControl1;
+		private: System::Windows::Forms::Timer^  timer1;
+		private: System::ComponentModel::IContainer^  components;
+		protected:
+
+		private:
+			/// <summary>
+			/// 設計工具所需的變數。
+			/// </summary>
 
 
-#pragma region Windows Form Designer generated code
+		#pragma region Windows Form Designer generated code
 		/// <summary>
 		/// 此為設計工具支援所需的方法 - 請勿使用程式碼編輯器修改
 		/// 這個方法的內容。
@@ -208,210 +209,114 @@ namespace OpenMesh_EX
 			this->PerformLayout();
 
 		}
-#pragma endregion
-void UpdateViewMatrix()
-{
-	double theta = angleV * (3.14159f / 180.0f);
-	double phi = angleH * (3.14159f / 180.0f);	
-	newCameraPosition[0] = cameraDistance * sin(theta) * cos(phi);
-	newCameraPosition[1] = cameraDistance * cos(theta);
-	newCameraPosition[2] = cameraDistance * sin(theta) * sin(phi);
-
-	for (int i = 0; i < 3; i++)
-		targetPosition[i] += translateDelta[i];
-	for (int i = 0; i < 3; i++)
-		newCameraPosition[i] += targetPosition[i];
-
-	ViewMatrix = glm::lookAt(
-		glm::vec3(newCameraPosition[0], newCameraPosition[1], newCameraPosition[2]), // Camera in World Space
-		glm::vec3(targetPosition[0], targetPosition[1], targetPosition[2]), // and looks at the origin
-		glm::vec3(0, 1, 0)  // Head is up (set to 0,1,0 to look upside-down)
-	);
-}
-private: System::Void hkoglPanelControl1_Load(System::Object^  sender, System::EventArgs^  e)
-{
-	//glew初始
-	GLenum res = glewInit();
-	if (res != GLEW_OK) 
-	{
-		fprintf(stderr, "Error: '%s'\n", glewGetErrorString(res));
-	}
-	glClearColor(0, 0, 0, 1);
-
-	////Set up MVP matrix
-	ProjectionMatrix = glm::perspective(60.0f, 613.f / 430.f, 0.1f, 2000.0f);\
-	for (size_t i = 0; i < 4; i++)
-	{
-		for (size_t j = 0; j < 4; j++)
+		#pragma endregion
+		void UpdateViewMatrix()
 		{
-			printf("%f ", ProjectionMatrix[i][j]);
+			double theta = angleV * (3.14159f / 180.0f);
+			double phi = angleH * (3.14159f / 180.0f);	
+			newCameraPosition[0] = cameraDistance * sin(theta) * cos(phi);
+			newCameraPosition[1] = cameraDistance * cos(theta);
+			newCameraPosition[2] = cameraDistance * sin(theta) * sin(phi);
+
+			for (int i = 0; i < 3; i++)
+				targetPosition[i] += translateDelta[i];
+			for (int i = 0; i < 3; i++)
+				newCameraPosition[i] += targetPosition[i];
+
+			ViewMatrix = glm::lookAt(
+				glm::vec3(newCameraPosition[0], newCameraPosition[1], newCameraPosition[2]), // Camera in World Space
+				glm::vec3(targetPosition[0], targetPosition[1], targetPosition[2]), // and looks at the origin
+				glm::vec3(0, 1, 0)  // Head is up (set to 0,1,0 to look upside-down)
+			);
 		}
-		printf("\n");
-	}
-	printf("-------------------------\n");
-	/*glPushMatrix();
-	glMatrixMode(GL_PROJECTION_MATRIX);
-	gluPerspective(60.0f, 613.f / 430.f, 0.1f, 2000.0f);
-	glPopMatrix();
-	GLdouble mvm[16], pm[16];	
-	glGetDoublev(GL_PROJECTION_MATRIX, pm);
-	glGetDoublev(GL_MODELVIEW_MATRIX, mvm);*/
-	
-	ViewMatrix = glm::lookAt(
-		glm::vec3(newCameraPosition[0], newCameraPosition[1], newCameraPosition[2]), // Camera in World Space
-		glm::vec3(targetPosition[0], targetPosition[1], targetPosition[2]), // and looks at the origin
-		glm::vec3(0, 1, 0)  // Head is up (set to 0,1,0 to look upside-down)
-	);
-	//Ininialize object
-	model_tri.initialize();
-	model_tri.setShader("vs.glsl", "fs.glsl");
-	model_wire.initialize();
-	model_wire.setShader("vs.glsl", "fs.glsl");
-	model_point.initialize();
-	model_point.setShader("vs.glsl", "fs.glsl");	
-}
-void Update()
-{
-	glm::mat4 mm(1.0);
-	mm *= translate(mat4(1.0), glm::vec3(0, 0, 0));
-	mm *= scale(mat4(1.0), glm::vec3(10, 10, 10));
-	model_tri.render(GL_TRIANGLES, ProjectionMatrix, mm, ViewMatrix);
-	model_wire.render(GL_LINES, ProjectionMatrix, mm, ViewMatrix);	
-	model_point.render(GL_LINES, ProjectionMatrix, mm, ViewMatrix);
-}
-private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::Windows::Forms::PaintEventArgs^  e)
-{
-	glClearColor(1, 1, 1, 1);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	UpdateViewMatrix();
-	if(mesh != NULL)
-		Update();
-}
-//private: System::Void hkoglPanelControl1_MouseDown(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
-//{
-//	if (e->Button == System::Windows::Forms::MouseButtons::Left ||
-//		e->Button == System::Windows::Forms::MouseButtons::Middle)
-//	{
-//		point center;
-//		Mouse_State = Mouse::NONE;
-//		center[0] = 0.0;
-//		center[1] = 0.0;
-//		center[2] = 0.0;
-//		camera.mouse(e->X, e->Y, Mouse_State,
-//			xf * center,
-//			1.0, xf);
-//	}
-//}
-//private: System::Void hkoglPanelControl1_MouseMove(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
-//{
-//	if (e->Button == System::Windows::Forms::MouseButtons::Left)
-//	{
-//		point center;
-//		Mouse_State = Mouse::ROTATE;
-//		center[0] = 0.0;
-//		center[1] = 0.0;
-//		center[2] = 0.0;
-//		camera.mouse(e->X, e->Y, Mouse_State,
-//			xf * center,
-//			1.0, xf);
-//		hkoglPanelControl1->Invalidate();
-//	}
-//
-//	if (e->Button == System::Windows::Forms::MouseButtons::Middle)
-//	{
-//		point center;
-//		Mouse_State = Mouse::MOVEXY;
-//		center[0] = 0.0;
-//		center[1] = 0.0;
-//		center[2] = 0.0;
-//		camera.mouse(e->X, e->Y, Mouse_State,
-//			xf * center,
-//			1.0, xf);
-//		hkoglPanelControl1->Invalidate();
-//	}
-//}
-//private: System::Void hkoglPanelControl1_MouseWheel(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
-//{
-//	if (e->Delta < 0)
-//	{
-//		point center;
-//		Mouse_State = Mouse::WHEELDOWN;
-//		center[0] = 0.0;
-//		center[1] = 0.0;
-//		center[2] = 0.0;
-//		camera.mouse(e->X, e->Y, Mouse_State,
-//			xf * center,
-//			1.0, xf);
-//		hkoglPanelControl1->Invalidate();
-//	}
-//	else
-//	{
-//		point center;
-//		Mouse_State = Mouse::WHEELUP;
-//		center[0] = 0.0;
-//		center[1] = 0.0;
-//		center[2] = 0.0;
-//		camera.mouse(e->X, e->Y, Mouse_State,
-//			xf * center,
-//			1.0, xf);
-//		hkoglPanelControl1->Invalidate();
-//	}
-//}
-		private: System::Void hkoglPanelControl1_MouseDown(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
+		private: System::Void hkoglPanelControl1_Load(System::Object^  sender, System::EventArgs^  e)
 		{
-			if (e->Button == System::Windows::Forms::MouseButtons::Left)
+			//glew初始
+			GLenum res = glewInit();
+			if (res != GLEW_OK) 
 			{
-				isRotate = true;
-				xOrigin = e->X;				
-				yOrigin = e->Y;
-				
+				fprintf(stderr, "Error: '%s'\n", glewGetErrorString(res));
 			}
-			if (e->Button == System::Windows::Forms::MouseButtons::Middle)
+			glClearColor(0, 0, 0, 1);
+
+			////Set up MVP matrix
+			ProjectionMatrix = glm::perspective(60.0f, 613.f / 430.f, 0.1f, 2000.0f);
+			ModelMatrix = glm::mat4(1.0);
+			/*for (size_t i = 0; i < 4; i++)
 			{
-				isTranslate = true;
-				xOrigin = e->X;
-				yOrigin = e->Y;
-			}
-			if (e->Button == System::Windows::Forms::MouseButtons::Right)
-			{
-				UpdateViewMatrix();
-				GLdouble mouseX, mouseY;
-				if (mesh != NULL)
+				for (size_t j = 0; j < 4; j++)
 				{
-					mouseX = xOrigin;
-					mouseY = yOrigin;
-					glm::mat4 mm(1.0);
-					mm *= translate(mat4(1.0), glm::vec3(0, 0, 0));
-					mm *= scale(mat4(1.0), glm::vec3(10, 10, 10));
-
-					glm::vec3 line_color = glm::vec3(0, 0, 0);
-					glm::vec3 n = mesh->nearest_point(mouseX, mouseY, mm, ViewMatrix, ProjectionMatrix);
-					model_point.clear();
-					model_point.setPoint(glm::vec3(0, 0, 1000));
-					model_point.setPoint(n);
-					model_point.setColor(line_color);
-					model_point.setColor(line_color);
-					printf("Nearest = %f/%f/%f\n", n.x, n.y, n.z);
+					printf("%f ", ProjectionMatrix[i][j]);
 				}
+				printf("\n");
 			}
+			printf("-------------------------\n");*/
+			/*glPushMatrix();
+			glMatrixMode(GL_PROJECTION_MATRIX);
+			gluPerspective(60.0f, 613.f / 430.f, 0.1f, 2000.0f);
+			glPopMatrix();
+			GLdouble mvm[16], pm[16];	
+			glGetDoublev(GL_PROJECTION_MATRIX, pm);
+			glGetDoublev(GL_MODELVIEW_MATRIX, mvm);*/
+	
+			ViewMatrix = glm::lookAt(
+				glm::vec3(newCameraPosition[0], newCameraPosition[1], newCameraPosition[2]), // Camera in World Space
+				glm::vec3(targetPosition[0], targetPosition[1], targetPosition[2]), // and looks at the origin
+				glm::vec3(0, 1, 0)  // Head is up (set to 0,1,0 to look upside-down)
+			);
+			//Ininialize object
+			model_tri.initialize();
+			model_tri.setShader("vs.glsl", "fs.glsl");
+			model_wire.initialize();
+			model_wire.setShader("vs.glsl", "fs.glsl");
+			model_point.initialize();
+			model_point.setShader("vs.glsl", "fs.glsl");	
 		}
-		private: System::Void hkoglPanelControl1_MouseUp(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
+		void Update()
+		{	
+			model_tri.render(GL_TRIANGLES, ProjectionMatrix, ModelMatrix, ViewMatrix);
+			model_wire.render(GL_LINES, ProjectionMatrix, ModelMatrix, ViewMatrix);
+			glEnable(GL_PROGRAM_POINT_SIZE);
+			glPointSize(10);
+			model_point.render(GL_POINTS, ProjectionMatrix, ModelMatrix, ViewMatrix);
+			hkoglPanelControl1->Invalidate();
+		}
+		private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::Windows::Forms::PaintEventArgs^  e)
+		{
+			glClearColor(1, 1, 1, 1);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
+			UpdateViewMatrix();
+			if(mesh != NULL)
+				Update();	
+		}		
+		/*private: System::Void hkoglPanelControl1_MouseMove(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
 		{
 			if (e->Button == System::Windows::Forms::MouseButtons::Left)
 			{
-				isRotate = false;
-				prelx = lx;
-				prely = ly;
+				point center;
+				Mouse_State = Mouse::ROTATE;
+				center[0] = 0.0;
+				center[1] = 0.0;
+				center[2] = 0.0;
+				camera.mouse(e->X, e->Y, Mouse_State,
+					xf * center,
+					1.0, xf);
+				hkoglPanelControl1->Invalidate();
 			}
+	
 			if (e->Button == System::Windows::Forms::MouseButtons::Middle)
 			{
-				isTranslate = false;
-				translateDelta[0] = 0;
-				translateDelta[1] = 0;
-				translateDelta[2] = 0;
+				point center;
+				Mouse_State = Mouse::MOVEXY;
+				center[0] = 0.0;
+				center[1] = 0.0;
+				center[2] = 0.0;
+				camera.mouse(e->X, e->Y, Mouse_State,
+					xf * center,
+					1.0, xf);
+				hkoglPanelControl1->Invalidate();
 			}
-		}
+		}*/
 		private: System::Void hkoglPanelControl1_MouseMove(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
 		{
 			if (isRotate)
@@ -436,6 +341,33 @@ private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::
 				yOrigin = e->Y;
 			}
 		}
+		/*private: System::Void hkoglPanelControl1_MouseWheel(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
+		{
+			if (e->Delta < 0)
+			{
+				point center;
+				Mouse_State = Mouse::WHEELDOWN;
+				center[0] = 0.0;
+				center[1] = 0.0;
+				center[2] = 0.0;
+				camera.mouse(e->X, e->Y, Mouse_State,
+					xf * center,
+					1.0, xf);
+				hkoglPanelControl1->Invalidate();
+			}
+			else
+			{
+				point center;
+				Mouse_State = Mouse::WHEELUP;
+				center[0] = 0.0;
+				center[1] = 0.0;
+				center[2] = 0.0;
+				camera.mouse(e->X, e->Y, Mouse_State,
+					xf * center,
+					1.0, xf);
+				hkoglPanelControl1->Invalidate();
+			}
+		}*/
 		private: System::Void hkoglPanelControl1_MouseWheel(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
 		{
 			if (e->Delta > 0)
@@ -447,8 +379,67 @@ private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::
 			{
 				cameraDistance += 0.05f * abs(cameraDistance);
 				cameraDistance = (((cameraDistance) > (minDistance)) ? (cameraDistance) : (minDistance));
-			}	
-		}		
+			}
+		}
+		private: System::Void hkoglPanelControl1_MouseDown(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
+		{
+			UpdateViewMatrix();
+			if (e->Button == System::Windows::Forms::MouseButtons::Left)
+			{
+				isRotate = true;
+				xOrigin = e->X;				
+				yOrigin = e->Y;
+				
+			}
+			if (e->Button == System::Windows::Forms::MouseButtons::Middle)
+			{
+				isTranslate = true;
+				xOrigin = e->X;
+				yOrigin = e->Y;
+			}
+			if (e->Button == System::Windows::Forms::MouseButtons::Right)
+			{
+				if (mesh != NULL)
+				{									
+					glm::vec3 drawColor = glm::vec3(0, 0,1);
+					glm::vec3 n = mesh->nearest_point(e->X, e->Y, ModelMatrix, ViewMatrix, ProjectionMatrix);
+					model_point.clear();					
+					model_point.setPoint(n);
+					model_point.setColor(drawColor);								
+				}
+			}
+		}
+		/*private: System::Void hkoglPanelControl1_MouseDown(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
+		{
+			if (e->Button == System::Windows::Forms::MouseButtons::Left ||
+				e->Button == System::Windows::Forms::MouseButtons::Middle)
+			{
+				point center;
+				Mouse_State = Mouse::NONE;
+				center[0] = 0.0;
+				center[1] = 0.0;
+				center[2] = 0.0;
+				camera.mouse(e->X, e->Y, Mouse_State,
+					xf * center,
+					1.0, xf);
+			}
+		}*/
+		private: System::Void hkoglPanelControl1_MouseUp(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
+		{
+			if (e->Button == System::Windows::Forms::MouseButtons::Left)
+			{
+				isRotate = false;
+				prelx = lx;
+				prely = ly;
+			}
+			if (e->Button == System::Windows::Forms::MouseButtons::Middle)
+			{
+				isTranslate = false;
+				translateDelta[0] = 0;
+				translateDelta[1] = 0;
+				translateDelta[2] = 0;
+			}
+		}				
 		private: System::Void loadModelToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
 		{
 			openModelDialog->Filter = "Model(*.obj)|*obj";
@@ -518,8 +509,8 @@ private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::
 		}
 		private: System::Void MyForm_Resize(System::Object^  sender, System::EventArgs^  e) 
 		{
-			window_width = this->Width;
-			window_height = this->Height;			
+			/*window_width = this->Width;
+			window_height = this->Height;*/
 		}
-};
+	};
 }

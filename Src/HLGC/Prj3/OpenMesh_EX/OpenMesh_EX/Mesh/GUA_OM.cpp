@@ -607,36 +607,19 @@ glm::vec3 Tri_Mesh::nearest_point(int x, int y,glm::mat4 m, glm::mat4 v, glm::ma
 {
 	float min_dis = 1000000.f;
 	GLint viewport[4];
-	/*GLdouble mvm[16], pm[16];		
 	glGetIntegerv(GL_VIEWPORT, viewport);
-	glGetDoublev(GL_PROJECTION_MATRIX, pm);
-	glGetDoublev(GL_MODELVIEW_MATRIX, mvm);	*/
 	y = viewport[3] - y;
 	GLdouble windowZ = 0;	
 	glReadPixels((GLint)x, (GLint)y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &windowZ);
 	double screen_X = 0.f, screen_Y = 0.f, screen_Z = 0.f;
 	GLdouble pm[16],mvm[16];
-	//printf("P\n");
-	p = glm::mat4(1.0);
 	for (size_t i = 0; i < 4; i++)
 	{
 		for (size_t j = 0; j < 4; j++)
-		{
-			//printf("%f ", p[i][j]);
+		{			
 			pm[i * 4 + j] = p[i][j];
-		}
-		//printf("\n");
+		}	
 	}
-	//printf("V\n");
-	for (size_t i = 0; i < 4; i++)
-	{
-		for (size_t j = 0; j < 4; j++)
-		{
-			//printf("%f ", v[i][j]);
-			//vm[i * 4 + j] = v[i][j];
-		}
-		//printf("\n");
-	}	
 	v *= m;
 	for (size_t i = 0; i < 4; i++)
 	{
@@ -645,9 +628,8 @@ glm::vec3 Tri_Mesh::nearest_point(int x, int y,glm::mat4 m, glm::mat4 v, glm::ma
 			mvm[i * 4 + j] = v[i][j];
 		}		
 	}
-	printf("%d\n", gluUnProject(x, y, windowZ,mvm, pm, viewport, &screen_X, &screen_Y, &screen_Z));
-	//printf("%d\n", gluUnProject(x, y, windowZ, (GLdouble*)&(glm::mat4(1.0))[0][0], (GLdouble*)&glm::mat4(1.0)[0][0], viewport, &screen_X, &screen_Y, &screen_Z));
-	//printf("Screen = %f/%f/%f\n", screen_X, screen_Y, screen_Z);
+	printf("%d\n", gluUnProject(x, y, windowZ, mvm, pm, viewport, &screen_X, &screen_Y, &screen_Z));
+	printf("Screen = %f/%f/%f\n", screen_X, screen_Y, screen_Z);
 	glm::vec3 nearest;
 	glm::mat4 mm = glm::mat4(1.0);
 	for (size_t i = 0; i < 4; i++)
@@ -660,9 +642,7 @@ glm::vec3 Tri_Mesh::nearest_point(int x, int y,glm::mat4 m, glm::mat4 v, glm::ma
 	glm::vec3 pos;
 	pos.x = screen_X;
 	pos.y = screen_Y;
-	pos.z = screen_Z;	
-	//pos = glm::vec3(mm * glm::vec4(pos,1.0));
-	printf("Screen = %f/%f/%f\n", pos.x, pos.y, pos.z);
+	pos.z = screen_Z;
 	for (OMT::VIter v_it = vertices_begin() ; v_it != vertices_end() ; ++v_it)
 	{	
 		glm::vec3 ori = glm::vec3(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2]);
@@ -676,29 +656,10 @@ glm::vec3 Tri_Mesh::nearest_point(int x, int y,glm::mat4 m, glm::mat4 v, glm::ma
 			nearest = ori;
 		}
 	}
-	return pos;
+	return nearest;
 }
 void Tri_Mesh::Render_Point()
-{
-	/*glPointSize ( 8.0 ) ;				  
-	glColor3f( 1.0, 0.0, 0.0 ) ;
-	glBegin(GL_POINTS);*/
-	//float min_dis = 10000.f;
-	//glm::vec3 nearest;
-	//for (OMT::VIter v_it = vertices_begin() ; v_it != vertices_end() ; ++v_it)
-	//{
-	//	  //glVertex3dv(point(v_it).data());
-	//	glm::vec4 pp = glm::vec4(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2],1);
-	//	pp = pm * pp;
-	//	float dis = sqrtf(pow(p.x-pp.x,2)+ pow(p.y-pp.y, 2)+ pow(p.z-pp.z, 2));
-	//	if (dis < min_dis)
-	//	{
-	//		min_dis = dis;
-	//		nearest = glm::vec3(pp.x,pp.y,pp.z);
-	//	}
-	//}
-	//printf("x/y/z:%f,%f,%f\n", nearest.x, nearest.y, nearest.z);
-	//glEnd();
+{	
 }
 
 bool ReadFile(std::string _fileName,Tri_Mesh *_mesh)
