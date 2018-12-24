@@ -2,6 +2,7 @@
 #ifndef _GUA_OM_H_
 #define _GUA_OM_H_
 #include "../glm/glm.hpp"
+#include "../glm/gtc/type_ptr.hpp"
 #include <OpenMesh/Core/IO/MeshIO.hh>
 #include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
 #include <OpenMesh/Core/Mesh/PolyMesh_ArrayKernelT.hh>
@@ -239,7 +240,7 @@ public:
 	void Render_SolidWireframe();
 	void Render_Wireframe();*/
 	void Render_Point();
-	glm::vec3 nearest_point(glm::vec3 p, glm::mat4 pm, glm::mat4 mm);
+	glm::vec3 nearest_point(int x,int y,glm::mat4 m, glm::mat4 v, glm::mat4 p);
 	std::vector<float> GetMesh(size_t type);
 private:
 };

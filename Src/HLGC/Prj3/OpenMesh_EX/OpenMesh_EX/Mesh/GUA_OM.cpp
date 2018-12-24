@@ -603,26 +603,80 @@ std::vector<float> Tri_Mesh::GetMesh(size_t type)
 //	glEnd();
 //	
 //}
-glm::vec3 Tri_Mesh::nearest_point(glm::vec3 p, glm::mat4 pm, glm::mat4 mm)
+glm::vec3 Tri_Mesh::nearest_point(int x, int y,glm::mat4 m, glm::mat4 v, glm::mat4 p)
 {
-	float min_dis = 100.f;
+	float min_dis = 1000000.f;
+	GLint viewport[4];
+	/*GLdouble mvm[16], pm[16];		
+	glGetIntegerv(GL_VIEWPORT, viewport);
+	glGetDoublev(GL_PROJECTION_MATRIX, pm);
+	glGetDoublev(GL_MODELVIEW_MATRIX, mvm);	*/
+	y = viewport[3] - y;
+	GLdouble windowZ = 0;	
+	glReadPixels((GLint)x, (GLint)y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &windowZ);
+	double screen_X = 0.f, screen_Y = 0.f, screen_Z = 0.f;
+	GLdouble pm[16],mvm[16];
+	//printf("P\n");
+	p = glm::mat4(1.0);
+	for (size_t i = 0; i < 4; i++)
+	{
+		for (size_t j = 0; j < 4; j++)
+		{
+			//printf("%f ", p[i][j]);
+			pm[i * 4 + j] = p[i][j];
+		}
+		//printf("\n");
+	}
+	//printf("V\n");
+	for (size_t i = 0; i < 4; i++)
+	{
+		for (size_t j = 0; j < 4; j++)
+		{
+			//printf("%f ", v[i][j]);
+			//vm[i * 4 + j] = v[i][j];
+		}
+		//printf("\n");
+	}	
+	v *= m;
+	for (size_t i = 0; i < 4; i++)
+	{
+		for (size_t j = 0; j < 4; j++)
+		{		
+			mvm[i * 4 + j] = v[i][j];
+		}		
+	}
+	printf("%d\n", gluUnProject(x, y, windowZ,mvm, pm, viewport, &screen_X, &screen_Y, &screen_Z));
+	//printf("%d\n", gluUnProject(x, y, windowZ, (GLdouble*)&(glm::mat4(1.0))[0][0], (GLdouble*)&glm::mat4(1.0)[0][0], viewport, &screen_X, &screen_Y, &screen_Z));
+	//printf("Screen = %f/%f/%f\n", screen_X, screen_Y, screen_Z);
 	glm::vec3 nearest;
+	glm::mat4 mm = glm::mat4(1.0);
+	for (size_t i = 0; i < 4; i++)
+	{
+		for (size_t j = 0; j < 4; j++)
+		{
+			 mm[i][j] = mvm[i * 4 + j];
+		}
+	}
+	glm::vec3 pos;
+	pos.x = screen_X;
+	pos.y = screen_Y;
+	pos.z = screen_Z;	
+	//pos = glm::vec3(mm * glm::vec4(pos,1.0));
+	printf("Screen = %f/%f/%f\n", pos.x, pos.y, pos.z);
 	for (OMT::VIter v_it = vertices_begin() ; v_it != vertices_end() ; ++v_it)
 	{	
 		glm::vec3 ori = glm::vec3(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2]);
 		glm::vec4 pp = glm::vec4(ori,1);
 
-		//pp = pm * mm * pp;
-		float dis = sqrtf(pow(p.x-pp.x,2)+ pow(p.y-pp.y, 2)+ pow(p.z-pp.z, 2));
+		pp = mm * pp;
+		float dis = sqrtf(pow(pos.x-pp.x,2)+ pow(pos.y-pp.y, 2)+ pow(pos.z-pp.z, 2));
 		if (dis < min_dis)
 		{
-			
+			min_dis = dis;
+			nearest = ori;
 		}
-		min_dis = dis;
-		nearest = glm::vec3(pp);
-		break;
 	}
-	return nearest;
+	return pos;
 }
 void Tri_Mesh::Render_Point()
 {

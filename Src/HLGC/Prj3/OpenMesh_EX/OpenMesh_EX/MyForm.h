@@ -239,8 +239,24 @@ private: System::Void hkoglPanelControl1_Load(System::Object^  sender, System::E
 	glClearColor(0, 0, 0, 1);
 
 	////Set up MVP matrix
-	ProjectionMatrix = glm::perspective(60.0f, 613.f / 430.f, 0.1f, 2000.0f);
+	ProjectionMatrix = glm::perspective(60.0f, 613.f / 430.f, 0.1f, 2000.0f);\
+	for (size_t i = 0; i < 4; i++)
+	{
+		for (size_t j = 0; j < 4; j++)
+		{
+			printf("%f ", ProjectionMatrix[i][j]);
+		}
+		printf("\n");
+	}
+	printf("-------------------------\n");
+	/*glPushMatrix();
+	glMatrixMode(GL_PROJECTION_MATRIX);
 	gluPerspective(60.0f, 613.f / 430.f, 0.1f, 2000.0f);
+	glPopMatrix();
+	GLdouble mvm[16], pm[16];	
+	glGetDoublev(GL_PROJECTION_MATRIX, pm);
+	glGetDoublev(GL_MODELVIEW_MATRIX, mvm);*/
+	
 	ViewMatrix = glm::lookAt(
 		glm::vec3(newCameraPosition[0], newCameraPosition[1], newCameraPosition[2]), // Camera in World Space
 		glm::vec3(targetPosition[0], targetPosition[1], targetPosition[2]), // and looks at the origin
@@ -348,47 +364,37 @@ private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::
 			{
 				isRotate = true;
 				xOrigin = e->X;				
-				yOrigin = e->Y;				
+				yOrigin = e->Y;
+				
 			}
 			if (e->Button == System::Windows::Forms::MouseButtons::Middle)
 			{
 				isTranslate = true;
 				xOrigin = e->X;
 				yOrigin = e->Y;
-			}			
-			GLint mouseX, mouseY;
-			if (mesh != NULL)
-			{			
-				mouseX = xOrigin;
-				mouseY = yOrigin;
-				glm::mat4 mm(1.0);
-				mm *= translate(mat4(1.0), glm::vec3(0, 0, 0));
-				mm *= scale(mat4(1.0), glm::vec3(10, 10, 10));
-				GLdouble screen_X=0, screen_Y=0, screen_Z=0;
-				glm::mat4 modelview =mm*ViewMatrix;
-				GLint viewport[4];				
-				GLdouble mvm[16],pm[16];				
-				glGetDoublev(GL_PROJECTION_MATRIX, pm);		
-				glGetIntegerv(GL_VIEWPORT, viewport);
-				mouseY = viewport[3] - mouseY - 1;				
-				GLdouble windowZ=0;				
-				glReadPixels(mouseX, mouseY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &windowZ);				
-				printf("%d\n", gluUnProject((GLdouble)mouseX, (GLdouble)mouseY, (GLdouble)windowZ, (GLdouble*)&modelview[0][0], pm, viewport, &screen_X, &screen_Y, &screen_Z));
-				printf("Screen = %f,%f,%f\n", screen_X, screen_Y, screen_Z);
-				glm::vec3 p;
-				p.x = screen_X;
-				p.y = screen_Y;
-				p.z = screen_Z;					
-				glm::vec3 line_color = glm::vec3(0,0,0);
-				glm::vec3 n = mesh->nearest_point(p, ProjectionMatrix, modelview);
-				model_point.clear();
-				model_point.setPoint(glm::vec3(0, 0,1000));
-				model_point.setPoint(n);
-				model_point.setColor(line_color);
-				model_point.setColor(line_color);
-				printf("Nearest = %f/%f/%f\n", n.x, n.y, n.z);
 			}
-			//printf("x/y:%f/%f\n", x,y);
+			if (e->Button == System::Windows::Forms::MouseButtons::Right)
+			{
+				UpdateViewMatrix();
+				GLdouble mouseX, mouseY;
+				if (mesh != NULL)
+				{
+					mouseX = xOrigin;
+					mouseY = yOrigin;
+					glm::mat4 mm(1.0);
+					mm *= translate(mat4(1.0), glm::vec3(0, 0, 0));
+					mm *= scale(mat4(1.0), glm::vec3(10, 10, 10));
+
+					glm::vec3 line_color = glm::vec3(0, 0, 0);
+					glm::vec3 n = mesh->nearest_point(mouseX, mouseY, mm, ViewMatrix, ProjectionMatrix);
+					model_point.clear();
+					model_point.setPoint(glm::vec3(0, 0, 1000));
+					model_point.setPoint(n);
+					model_point.setColor(line_color);
+					model_point.setColor(line_color);
+					printf("Nearest = %f/%f/%f\n", n.x, n.y, n.z);
+				}
+			}
 		}
 		private: System::Void hkoglPanelControl1_MouseUp(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
 		{
