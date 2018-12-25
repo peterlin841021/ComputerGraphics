@@ -240,30 +240,13 @@ namespace OpenMesh_EX
 			glClearColor(0, 0, 0, 1);
 
 			////Set up MVP matrix
-			ProjectionMatrix = glm::perspective(60.0f, 613.f / 430.f, 0.1f, 2000.0f);
-			ModelMatrix = glm::mat4(1.0);
-			/*for (size_t i = 0; i < 4; i++)
-			{
-				for (size_t j = 0; j < 4; j++)
-				{
-					printf("%f ", ProjectionMatrix[i][j]);
-				}
-				printf("\n");
-			}
-			printf("-------------------------\n");*/
-			/*glPushMatrix();
-			glMatrixMode(GL_PROJECTION_MATRIX);
-			gluPerspective(60.0f, 613.f / 430.f, 0.1f, 2000.0f);
-			glPopMatrix();
-			GLdouble mvm[16], pm[16];	
-			glGetDoublev(GL_PROJECTION_MATRIX, pm);
-			glGetDoublev(GL_MODELVIEW_MATRIX, mvm);*/
-	
+			ProjectionMatrix = glm::perspective(60.0f, 613.f / 430.f, 0.1f, 1000.0f);
+			ModelMatrix = glm::mat4(1.0);			
 			ViewMatrix = glm::lookAt(
 				glm::vec3(newCameraPosition[0], newCameraPosition[1], newCameraPosition[2]), // Camera in World Space
 				glm::vec3(targetPosition[0], targetPosition[1], targetPosition[2]), // and looks at the origin
 				glm::vec3(0, 1, 0)  // Head is up (set to 0,1,0 to look upside-down)
-			);
+			);			
 			//Ininialize object
 			model_tri.initialize();
 			model_tri.setShader("vs.glsl", "fs.glsl");
@@ -273,23 +256,55 @@ namespace OpenMesh_EX
 			model_point.setShader("vs.glsl", "fs.glsl");	
 		}
 		void Update()
-		{	
-			model_tri.render(GL_TRIANGLES, ProjectionMatrix, ModelMatrix, ViewMatrix);
-			model_wire.render(GL_LINES, ProjectionMatrix, ModelMatrix, ViewMatrix);
+		{
+			glm::vec3 drawColor = glm::vec3(0, 0, 1);
+			GLdouble mvm[16];
+			glPushMatrix();
+				glMatrixMode(GL_MODELVIEW);				
+				glMultMatrixd((double *)xf);
+				glGetDoublev(GL_MODELVIEW_MATRIX, mvm);
+			glPopMatrix();
+			mat4 mv = mat4(1.0);
+			for (size_t i = 0; i < 4; i++)
+			{
+				for (size_t j = 0; j < 4; j++)
+				{
+					mv[i][j] = mvm[i * 4 + j];
+				}
+			}						
+			model_tri.render(GL_TRIANGLES, ProjectionMatrix, mv, ViewMatrix);
+			model_wire.render(GL_LINES, ProjectionMatrix, mv, ViewMatrix);
+			
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glPointSize(10);
-			model_point.render(GL_POINTS, ProjectionMatrix, ModelMatrix, ViewMatrix);
+			model_point.render(GL_POINTS, ProjectionMatrix, mv, ViewMatrix);
 			hkoglPanelControl1->Invalidate();
 		}
 		private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::Windows::Forms::PaintEventArgs^  e)
 		{
-			glClearColor(1, 1, 1, 1);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
+			glClearColor(1, 1, 1, 1);			
+			//glEnable(GL_COLOR_MATERIAL);
+			/*glEnable(GL_DEPTH_TEST);
+			glDepthMask(GL_TRUE);
+			glDepthFunc(GL_LEQUAL);*/
+			//glDepthRange(0.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			
+			point center;
+			center[0] = 0.0;
+			center[1] = 0.0;
+			center[2] = 0.0;
+			camera.setupGL(xf * center, 1.0);
+
+			if (mesh != NULL)
+			{
+				Update();
+			}
+													
 			UpdateViewMatrix();
-			if(mesh != NULL)
-				Update();	
 		}		
-		/*private: System::Void hkoglPanelControl1_MouseMove(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
+		
+		private: System::Void hkoglPanelControl1_MouseMove(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
 		{
 			if (e->Button == System::Windows::Forms::MouseButtons::Left)
 			{
@@ -303,7 +318,7 @@ namespace OpenMesh_EX
 					1.0, xf);
 				hkoglPanelControl1->Invalidate();
 			}
-	
+
 			if (e->Button == System::Windows::Forms::MouseButtons::Middle)
 			{
 				point center;
@@ -316,32 +331,9 @@ namespace OpenMesh_EX
 					1.0, xf);
 				hkoglPanelControl1->Invalidate();
 			}
-		}*/
-		private: System::Void hkoglPanelControl1_MouseMove(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
-		{
-			if (isRotate)
-			{
-				angleV -= (e->Y - yOrigin) / 10.0f;
-				angleH += (e->X - xOrigin) / 10.0f;
-				angleV = (((angleV) > (minAngleV)) ? (angleV) : (minAngleV));
-				angleV = (((angleV) < (maxAngleV)) ? (angleV) : (maxAngleV));
-				xOrigin = e->X;
-				yOrigin = e->Y;
-			}
-			if (isTranslate)
-			{
-				double phi = angleH * (3.14159f / 180.0f);
-				translateDelta[0] = (e->X - xOrigin) / 10.0f;
-				translateDelta[1] = (e->Y - yOrigin) / 10.0f;
-				translateDelta[2] = 0.0f;
-
-				translateDelta[2] = translateDelta[0] * cos(phi);
-				translateDelta[0] = -1.0*translateDelta[0] * sin(phi);
-				xOrigin = e->X;
-				yOrigin = e->Y;
-			}
 		}
-		/*private: System::Void hkoglPanelControl1_MouseWheel(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
+		
+		private: System::Void hkoglPanelControl1_MouseWheel(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
 		{
 			if (e->Delta < 0)
 			{
@@ -367,45 +359,54 @@ namespace OpenMesh_EX
 					1.0, xf);
 				hkoglPanelControl1->Invalidate();
 			}
-		}*/
-		private: System::Void hkoglPanelControl1_MouseWheel(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
-		{
-			if (e->Delta > 0)
-			{
-				cameraDistance -= 0.05f * abs(cameraDistance);
-				cameraDistance = (((cameraDistance) > (minDistance)) ? (cameraDistance) : (minDistance));
-			}
-			else
-			{
-				cameraDistance += 0.05f * abs(cameraDistance);
-				cameraDistance = (((cameraDistance) > (minDistance)) ? (cameraDistance) : (minDistance));
-			}
 		}
 		private: System::Void hkoglPanelControl1_MouseDown(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
 		{
 			UpdateViewMatrix();
-			if (e->Button == System::Windows::Forms::MouseButtons::Left)
-			{
-				isRotate = true;
+			GLdouble pm[16];
+			glGetDoublev(GL_PROJECTION_MATRIX, pm);
+			GLint viewport[4];
+			glGetIntegerv(GL_VIEWPORT, viewport);
+			if (e->Button == System::Windows::Forms::MouseButtons::Left || e->Button == System::Windows::Forms::MouseButtons::Middle || e->Button == System::Windows::Forms::MouseButtons::Right)
+			{				
 				xOrigin = e->X;				
 				yOrigin = e->Y;
-				
-			}
-			if (e->Button == System::Windows::Forms::MouseButtons::Middle)
-			{
-				isTranslate = true;
-				xOrigin = e->X;
-				yOrigin = e->Y;
-			}
-			if (e->Button == System::Windows::Forms::MouseButtons::Right)
-			{
-				if (mesh != NULL)
-				{									
-					glm::vec3 drawColor = glm::vec3(0, 0,1);
-					glm::vec3 n = mesh->nearest_point(e->X, e->Y, ModelMatrix, ViewMatrix, ProjectionMatrix);
-					model_point.clear();					
-					model_point.setPoint(n);
-					model_point.setColor(drawColor);								
+				point center;
+				Mouse_State = Mouse::NONE;
+				center[0] = 0.0;
+				center[1] = 0.0;
+				center[2] = 0.0;
+				camera.mouse(xOrigin, yOrigin, Mouse_State, xf * center, 1.0, xf);
+				if (e->Button == System::Windows::Forms::MouseButtons::Right)
+				{
+					if (mesh != NULL)
+					{
+						
+						glm::vec3 drawColor = glm::vec3(0, 0, 1);
+						
+						for (size_t i = 0; i < 4; i++)
+						{
+							for (size_t j = 0; j < 4; j++)
+							{
+								pm[i * 4 + j] = ProjectionMatrix[i][j];
+							}
+						}
+					
+						GLfloat  windowZ = 0;
+						double objX = 0.f, objY = 0.f, objZ = 0.f;
+						GLdouble mvm[16];
+						glEnable(GL_DEPTH_TEST);						
+						glReadPixels(xOrigin, viewport[3] - yOrigin, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT,&windowZ);
+						gluUnProject(xOrigin, viewport[3] - yOrigin, windowZ, xf, pm, viewport, &objX, &objY, &objZ);
+						hkoglPanelControl1->Invalidate();
+						glm::vec3 clickObjCoord = glm::vec3(objX, objY, objZ);
+						model_point.clear();
+						model_point.setPoint(mesh->nearest_point(clickObjCoord));
+						//model_point.setPoint(clickObjCoord);
+						printf("Obj:(%f,%f,%f)\n", clickObjCoord.x, clickObjCoord.y, clickObjCoord.z);
+						printf("Z:%lf\n", windowZ);
+						model_point.setColor(drawColor);
+					}
 				}
 			}
 		}
@@ -426,7 +427,7 @@ namespace OpenMesh_EX
 		}*/
 		private: System::Void hkoglPanelControl1_MouseUp(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
 		{
-			if (e->Button == System::Windows::Forms::MouseButtons::Left)
+			/*if (e->Button == System::Windows::Forms::MouseButtons::Left)
 			{
 				isRotate = false;
 				prelx = lx;
@@ -438,7 +439,7 @@ namespace OpenMesh_EX
 				translateDelta[0] = 0;
 				translateDelta[1] = 0;
 				translateDelta[2] = 0;
-			}
+			}*/
 		}				
 		private: System::Void loadModelToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
 		{
@@ -457,7 +458,7 @@ namespace OpenMesh_EX
 			if (ReadFile(filename, mesh))
 				std::cout << filename << std::endl;
 			model_wire.clear();			
-			meshes_vs = mesh->GetMesh(0);
+			meshes_vs = mesh->GetMesh(0);			
 			printf("Size:%d\n", meshes_vs.size());
 			for (size_t i = 0; i < meshes_vs.size(); i += 3)
 			{

@@ -603,10 +603,11 @@ std::vector<float> Tri_Mesh::GetMesh(size_t type)
 //	glEnd();
 //	
 //}
-glm::vec3 Tri_Mesh::nearest_point(int x, int y,glm::mat4 m, glm::mat4 v, glm::mat4 p)
+glm::vec3 Tri_Mesh::nearest_point(glm::vec3 screen)
 {
-	float min_dis = 1000000.f;
-	GLint viewport[4];
+	float min_dis = 1000.f;
+	glm::vec3 nearest;
+	/*GLint viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	y = viewport[3] - y;
 	GLdouble windowZ = 0;	
@@ -642,18 +643,15 @@ glm::vec3 Tri_Mesh::nearest_point(int x, int y,glm::mat4 m, glm::mat4 v, glm::ma
 	glm::vec3 pos;
 	pos.x = screen_X;
 	pos.y = screen_Y;
-	pos.z = screen_Z;
+	pos.z = screen_Z;*/
 	for (OMT::VIter v_it = vertices_begin() ; v_it != vertices_end() ; ++v_it)
 	{	
-		glm::vec3 ori = glm::vec3(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2]);
-		glm::vec4 pp = glm::vec4(ori,1);
-
-		pp = mm * pp;
-		float dis = sqrtf(pow(pos.x-pp.x,2)+ pow(pos.y-pp.y, 2)+ pow(pos.z-pp.z, 2));
+		glm::vec3 p = glm::vec3(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2]);		
+		float dis = sqrtf(pow(p.x- screen.x,2)+ pow(p.y- screen.y, 2)+ pow(p.z- screen.z, 2));
 		if (dis < min_dis)
 		{
 			min_dis = dis;
-			nearest = ori;
+			nearest = p;
 		}
 	}
 	return nearest;

@@ -240,7 +240,7 @@ public:
 	void Render_SolidWireframe();
 	void Render_Wireframe();*/
 	void Render_Point();
-	glm::vec3 nearest_point(int x,int y,glm::mat4 m, glm::mat4 v, glm::mat4 p);
+	glm::vec3 nearest_point(glm::vec3 screen);
 	std::vector<float> GetMesh(size_t type);
 private:
 };
