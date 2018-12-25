@@ -603,10 +603,11 @@ std::vector<float> Tri_Mesh::GetMesh(size_t type)
 //	glEnd();
 //	
 //}
-glm::vec3 Tri_Mesh::nearest_point(glm::vec3 screen)
+std::vector<glm::vec3> Tri_Mesh::nearest_point(glm::vec3 screen)
 {
-	float min_dis = 1000.f;
-	glm::vec3 nearest;
+	float min_dis = 100.f;
+	std::vector<glm::vec3> points;
+	VHandle vh;
 	/*GLint viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	y = viewport[3] - y;
@@ -647,14 +648,34 @@ glm::vec3 Tri_Mesh::nearest_point(glm::vec3 screen)
 	for (OMT::VIter v_it = vertices_begin() ; v_it != vertices_end() ; ++v_it)
 	{	
 		glm::vec3 p = glm::vec3(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2]);		
-		float dis = sqrtf(pow(p.x- screen.x,2)+ pow(p.y- screen.y, 2)+ pow(p.z- screen.z, 2));
+		float dis = sqrtf(pow(p.x- screen.x,2)+ pow(p.y- screen.y, 2)+ pow(p.z- screen.z, 2));		
 		if (dis < min_dis)
 		{
 			min_dis = dis;
-			nearest = p;
+			//printf("DIS:%f\n", dis);
+			vh = v_it.handle();
 		}
 	}
-	return nearest;
+	if (min_dis < 1.5f)
+	{
+		HalfedgeHandle heh = halfedge_handle(vh);
+		
+		FaceHandle fh = face_handle(heh);
+		for (OMT::FIter f_it = faces_begin(); f_it != faces_end(); f_it++)
+		{
+			if (f_it.handle().idx() == fh.idx())
+			{
+				for (OMT::FVIter fv_it = fv_iter(f_it.handle());fv_it; fv_it++)
+				{
+					points.push_back(glm::vec3(point(fv_it.handle())[0], point(fv_it.handle())[1], point(fv_it.handle())[2]));
+				}
+				break;
+			}
+		}
+		//points.push_back(glm::vec3(point(from_vertex_handle(heh))[0], point(from_vertex_handle(heh))[1], point(from_vertex_handle(heh))[2]));
+		//points.push_back(glm::vec3(point(to_vertex_handle(heh))[0], point(to_vertex_handle(heh))[1], point(to_vertex_handle(heh))[2]));
+	}	
+	return points;
 }
 void Tri_Mesh::Render_Point()
 {	

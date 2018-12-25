@@ -13,7 +13,7 @@ xform xf;
 GLCamera camera;
 float fov = 0.7f;
 //For shader
-object model_tri,model_wire,model_point;
+object model_tri,model_wire,model_point,model_face;
 size_t window_width = 0;
 size_t window_height = 0;
 glm::mat4 ProjectionMatrix;
@@ -254,6 +254,8 @@ namespace OpenMesh_EX
 			model_wire.setShader("vs.glsl", "fs.glsl");
 			model_point.initialize();
 			model_point.setShader("vs.glsl", "fs.glsl");	
+			model_face.initialize();
+			model_face.setShader("vs.glsl", "fs.glsl");
 		}
 		void Update()
 		{
@@ -272,12 +274,13 @@ namespace OpenMesh_EX
 					mv[i][j] = mvm[i * 4 + j];
 				}
 			}						
-			model_tri.render(GL_TRIANGLES, ProjectionMatrix, mv, ViewMatrix);
+			//model_tri.render(GL_TRIANGLES, ProjectionMatrix, mv, ViewMatrix);
 			model_wire.render(GL_LINES, ProjectionMatrix, mv, ViewMatrix);
 			
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glPointSize(10);
 			model_point.render(GL_POINTS, ProjectionMatrix, mv, ViewMatrix);
+			model_face.render(GL_TRIANGLES, ProjectionMatrix, mv, ViewMatrix);
 			hkoglPanelControl1->Invalidate();
 		}
 		private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::Windows::Forms::PaintEventArgs^  e)
@@ -401,11 +404,18 @@ namespace OpenMesh_EX
 						hkoglPanelControl1->Invalidate();
 						glm::vec3 clickObjCoord = glm::vec3(objX, objY, objZ);
 						model_point.clear();
-						model_point.setPoint(mesh->nearest_point(clickObjCoord));
+						model_face.clear();
+						std::vector<glm::vec3> nvs = mesh->nearest_point(clickObjCoord);
+						for (size_t i = 0; i < nvs.size(); i++)
+						{
+							model_point.setPoint(nvs[i]);
+							model_face.setPoint(nvs[i]);
+						}						
 						//model_point.setPoint(clickObjCoord);
 						printf("Obj:(%f,%f,%f)\n", clickObjCoord.x, clickObjCoord.y, clickObjCoord.z);
-						printf("Z:%lf\n", windowZ);
-						model_point.setColor(drawColor);
+						//printf("Z:%lf\n", windowZ);
+						model_point.setColor(drawColor);						
+						model_face.setColor(glm::vec3(0, 0, 0));					
 					}
 				}
 			}
@@ -480,6 +490,7 @@ namespace OpenMesh_EX
 			for (size_t i = 0; i < meshes_vs.size() / 3; i++)
 			{
 				model_tri.setColor(glm::vec3(1.0, 0.96, 0.49));
+				//model_tri.setColor(glm::vec3(1.0, 1, 1));
 			}
 			hkoglPanelControl1->Invalidate();
 		}
