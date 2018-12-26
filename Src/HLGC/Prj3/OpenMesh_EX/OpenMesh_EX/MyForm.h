@@ -10,10 +10,12 @@ using namespace std;
 
 Tri_Mesh *mesh;
 xform xf;
+xform resetXf;
 GLCamera camera;
 float fov = 0.7f;
 //For shader
 object model_tri,model_wire,model_point,model_face;
+size_t selectMode = 0;//0:points 1:faces 2:onering
 size_t window_width = 0;
 size_t window_height = 0;
 glm::mat4 ProjectionMatrix;
@@ -23,8 +25,12 @@ bool reTime = false;
 float countTime = 0;
 bool isRotate = false;
 bool isTranslate = false;
+bool multiSelected = false;
+
 int xOrigin = -1;
 int yOrigin = -1;
+size_t mainPanelXSize = 500;
+size_t mainPanelYSize = 500;
 double maxAngleV = 180;
 double minAngleV = 0;
 double minDistance = 0.1;
@@ -91,7 +97,14 @@ namespace OpenMesh_EX
 		private: System::Windows::Forms::ToolStripMenuItem^  saveModelToolStripMenuItem;
 		private: HKOGLPanel::HKOGLPanelControl^  hkoglPanelControl1;
 		private: System::Windows::Forms::Timer^  timer1;
-		private: System::ComponentModel::IContainer^  components;
+	private: System::ComponentModel::BackgroundWorker^  backgroundWorker1;
+	private: HKOGLPanel::HKOGLPanelControl^  uv;
+	private: HKOGLPanel::HKOGLPanelControl^  texture;
+	private: System::Windows::Forms::CheckBox^  SelectPoint;
+	private: System::Windows::Forms::CheckBox^  SelectFaces;
+	private: System::Windows::Forms::CheckBox^  SelectOneRing;
+	private: System::Windows::Forms::CheckBox^  MultiSelect;
+	private: System::ComponentModel::IContainer^  components;
 		protected:
 
 		private:
@@ -108,8 +121,12 @@ namespace OpenMesh_EX
 		void InitializeComponent(void)
 		{
 			this->components = (gcnew System::ComponentModel::Container());
-			HKOGLPanel::HKCOGLPanelCameraSetting^  hkcoglPanelCameraSetting1 = (gcnew HKOGLPanel::HKCOGLPanelCameraSetting());
-			HKOGLPanel::HKCOGLPanelPixelFormat^  hkcoglPanelPixelFormat1 = (gcnew HKOGLPanel::HKCOGLPanelPixelFormat());
+			HKOGLPanel::HKCOGLPanelCameraSetting^  hkcoglPanelCameraSetting7 = (gcnew HKOGLPanel::HKCOGLPanelCameraSetting());
+			HKOGLPanel::HKCOGLPanelPixelFormat^  hkcoglPanelPixelFormat7 = (gcnew HKOGLPanel::HKCOGLPanelPixelFormat());
+			HKOGLPanel::HKCOGLPanelCameraSetting^  hkcoglPanelCameraSetting8 = (gcnew HKOGLPanel::HKCOGLPanelCameraSetting());
+			HKOGLPanel::HKCOGLPanelPixelFormat^  hkcoglPanelPixelFormat8 = (gcnew HKOGLPanel::HKCOGLPanelPixelFormat());
+			HKOGLPanel::HKCOGLPanelCameraSetting^  hkcoglPanelCameraSetting9 = (gcnew HKOGLPanel::HKCOGLPanelCameraSetting());
+			HKOGLPanel::HKCOGLPanelPixelFormat^  hkcoglPanelPixelFormat9 = (gcnew HKOGLPanel::HKCOGLPanelPixelFormat());
 			this->menuStrip1 = (gcnew System::Windows::Forms::MenuStrip());
 			this->fileToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->loadModelToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
@@ -118,6 +135,13 @@ namespace OpenMesh_EX
 			this->saveModelDialog = (gcnew System::Windows::Forms::SaveFileDialog());
 			this->hkoglPanelControl1 = (gcnew HKOGLPanel::HKOGLPanelControl());
 			this->timer1 = (gcnew System::Windows::Forms::Timer(this->components));
+			this->backgroundWorker1 = (gcnew System::ComponentModel::BackgroundWorker());
+			this->uv = (gcnew HKOGLPanel::HKOGLPanelControl());
+			this->texture = (gcnew HKOGLPanel::HKOGLPanelControl());
+			this->SelectPoint = (gcnew System::Windows::Forms::CheckBox());
+			this->SelectFaces = (gcnew System::Windows::Forms::CheckBox());
+			this->SelectOneRing = (gcnew System::Windows::Forms::CheckBox());
+			this->MultiSelect = (gcnew System::Windows::Forms::CheckBox());
 			this->menuStrip1->SuspendLayout();
 			this->SuspendLayout();
 			// 
@@ -126,7 +150,7 @@ namespace OpenMesh_EX
 			this->menuStrip1->Items->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(1) { this->fileToolStripMenuItem });
 			this->menuStrip1->Location = System::Drawing::Point(0, 0);
 			this->menuStrip1->Name = L"menuStrip1";
-			this->menuStrip1->Size = System::Drawing::Size(613, 24);
+			this->menuStrip1->Size = System::Drawing::Size(784, 24);
 			this->menuStrip1->TabIndex = 1;
 			this->menuStrip1->Text = L"menuStrip1";
 			// 
@@ -165,22 +189,23 @@ namespace OpenMesh_EX
 			// 
 			// hkoglPanelControl1
 			// 
-			hkcoglPanelCameraSetting1->Far = 1000;
-			hkcoglPanelCameraSetting1->Fov = 45;
-			hkcoglPanelCameraSetting1->Near = -1000;
-			hkcoglPanelCameraSetting1->Type = HKOGLPanel::HKCOGLPanelCameraSetting::CAMERATYPE::ORTHOGRAPHIC;
-			this->hkoglPanelControl1->Camera_Setting = hkcoglPanelCameraSetting1;
-			this->hkoglPanelControl1->Dock = System::Windows::Forms::DockStyle::Fill;
-			this->hkoglPanelControl1->Location = System::Drawing::Point(0, 24);
+			this->hkoglPanelControl1->Anchor = System::Windows::Forms::AnchorStyles::None;
+			hkcoglPanelCameraSetting7->Far = 1000;
+			hkcoglPanelCameraSetting7->Fov = 45;
+			hkcoglPanelCameraSetting7->Near = -1000;
+			hkcoglPanelCameraSetting7->Type = HKOGLPanel::HKCOGLPanelCameraSetting::CAMERATYPE::ORTHOGRAPHIC;
+			this->hkoglPanelControl1->Camera_Setting = hkcoglPanelCameraSetting7;
+			this->hkoglPanelControl1->Location = System::Drawing::Point(12, 27);
 			this->hkoglPanelControl1->Name = L"hkoglPanelControl1";
-			hkcoglPanelPixelFormat1->Accumu_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
-			hkcoglPanelPixelFormat1->Alpha_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
-			hkcoglPanelPixelFormat1->Stencil_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
-			this->hkoglPanelControl1->Pixel_Format = hkcoglPanelPixelFormat1;
-			this->hkoglPanelControl1->Size = System::Drawing::Size(613, 430);
+			hkcoglPanelPixelFormat7->Accumu_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			hkcoglPanelPixelFormat7->Alpha_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			hkcoglPanelPixelFormat7->Stencil_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			this->hkoglPanelControl1->Pixel_Format = hkcoglPanelPixelFormat7;
+			this->hkoglPanelControl1->Size = System::Drawing::Size(500, 500);
 			this->hkoglPanelControl1->TabIndex = 2;
 			this->hkoglPanelControl1->Load += gcnew System::EventHandler(this, &MyForm::hkoglPanelControl1_Load);
 			this->hkoglPanelControl1->Paint += gcnew System::Windows::Forms::PaintEventHandler(this, &MyForm::hkoglPanelControl1_Paint);
+			this->hkoglPanelControl1->KeyPress += gcnew System::Windows::Forms::KeyPressEventHandler(this, &MyForm::MyForm_KeyPress);
 			this->hkoglPanelControl1->MouseDown += gcnew System::Windows::Forms::MouseEventHandler(this, &MyForm::hkoglPanelControl1_MouseDown);
 			this->hkoglPanelControl1->MouseMove += gcnew System::Windows::Forms::MouseEventHandler(this, &MyForm::hkoglPanelControl1_MouseMove);
 			this->hkoglPanelControl1->MouseUp += gcnew System::Windows::Forms::MouseEventHandler(this, &MyForm::hkoglPanelControl1_MouseUp);
@@ -192,11 +217,95 @@ namespace OpenMesh_EX
 			this->timer1->Interval = 10;
 			this->timer1->Tick += gcnew System::EventHandler(this, &MyForm::timer1_Tick);
 			// 
+			// uv
+			// 
+			this->uv->Anchor = System::Windows::Forms::AnchorStyles::None;
+			hkcoglPanelCameraSetting8->Far = 1000;
+			hkcoglPanelCameraSetting8->Fov = 45;
+			hkcoglPanelCameraSetting8->Near = -1000;
+			hkcoglPanelCameraSetting8->Type = HKOGLPanel::HKCOGLPanelCameraSetting::CAMERATYPE::ORTHOGRAPHIC;
+			this->uv->Camera_Setting = hkcoglPanelCameraSetting8;
+			this->uv->Location = System::Drawing::Point(522, 27);
+			this->uv->Name = L"uv";
+			hkcoglPanelPixelFormat8->Accumu_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			hkcoglPanelPixelFormat8->Alpha_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			hkcoglPanelPixelFormat8->Stencil_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			this->uv->Pixel_Format = hkcoglPanelPixelFormat8;
+			this->uv->Size = System::Drawing::Size(250, 250);
+			this->uv->TabIndex = 3;
+			// 
+			// texture
+			// 
+			this->texture->Anchor = System::Windows::Forms::AnchorStyles::None;
+			hkcoglPanelCameraSetting9->Far = 1000;
+			hkcoglPanelCameraSetting9->Fov = 45;
+			hkcoglPanelCameraSetting9->Near = -1000;
+			hkcoglPanelCameraSetting9->Type = HKOGLPanel::HKCOGLPanelCameraSetting::CAMERATYPE::ORTHOGRAPHIC;
+			this->texture->Camera_Setting = hkcoglPanelCameraSetting9;
+			this->texture->Location = System::Drawing::Point(522, 277);
+			this->texture->Name = L"texture";
+			hkcoglPanelPixelFormat9->Accumu_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			hkcoglPanelPixelFormat9->Alpha_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			hkcoglPanelPixelFormat9->Stencil_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			this->texture->Pixel_Format = hkcoglPanelPixelFormat9;
+			this->texture->Size = System::Drawing::Size(250, 250);
+			this->texture->TabIndex = 4;
+			// 
+			// SelectPoint
+			// 
+			this->SelectPoint->AutoSize = true;
+			this->SelectPoint->Location = System::Drawing::Point(12, 534);
+			this->SelectPoint->Name = L"SelectPoint";
+			this->SelectPoint->Size = System::Drawing::Size(52, 16);
+			this->SelectPoint->TabIndex = 5;
+			this->SelectPoint->Text = L"Points";
+			this->SelectPoint->UseVisualStyleBackColor = true;
+			this->SelectPoint->Click += gcnew System::EventHandler(this, &MyForm::SelectPoint_Click);
+			// 
+			// SelectFaces
+			// 
+			this->SelectFaces->AutoSize = true;
+			this->SelectFaces->Location = System::Drawing::Point(79, 534);
+			this->SelectFaces->Name = L"SelectFaces";
+			this->SelectFaces->Size = System::Drawing::Size(49, 16);
+			this->SelectFaces->TabIndex = 6;
+			this->SelectFaces->Text = L"Faces";
+			this->SelectFaces->UseVisualStyleBackColor = true;
+			this->SelectFaces->Click += gcnew System::EventHandler(this, &MyForm::SelectFaces_Click);
+			// 
+			// SelectOneRing
+			// 
+			this->SelectOneRing->AutoSize = true;
+			this->SelectOneRing->Location = System::Drawing::Point(145, 534);
+			this->SelectOneRing->Name = L"SelectOneRing";
+			this->SelectOneRing->Size = System::Drawing::Size(66, 16);
+			this->SelectOneRing->TabIndex = 7;
+			this->SelectOneRing->Text = L"OneRing";
+			this->SelectOneRing->UseVisualStyleBackColor = true;
+			this->SelectOneRing->Click += gcnew System::EventHandler(this, &MyForm::SelectOneRing_Click);
+			// 
+			// MultiSelect
+			// 
+			this->MultiSelect->AutoSize = true;
+			this->MultiSelect->Location = System::Drawing::Point(229, 533);
+			this->MultiSelect->Name = L"MultiSelect";
+			this->MultiSelect->Size = System::Drawing::Size(91, 16);
+			this->MultiSelect->TabIndex = 8;
+			this->MultiSelect->Text = L"MultiSelection";
+			this->MultiSelect->UseVisualStyleBackColor = true;
+			this->MultiSelect->Click += gcnew System::EventHandler(this, &MyForm::MultiSelect_Click);
+			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 12);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->ClientSize = System::Drawing::Size(613, 454);
+			this->ClientSize = System::Drawing::Size(784, 561);
+			this->Controls->Add(this->MultiSelect);
+			this->Controls->Add(this->SelectOneRing);
+			this->Controls->Add(this->SelectFaces);
+			this->Controls->Add(this->SelectPoint);
+			this->Controls->Add(this->texture);
+			this->Controls->Add(this->uv);
 			this->Controls->Add(this->hkoglPanelControl1);
 			this->Controls->Add(this->menuStrip1);
 			this->MainMenuStrip = this->menuStrip1;
@@ -238,15 +347,16 @@ namespace OpenMesh_EX
 				fprintf(stderr, "Error: '%s'\n", glewGetErrorString(res));
 			}
 			glClearColor(0, 0, 0, 1);
-
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			////Set up MVP matrix
-			ProjectionMatrix = glm::perspective(60.0f, 613.f / 430.f, 0.1f, 1000.0f);
+			ProjectionMatrix = glm::perspective(60.0f, (float)mainPanelXSize / mainPanelYSize, 0.1f, 1000.0f);
 			ModelMatrix = glm::mat4(1.0);			
 			ViewMatrix = glm::lookAt(
 				glm::vec3(newCameraPosition[0], newCameraPosition[1], newCameraPosition[2]), // Camera in World Space
 				glm::vec3(targetPosition[0], targetPosition[1], targetPosition[2]), // and looks at the origin
 				glm::vec3(0, 1, 0)  // Head is up (set to 0,1,0 to look upside-down)
-			);			
+			);
+			resetXf = xf;
 			//Ininialize object
 			model_tri.initialize();
 			model_tri.setShader("vs.glsl", "fs.glsl");
@@ -275,7 +385,7 @@ namespace OpenMesh_EX
 				}
 			}						
 			model_tri.render(GL_TRIANGLES, ProjectionMatrix, mv, ViewMatrix);
-			glLineWidth(10);
+			glLineWidth(5);
 			model_wire.render(GL_LINES, ProjectionMatrix, mv, ViewMatrix);
 			
 			glEnable(GL_PROGRAM_POINT_SIZE);
@@ -374,49 +484,77 @@ namespace OpenMesh_EX
 			{				
 				xOrigin = e->X;				
 				yOrigin = e->Y;
-				point center;
-				Mouse_State = Mouse::NONE;
-				center[0] = 0.0;
-				center[1] = 0.0;
-				center[2] = 0.0;
-				camera.mouse(xOrigin, yOrigin, Mouse_State, xf * center, 1.0, xf);
-				if (e->Button == System::Windows::Forms::MouseButtons::Right)
+				if (mesh != NULL)
 				{
-					if (mesh != NULL)
-					{						
-						glm::vec3 drawColor = glm::vec3(0, 0, 1);
-						
-						for (size_t i = 0; i < 4; i++)
+					point center;
+					Mouse_State = Mouse::NONE;
+					center[0] = 0.0;
+					center[1] = 0.0;
+					center[2] = 0.0;
+					//Screen to Obj 
+					glm::vec3 drawColor = glm::vec3(0, 0, 1);
+
+					for (size_t i = 0; i < 4; i++)
+					{
+						for (size_t j = 0; j < 4; j++)
 						{
-							for (size_t j = 0; j < 4; j++)
-							{
-								pm[i * 4 + j] = ProjectionMatrix[i][j];
-							}
+							pm[i * 4 + j] = ProjectionMatrix[i][j];
 						}
-					
-						GLfloat  windowZ = 0;
-						double objX = 0.f, objY = 0.f, objZ = 0.f;						
-						glEnable(GL_DEPTH_TEST);						
-						glReadPixels(xOrigin, viewport[3] - yOrigin, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT,&windowZ);
-						gluUnProject(xOrigin, viewport[3] - yOrigin, windowZ, xf, pm, viewport, &objX, &objY, &objZ);
-						hkoglPanelControl1->Invalidate();
-						glm::vec3 clickObjCoord = glm::vec3(objX, objY, objZ);
+					}
+
+					GLfloat  windowZ = 0;
+					double objX = 0.f, objY = 0.f, objZ = 0.f;
+					GLdouble mvm[16];
+					glEnable(GL_DEPTH_TEST);
+					glReadPixels(xOrigin, viewport[3] - yOrigin, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &windowZ);
+					gluUnProject(xOrigin, viewport[3] - yOrigin, windowZ, xf, pm, viewport, &objX, &objY, &objZ);
+					hkoglPanelControl1->Invalidate();
+					camera.mouse(xOrigin, yOrigin, Mouse_State, xf * center, 1.0, xf);
+					glm::vec3 clickObjCoord = glm::vec3(objX, objY, objZ);
+					//printf("OBJ:(%f,%f,%f)\n", objX, objY, objZ);
+					/*if (e->Button == System::Windows::Forms::MouseButtons::Left)
+					{
 						model_point.clear();
-						model_face.clear();
 						std::vector<glm::vec3> nvs = mesh->nearest_point(clickObjCoord);
-						std::vector<glm::vec3> fs = mesh->nearest_face(clickObjCoord);
 						for (size_t i = 0; i < nvs.size(); i++)
 						{
-							model_point.setPoint(nvs[i]);							
+							model_point.setPoint(nvs[i]);
 						}
-						for (size_t i = 0; i < fs.size(); i++)
+						model_point.setColor(drawColor);
+					}*/
+					if (e->Button == System::Windows::Forms::MouseButtons::Right)
+					{
+						if (!multiSelected)
+						{
+							model_point.clear();
+							model_face.clear();
+						}							
+						std::vector<glm::vec3> fs;
+						if (selectMode == 0)
 						{							
-							model_face.setPoint(fs[i]);
+							std::vector<glm::vec3> nvs = mesh->nearest_point(clickObjCoord);
+							for (size_t i = 0; i < nvs.size(); i++)
+							{
+								model_point.setPoint(nvs[i]);
+							}
+							model_point.setColor(drawColor);
 						}
-						model_point.setColor(drawColor);						
-						model_face.setColor(glm::vec3(0, 0, 0));					
+						else if (selectMode == 1)
+						{
+							fs = mesh->nearest_face(clickObjCoord);
+							model_face.setColor(glm::vec3(0, 0, 0));
+						}
+						else if (selectMode == 2)
+						{
+							fs = mesh->nearest_onering(clickObjCoord);
+						}						
+						for (size_t i = 0; i < fs.size(); i++)
+						{
+							model_face.setPoint(fs[i]);
+							model_face.setColor(glm::vec3(0, 0, 0));
+						}						
 					}
-				}
+				}				
 			}
 		}		
 		private: System::Void hkoglPanelControl1_MouseUp(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
@@ -448,7 +586,7 @@ namespace OpenMesh_EX
 
 			if (mesh != NULL)
 				delete mesh;
-			mesh = new Tri_Mesh;
+			mesh = new Tri_Mesh;			
 			if (ReadFile(filename, mesh))
 				std::cout << filename << std::endl;
 			model_wire.clear();			
@@ -475,6 +613,18 @@ namespace OpenMesh_EX
 			{
 				model_tri.setColor(glm::vec3(1.0, 0.96, 0.49));				
 			}
+			model_point.clear();
+			model_face.clear();
+			/**Reset modelview**/
+			xf = resetXf;
+			point center;
+			Mouse_State = Mouse::NONE;
+			center[0] = 0.0;
+			center[1] = 0.0;
+			center[2] = 0.0;
+			camera.mouse(0, 0, Mouse_State,
+				xf * center,
+				1.0, xf);
 			hkoglPanelControl1->Invalidate();
 		}
 		private: System::Void saveModelToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
@@ -504,6 +654,70 @@ namespace OpenMesh_EX
 		}
 		private: System::Void MyForm_Resize(System::Object^  sender, System::EventArgs^  e) 
 		{			
+		}	
+		private: System::Void MyForm_KeyPress(System::Object^  sender, System::Windows::Forms::KeyPressEventArgs^  e) 
+		{
+			//KeyEvent
+		}
+			
+		private: System::Void SelectOneRing_CheckedChanged(System::Object^  sender, System::EventArgs^  e) 
+		{
+			
+		}
+		private: System::Void MultiSelect_CheckedChanged(System::Object^  sender, System::EventArgs^  e) 
+		{
+			multiSelected = !multiSelected;
+		}
+		private: System::Void SelectPoint_Click(System::Object^  sender, System::EventArgs^  e) 
+		{
+			if (SelectPoint->Checked || !SelectPoint->Checked)
+			{
+				this->SelectPoint->Checked = true;
+				this->SelectFaces->Checked = false;
+				this->SelectOneRing->Checked = false;
+				selectMode = 0;
+			}			
+		}
+		private: System::Void SelectFaces_Click(System::Object^  sender, System::EventArgs^  e) 
+		{
+			if (SelectFaces->Checked)
+			{
+				this->SelectPoint->Checked = false;
+				this->SelectFaces->Checked = true;
+				this->SelectOneRing->Checked = false;
+				selectMode = 1;
+			}
+			else
+			{
+				this->SelectPoint->Checked = false;
+				this->SelectFaces->Checked = false;
+				this->SelectOneRing->Checked = false;
+				selectMode = 0;
+			}
+		}
+		private: System::Void SelectOneRing_Click(System::Object^  sender, System::EventArgs^  e) 
+		{
+			if (SelectOneRing->Checked)
+			{
+				this->SelectPoint->Checked = false;
+				this->SelectFaces->Checked = false;
+				this->SelectOneRing->Checked = true;
+				selectMode = 2;
+			}
+			else
+			{
+				this->SelectPoint->Checked = false;
+				this->SelectFaces->Checked = false;
+				this->SelectOneRing->Checked = false;
+				selectMode = 0;
+			}
+		}
+		private: System::Void MultiSelect_Click(System::Object^  sender, System::EventArgs^  e) 
+		{
+			if (MultiSelect->Checked)
+				multiSelected = true;
+			else
+				multiSelected = false;
 		}
 	};
 }

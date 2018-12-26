@@ -603,43 +603,54 @@ std::vector<float> Tri_Mesh::GetMesh(size_t type)
 //	glEnd();
 //	
 //}
-std::vector<glm::vec3> Tri_Mesh::nearest_point(glm::vec3 screen)
+double Tri_Mesh::seaDragon(Point trangleVertex1, Point trangleVertex2, Point trangleVertex3) {
+
+	double triSide[3];
+	double s, triArea;
+
+	triSide[0] = (trangleVertex1 - trangleVertex2).length();
+	triSide[1] = (trangleVertex2 - trangleVertex3).length();
+	triSide[2] = (trangleVertex3 - trangleVertex1).length();
+
+	s = (triSide[0] + triSide[1] + triSide[2]) / 2;
+	triArea = sqrt(s*(s - triSide[0])*(s - triSide[1])*(s - triSide[2]));
+
+	return triArea;	
+}
+std::vector<glm::vec3> Tri_Mesh::nearest_onering(glm::vec3 screen)
 {
-	float min_dis = 10.f;
+	float min_dis = 100.f;
 	std::vector<glm::vec3> points;
-	VHandle vh;	
-	for (OMT::VIter v_it = vertices_begin() ; v_it != vertices_end() ; ++v_it)
-	{	
-		glm::vec3 p = glm::vec3(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2]);		
-		float dis = sqrtf(pow(p.x- screen.x,2)+ pow(p.y- screen.y, 2)+ pow(p.z- screen.z, 2));		
+	VHandle vh;
+	double triArea[4];
+	double mostSuitableTriangle;
+	double minimumValue = 0.0001;
+
+	for (OMT::VIter v_it = vertices_begin(); v_it != vertices_end(); ++v_it)
+	{
+		glm::vec3 p = glm::vec3(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2]);
+		float dis = sqrtf(pow(p.x - screen.x, 2) + pow(p.y - screen.y, 2) + pow(p.z - screen.z, 2));
 		if (dis < min_dis)
 		{
 			min_dis = dis;
-			//printf("DIS:%f\n", dis);
 			vh = v_it.handle();
 		}
 	}
-	printf("Dis%f\n", min_dis);
-	if (min_dis < 0.05f)//Thresholding
+	if (min_dis != 100.f)
 	{
-		HalfedgeHandle heh = halfedge_handle(vh);
-		
-		/*FaceHandle fh = face_handle(heh);
-		for (OMT::FIter f_it = faces_begin(); f_it != faces_end(); f_it++)
-		{
-			if (f_it.handle().idx() == fh.idx())
+		std::vector<OMT::Point> ring_points;		
+		for (OMT::VFIter vf_it = vf_iter(vh); vf_it ; vf_it++)
+		{			
+			for (OMT::FVIter fv_it = fv_iter(vf_it.handle()); fv_it; fv_it++)
 			{
-				for (OMT::FVIter fv_it = fv_iter(f_it.handle());fv_it; fv_it++)
-				{
-					points.push_back(glm::vec3(point(fv_it.handle())[0], point(fv_it.handle())[1], point(fv_it.handle())[2]));
-				}
-				break;
-			}
-		}*/
-		
-		points.push_back(glm::vec3(point(from_vertex_handle(heh))[0], point(from_vertex_handle(heh))[1], point(from_vertex_handle(heh))[2]));
-		//points.push_back(glm::vec3(point(to_vertex_handle(heh))[0], point(to_vertex_handle(heh))[1], point(to_vertex_handle(heh))[2]));
-	}	
+				ring_points.push_back(point(fv_it.handle()));
+			}			
+		}
+		for (size_t i = 0; i < ring_points.size(); i++)
+		{
+			points.push_back(glm::vec3(ring_points[i][0], ring_points[i][1], ring_points[i][2]));
+		}
+	}
 	return points;
 }
 std::vector<glm::vec3> Tri_Mesh::nearest_face(glm::vec3 screen)
@@ -647,6 +658,54 @@ std::vector<glm::vec3> Tri_Mesh::nearest_face(glm::vec3 screen)
 	float min_dis = 100.f;
 	std::vector<glm::vec3> points;
 	VHandle vh;
+	double triArea[4];
+	double mostSuitableTriangle;
+	double minimumValue = 0.0001;
+	
+	for (OMT::VIter v_it = vertices_begin() ; v_it != vertices_end() ; ++v_it)
+	{	
+		glm::vec3 p = glm::vec3(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2]);		
+		float dis = sqrtf(pow(p.x- screen.x,2)+ pow(p.y- screen.y, 2)+ pow(p.z- screen.z, 2));		
+		if (dis < min_dis)
+		{
+			min_dis = dis;		
+			vh = v_it.handle();
+		}
+	}	
+	if (min_dis != 100.f)
+	{		
+		std::vector<OMT::Point> fp;		
+		for (OMT::FIter f_it = faces_begin(); f_it != faces_end(); f_it++)
+		{
+			std::vector<OMT::Point> fv_it_point;
+			for (OMT::FVIter fv_it = fv_iter(f_it.handle()); fv_it; fv_it++)
+			{
+				fv_it_point.push_back(point(fv_it.handle()));	
+			}
+			OMT::Point ps = OMT::Point(screen.x, screen.y, screen.z);
+			triArea[0] = seaDragon(fv_it_point.at(0), fv_it_point.at(1), fv_it_point.at(2));
+			triArea[1] = seaDragon(ps, fv_it_point.at(0), fv_it_point.at(1));
+			triArea[2] = seaDragon(ps, fv_it_point.at(1), fv_it_point.at(2));
+			triArea[3] = seaDragon(ps, fv_it_point.at(2), fv_it_point.at(0));
+			mostSuitableTriangle = (triArea[1] + triArea[2] + triArea[3]);
+			if ((-minimumValue < (triArea[0] - mostSuitableTriangle)) && ((triArea[0] - mostSuitableTriangle) < minimumValue))
+			{
+				fp = fv_it_point;
+			}
+		}
+		for (size_t i = 0; i < fp.size(); i++)
+		{
+			points.push_back(glm::vec3(fp[i][0], fp[i][1], fp[i][2]));
+		}
+	}	
+	return points;
+}
+std::vector<glm::vec3> Tri_Mesh::nearest_point(glm::vec3 screen)
+{
+	float min_dis = 100.f;
+	std::vector<glm::vec3> points;
+	VHandle vh;	
+	glm::vec3 n;
 	for (OMT::VIter v_it = vertices_begin(); v_it != vertices_end(); ++v_it)
 	{
 		glm::vec3 p = glm::vec3(point(v_it).data()[0], point(v_it).data()[1], point(v_it).data()[2]);
@@ -654,33 +713,13 @@ std::vector<glm::vec3> Tri_Mesh::nearest_face(glm::vec3 screen)
 		if (dis < min_dis)
 		{
 			min_dis = dis;			
+			n = p;
 			vh = v_it.handle();
 		}
 	}
-	if (min_dis < 1.5f )
-	{
-		HalfedgeHandle heh = halfedge_handle(vh);
-		HalfedgeHandle oheh = opposite_halfedge_handle(heh);
-
-		FaceHandle f1 = face_handle(heh);
-		FaceHandle f2 = face_handle(oheh);
-		for (OMT::FIter f_it = faces_begin(); f_it != faces_end(); f_it++)
-		{			
-			if (f_it.handle().idx() == f1.idx())
-			{
-				for (OMT::FVIter fv_it = fv_iter(f_it.handle()); fv_it; fv_it++)
-				{
-					points.push_back(glm::vec3(point(fv_it.handle())[0], point(fv_it.handle())[1], point(fv_it.handle())[2]));
-				}				
-			}
-			if (f_it.handle().idx() == f2.idx())
-			{
-				for (OMT::FVIter fv_it = fv_iter(f_it.handle()); fv_it; fv_it++)
-				{
-					points.push_back(glm::vec3(point(fv_it.handle())[0], point(fv_it.handle())[1], point(fv_it.handle())[2]));
-				}
-			}
-		}
+	if (min_dis != 100.f)
+	{		
+		points.push_back(n);
 	}
 	return points;
 }

@@ -240,8 +240,10 @@ public:
 	void Render_SolidWireframe();
 	void Render_Wireframe();*/
 	void Render_Point();
+	double seaDragon(Point trangleVertex1, Point trangleVertex2, Point trangleVertex3);
 	std::vector<glm::vec3> nearest_face(glm::vec3 screen);
 	std::vector<glm::vec3> nearest_point(glm::vec3 screen);
+	std::vector<glm::vec3> nearest_onering(glm::vec3 screen);
 	std::vector<float> GetMesh(size_t type);
 private:
 };
