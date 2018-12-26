@@ -39,7 +39,7 @@ double newCameraPosition[3] = { 0,0,-1};
 double cameraDistance = 5;
 double translateDelta[3];
 double targetPosition[3] = { 0,0,0 };
-double ZoomValue = 0.5;
+double ZoomValue = 1.f;
 
 static const Mouse::button physical_to_logical_map[] = 
 {
@@ -275,10 +275,11 @@ namespace OpenMesh_EX
 				}
 			}						
 			model_tri.render(GL_TRIANGLES, ProjectionMatrix, mv, ViewMatrix);
+			glLineWidth(10);
 			model_wire.render(GL_LINES, ProjectionMatrix, mv, ViewMatrix);
 			
 			glEnable(GL_PROGRAM_POINT_SIZE);
-			glPointSize(10);
+			glPointSize(15);
 			model_point.render(GL_POINTS, ProjectionMatrix, mv, ViewMatrix);
 			model_face.render(GL_TRIANGLES, ProjectionMatrix, mv, ViewMatrix);
 			hkoglPanelControl1->Invalidate();
@@ -382,8 +383,7 @@ namespace OpenMesh_EX
 				if (e->Button == System::Windows::Forms::MouseButtons::Right)
 				{
 					if (mesh != NULL)
-					{
-						
+					{						
 						glm::vec3 drawColor = glm::vec3(0, 0, 1);
 						
 						for (size_t i = 0; i < 4; i++)
@@ -395,8 +395,7 @@ namespace OpenMesh_EX
 						}
 					
 						GLfloat  windowZ = 0;
-						double objX = 0.f, objY = 0.f, objZ = 0.f;
-						GLdouble mvm[16];
+						double objX = 0.f, objY = 0.f, objZ = 0.f;						
 						glEnable(GL_DEPTH_TEST);						
 						glReadPixels(xOrigin, viewport[3] - yOrigin, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT,&windowZ);
 						gluUnProject(xOrigin, viewport[3] - yOrigin, windowZ, xf, pm, viewport, &objX, &objY, &objZ);
@@ -405,10 +404,14 @@ namespace OpenMesh_EX
 						model_point.clear();
 						model_face.clear();
 						std::vector<glm::vec3> nvs = mesh->nearest_point(clickObjCoord);
+						std::vector<glm::vec3> fs = mesh->nearest_face(clickObjCoord);
 						for (size_t i = 0; i < nvs.size(); i++)
 						{
-							model_point.setPoint(nvs[i]);
-							model_face.setPoint(nvs[i]);
+							model_point.setPoint(nvs[i]);							
+						}
+						for (size_t i = 0; i < fs.size(); i++)
+						{							
+							model_face.setPoint(fs[i]);
 						}
 						model_point.setColor(drawColor);						
 						model_face.setColor(glm::vec3(0, 0, 0));					
