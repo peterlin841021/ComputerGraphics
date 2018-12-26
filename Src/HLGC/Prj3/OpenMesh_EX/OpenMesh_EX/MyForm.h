@@ -274,7 +274,7 @@ namespace OpenMesh_EX
 					mv[i][j] = mvm[i * 4 + j];
 				}
 			}						
-			//model_tri.render(GL_TRIANGLES, ProjectionMatrix, mv, ViewMatrix);
+			model_tri.render(GL_TRIANGLES, ProjectionMatrix, mv, ViewMatrix);
 			model_wire.render(GL_LINES, ProjectionMatrix, mv, ViewMatrix);
 			
 			glEnable(GL_PROGRAM_POINT_SIZE);
@@ -285,12 +285,11 @@ namespace OpenMesh_EX
 		}
 		private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::Windows::Forms::PaintEventArgs^  e)
 		{
-			glClearColor(1, 1, 1, 1);			
-			//glEnable(GL_COLOR_MATERIAL);
-			/*glEnable(GL_DEPTH_TEST);
+			glClearColor(1, 1, 1, 1);						
+			glEnable(GL_DEPTH_TEST);
 			glDepthMask(GL_TRUE);
-			glDepthFunc(GL_LEQUAL);*/
-			//glDepthRange(0.0f, 1.0f);
+			glDepthFunc(GL_LEQUAL);
+			glDepthRange(0.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
 			point center;
@@ -410,34 +409,16 @@ namespace OpenMesh_EX
 						{
 							model_point.setPoint(nvs[i]);
 							model_face.setPoint(nvs[i]);
-						}						
-						//model_point.setPoint(clickObjCoord);
-						printf("Obj:(%f,%f,%f)\n", clickObjCoord.x, clickObjCoord.y, clickObjCoord.z);
-						//printf("Z:%lf\n", windowZ);
+						}
 						model_point.setColor(drawColor);						
 						model_face.setColor(glm::vec3(0, 0, 0));					
 					}
 				}
 			}
-		}
-		/*private: System::Void hkoglPanelControl1_MouseDown(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
-		{
-			if (e->Button == System::Windows::Forms::MouseButtons::Left ||
-				e->Button == System::Windows::Forms::MouseButtons::Middle)
-			{
-				point center;
-				Mouse_State = Mouse::NONE;
-				center[0] = 0.0;
-				center[1] = 0.0;
-				center[2] = 0.0;
-				camera.mouse(e->X, e->Y, Mouse_State,
-					xf * center,
-					1.0, xf);
-			}
-		}*/
+		}		
 		private: System::Void hkoglPanelControl1_MouseUp(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
 		{
-			/*if (e->Button == System::Windows::Forms::MouseButtons::Left)
+			if (e->Button == System::Windows::Forms::MouseButtons::Left)
 			{
 				isRotate = false;
 				prelx = lx;
@@ -449,7 +430,7 @@ namespace OpenMesh_EX
 				translateDelta[0] = 0;
 				translateDelta[1] = 0;
 				translateDelta[2] = 0;
-			}*/
+			}
 		}				
 		private: System::Void loadModelToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
 		{
@@ -489,8 +470,7 @@ namespace OpenMesh_EX
 			}
 			for (size_t i = 0; i < meshes_vs.size() / 3; i++)
 			{
-				model_tri.setColor(glm::vec3(1.0, 0.96, 0.49));
-				//model_tri.setColor(glm::vec3(1.0, 1, 1));
+				model_tri.setColor(glm::vec3(1.0, 0.96, 0.49));				
 			}
 			hkoglPanelControl1->Invalidate();
 		}
@@ -520,9 +500,7 @@ namespace OpenMesh_EX
 			hkoglPanelControl1->Invalidate();
 		}
 		private: System::Void MyForm_Resize(System::Object^  sender, System::EventArgs^  e) 
-		{
-			/*window_width = this->Width;
-			window_height = this->Height;*/
+		{			
 		}
 	};
 }

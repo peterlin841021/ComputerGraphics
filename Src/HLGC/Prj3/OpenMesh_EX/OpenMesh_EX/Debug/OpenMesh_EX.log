@@ -1,0 +1,5 @@
+﻿  MyForm.cpp
+d:\program\gitprj\computergraphics\openmesh_ex\openmesh_ex\myform.h(274): warning C4244: '=': 將 'GLdouble' 轉換為 'float'，由於類型不同，可能導致資料遺失
+d:\program\gitprj\computergraphics\openmesh_ex\openmesh_ex\myform.h(399): warning C4101: 'mvm': 未參考的區域變數
+  DotNetUitilities.obj : 發現 MSIL 模組。MSIL 的累加連結已停用。正在執行完整連結
+  OpenMesh_EX.vcxproj -> D:\Program\GitPrj\ComputerGraphics\OpenMesh_EX\Debug\OpenMesh_EX.exe

@@ -128,7 +128,7 @@ void GLCamera::rotate(int mousex, int mousey, xform &xf)
 
 	xf = xform::trans(spincenter) * xform::rot(spinamount, spinaxis) *
 	     xform::trans(-spincenter) * xf;
-
+	
 	float dt = now() - last_time;
 	if (dt > SPIN_TIME)
 		spinspeed = spinamount / SPIN_TIME;
@@ -249,7 +249,7 @@ void GLCamera::mouse_click(int mousex, int mousey,
 	GLdouble s[3];
 	gluUnProject((xmin+xmax)/2, (ymin+ymax)/2, 1,
 		     M, P, V,
-		     &s[0], &s[1], &s[2]);
+		     &s[0], &s[1], &s[2]);	
 	spincenter = vec(s);
 	normalize(spincenter);
 	if (read_depth((xmin+xmax)/2, (ymin+ymax)/2, surface_point))
