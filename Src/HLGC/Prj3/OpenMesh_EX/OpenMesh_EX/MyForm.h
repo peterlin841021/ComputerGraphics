@@ -3,25 +3,18 @@
 #include "DotNetUtilities.h"
 #include "Mesh/GUA_OM.h"
 #include "Mesh/DP.h"
-//#include "stb_image.h"
+#include "Common.h"
 
 using namespace glm;
 using namespace std;
-typedef unsigned char stbi_uc;
-typedef struct _TextureData
-{
-	_TextureData() : width(0), height(0), data(0) {}
-	int width;
-	int height;
-	unsigned char* data;
-}TextureData;
+
 Tri_Mesh *mesh;
 xform xf;
 xform resetXf;
 GLCamera camera;
 float fov = 0.7f;
 //For shader
-object model_tri,model_wire,model_point,model_face,texture_obj;
+object model_tri,model_wire,model_point,model_face;
 size_t selectMode = 0;//0:points 1:faces 2:onering
 size_t window_width = 0;
 size_t window_height = 0;
@@ -52,7 +45,7 @@ double newCameraPosition[3] = { 0,0,-1};
 double cameraDistance = 5;
 double translateDelta[3];
 double targetPosition[3] = { 0,0,0 };
-double ZoomValue = 0.05f;
+double ZoomValue = 1.f;
 
 static const Mouse::button physical_to_logical_map[] = 
 {
@@ -103,21 +96,16 @@ namespace OpenMesh_EX
 		private: System::Windows::Forms::SaveFileDialog^  saveModelDialog;
 		private: System::Windows::Forms::ToolStripMenuItem^  saveModelToolStripMenuItem;
 		private: HKOGLPanel::HKOGLPanelControl^  hkoglPanelControl1;
-	private: System::Windows::Forms::Timer^  timer;
-
+		private: System::Windows::Forms::Timer^  timer1;
 	private: System::ComponentModel::BackgroundWorker^  backgroundWorker1;
 	private: HKOGLPanel::HKOGLPanelControl^  uv;
-
+	private: HKOGLPanel::HKOGLPanelControl^  texture;
 	private: System::Windows::Forms::CheckBox^  SelectPoint;
 	private: System::Windows::Forms::CheckBox^  SelectFaces;
 	private: System::Windows::Forms::CheckBox^  SelectOneRing;
 	private: System::Windows::Forms::CheckBox^  MultiSelect;
 	private: System::Windows::Forms::ToolStripMenuItem^  loadTextureToolStripMenuItem;
-	private: System::Windows::Forms::DateTimePicker^  dateTimePicker2;
-	private: HKOGLPanel::HKOGLPanelControl^  texture;
-	private: System::Windows::Forms::OpenFileDialog^  openImageFileDialog;
-
-
+	private: System::Windows::Forms::OpenFileDialog^  openImgFileDialog;
 	private: System::ComponentModel::IContainer^  components;
 		protected:
 
@@ -135,12 +123,12 @@ namespace OpenMesh_EX
 		void InitializeComponent(void)
 		{
 			this->components = (gcnew System::ComponentModel::Container());
-			HKOGLPanel::HKCOGLPanelCameraSetting^  hkcoglPanelCameraSetting1 = (gcnew HKOGLPanel::HKCOGLPanelCameraSetting());
-			HKOGLPanel::HKCOGLPanelPixelFormat^  hkcoglPanelPixelFormat1 = (gcnew HKOGLPanel::HKCOGLPanelPixelFormat());
-			HKOGLPanel::HKCOGLPanelCameraSetting^  hkcoglPanelCameraSetting2 = (gcnew HKOGLPanel::HKCOGLPanelCameraSetting());
-			HKOGLPanel::HKCOGLPanelPixelFormat^  hkcoglPanelPixelFormat2 = (gcnew HKOGLPanel::HKCOGLPanelPixelFormat());
-			HKOGLPanel::HKCOGLPanelCameraSetting^  hkcoglPanelCameraSetting3 = (gcnew HKOGLPanel::HKCOGLPanelCameraSetting());
-			HKOGLPanel::HKCOGLPanelPixelFormat^  hkcoglPanelPixelFormat3 = (gcnew HKOGLPanel::HKCOGLPanelPixelFormat());
+			HKOGLPanel::HKCOGLPanelCameraSetting^  hkcoglPanelCameraSetting4 = (gcnew HKOGLPanel::HKCOGLPanelCameraSetting());
+			HKOGLPanel::HKCOGLPanelPixelFormat^  hkcoglPanelPixelFormat4 = (gcnew HKOGLPanel::HKCOGLPanelPixelFormat());
+			HKOGLPanel::HKCOGLPanelCameraSetting^  hkcoglPanelCameraSetting5 = (gcnew HKOGLPanel::HKCOGLPanelCameraSetting());
+			HKOGLPanel::HKCOGLPanelPixelFormat^  hkcoglPanelPixelFormat5 = (gcnew HKOGLPanel::HKCOGLPanelPixelFormat());
+			HKOGLPanel::HKCOGLPanelCameraSetting^  hkcoglPanelCameraSetting6 = (gcnew HKOGLPanel::HKCOGLPanelCameraSetting());
+			HKOGLPanel::HKCOGLPanelPixelFormat^  hkcoglPanelPixelFormat6 = (gcnew HKOGLPanel::HKCOGLPanelPixelFormat());
 			this->menuStrip1 = (gcnew System::Windows::Forms::MenuStrip());
 			this->fileToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->loadModelToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
@@ -149,16 +137,15 @@ namespace OpenMesh_EX
 			this->openModelDialog = (gcnew System::Windows::Forms::OpenFileDialog());
 			this->saveModelDialog = (gcnew System::Windows::Forms::SaveFileDialog());
 			this->hkoglPanelControl1 = (gcnew HKOGLPanel::HKOGLPanelControl());
-			this->timer = (gcnew System::Windows::Forms::Timer(this->components));
+			this->timer1 = (gcnew System::Windows::Forms::Timer(this->components));
 			this->backgroundWorker1 = (gcnew System::ComponentModel::BackgroundWorker());
 			this->uv = (gcnew HKOGLPanel::HKOGLPanelControl());
+			this->texture = (gcnew HKOGLPanel::HKOGLPanelControl());
 			this->SelectPoint = (gcnew System::Windows::Forms::CheckBox());
 			this->SelectFaces = (gcnew System::Windows::Forms::CheckBox());
 			this->SelectOneRing = (gcnew System::Windows::Forms::CheckBox());
 			this->MultiSelect = (gcnew System::Windows::Forms::CheckBox());
-			this->dateTimePicker2 = (gcnew System::Windows::Forms::DateTimePicker());
-			this->texture = (gcnew HKOGLPanel::HKOGLPanelControl());
-			this->openImageFileDialog = (gcnew System::Windows::Forms::OpenFileDialog());
+			this->openImgFileDialog = (gcnew System::Windows::Forms::OpenFileDialog());
 			this->menuStrip1->SuspendLayout();
 			this->SuspendLayout();
 			// 
@@ -214,17 +201,17 @@ namespace OpenMesh_EX
 			// hkoglPanelControl1
 			// 
 			this->hkoglPanelControl1->Anchor = System::Windows::Forms::AnchorStyles::None;
-			hkcoglPanelCameraSetting1->Far = 1000;
-			hkcoglPanelCameraSetting1->Fov = 45;
-			hkcoglPanelCameraSetting1->Near = -1000;
-			hkcoglPanelCameraSetting1->Type = HKOGLPanel::HKCOGLPanelCameraSetting::CAMERATYPE::ORTHOGRAPHIC;
-			this->hkoglPanelControl1->Camera_Setting = hkcoglPanelCameraSetting1;
+			hkcoglPanelCameraSetting4->Far = 1000;
+			hkcoglPanelCameraSetting4->Fov = 45;
+			hkcoglPanelCameraSetting4->Near = -1000;
+			hkcoglPanelCameraSetting4->Type = HKOGLPanel::HKCOGLPanelCameraSetting::CAMERATYPE::ORTHOGRAPHIC;
+			this->hkoglPanelControl1->Camera_Setting = hkcoglPanelCameraSetting4;
 			this->hkoglPanelControl1->Location = System::Drawing::Point(12, 27);
 			this->hkoglPanelControl1->Name = L"hkoglPanelControl1";
-			hkcoglPanelPixelFormat1->Accumu_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
-			hkcoglPanelPixelFormat1->Alpha_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
-			hkcoglPanelPixelFormat1->Stencil_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
-			this->hkoglPanelControl1->Pixel_Format = hkcoglPanelPixelFormat1;
+			hkcoglPanelPixelFormat4->Accumu_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			hkcoglPanelPixelFormat4->Alpha_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			hkcoglPanelPixelFormat4->Stencil_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			this->hkoglPanelControl1->Pixel_Format = hkcoglPanelPixelFormat4;
 			this->hkoglPanelControl1->Size = System::Drawing::Size(500, 500);
 			this->hkoglPanelControl1->TabIndex = 2;
 			this->hkoglPanelControl1->Load += gcnew System::EventHandler(this, &MyForm::hkoglPanelControl1_Load);
@@ -235,34 +222,49 @@ namespace OpenMesh_EX
 			this->hkoglPanelControl1->MouseUp += gcnew System::Windows::Forms::MouseEventHandler(this, &MyForm::hkoglPanelControl1_MouseUp);
 			this->hkoglPanelControl1->MouseWheel += gcnew System::Windows::Forms::MouseEventHandler(this, &MyForm::hkoglPanelControl1_MouseWheel);
 			// 
-			// timer
+			// timer1
 			// 
-			this->timer->Enabled = true;
-			this->timer->Interval = 10;
-			this->timer->Tick += gcnew System::EventHandler(this, &MyForm::timer_Tick);
+			this->timer1->Enabled = true;
+			this->timer1->Interval = 10;
+			this->timer1->Tick += gcnew System::EventHandler(this, &MyForm::timer1_Tick);
 			// 
 			// uv
 			// 
 			this->uv->Anchor = System::Windows::Forms::AnchorStyles::None;
-			hkcoglPanelCameraSetting2->Far = 1000;
-			hkcoglPanelCameraSetting2->Fov = 45;
-			hkcoglPanelCameraSetting2->Near = -1000;
-			hkcoglPanelCameraSetting2->Type = HKOGLPanel::HKCOGLPanelCameraSetting::CAMERATYPE::ORTHOGRAPHIC;
-			this->uv->Camera_Setting = hkcoglPanelCameraSetting2;
+			hkcoglPanelCameraSetting5->Far = 1000;
+			hkcoglPanelCameraSetting5->Fov = 45;
+			hkcoglPanelCameraSetting5->Near = -1000;
+			hkcoglPanelCameraSetting5->Type = HKOGLPanel::HKCOGLPanelCameraSetting::CAMERATYPE::ORTHOGRAPHIC;
+			this->uv->Camera_Setting = hkcoglPanelCameraSetting5;
 			this->uv->Location = System::Drawing::Point(522, 27);
 			this->uv->Name = L"uv";
-			hkcoglPanelPixelFormat2->Accumu_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
-			hkcoglPanelPixelFormat2->Alpha_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
-			hkcoglPanelPixelFormat2->Stencil_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
-			this->uv->Pixel_Format = hkcoglPanelPixelFormat2;
+			hkcoglPanelPixelFormat5->Accumu_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			hkcoglPanelPixelFormat5->Alpha_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			hkcoglPanelPixelFormat5->Stencil_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			this->uv->Pixel_Format = hkcoglPanelPixelFormat5;
 			this->uv->Size = System::Drawing::Size(250, 250);
 			this->uv->TabIndex = 3;
-			this->uv->Load += gcnew System::EventHandler(this, &MyForm::uv_Load);
-			this->uv->Paint += gcnew System::Windows::Forms::PaintEventHandler(this, &MyForm::uv_Paint);
+			// 
+			// texture
+			// 
+			this->texture->Anchor = System::Windows::Forms::AnchorStyles::None;
+			hkcoglPanelCameraSetting6->Far = 1000;
+			hkcoglPanelCameraSetting6->Fov = 45;
+			hkcoglPanelCameraSetting6->Near = -1000;
+			hkcoglPanelCameraSetting6->Type = HKOGLPanel::HKCOGLPanelCameraSetting::CAMERATYPE::ORTHOGRAPHIC;
+			this->texture->Camera_Setting = hkcoglPanelCameraSetting6;
+			this->texture->Location = System::Drawing::Point(522, 277);
+			this->texture->Name = L"texture";
+			hkcoglPanelPixelFormat6->Accumu_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			hkcoglPanelPixelFormat6->Alpha_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			hkcoglPanelPixelFormat6->Stencil_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
+			this->texture->Pixel_Format = hkcoglPanelPixelFormat6;
+			this->texture->Size = System::Drawing::Size(250, 250);
+			this->texture->TabIndex = 4;
+			this->texture->Load += gcnew System::EventHandler(this, &MyForm::texture_Load);
 			// 
 			// SelectPoint
 			// 
-			this->SelectPoint->Anchor = System::Windows::Forms::AnchorStyles::Bottom;
 			this->SelectPoint->AutoSize = true;
 			this->SelectPoint->Location = System::Drawing::Point(12, 534);
 			this->SelectPoint->Name = L"SelectPoint";
@@ -274,7 +276,6 @@ namespace OpenMesh_EX
 			// 
 			// SelectFaces
 			// 
-			this->SelectFaces->Anchor = System::Windows::Forms::AnchorStyles::Bottom;
 			this->SelectFaces->AutoSize = true;
 			this->SelectFaces->Location = System::Drawing::Point(79, 534);
 			this->SelectFaces->Name = L"SelectFaces";
@@ -286,7 +287,6 @@ namespace OpenMesh_EX
 			// 
 			// SelectOneRing
 			// 
-			this->SelectOneRing->Anchor = System::Windows::Forms::AnchorStyles::Bottom;
 			this->SelectOneRing->AutoSize = true;
 			this->SelectOneRing->Location = System::Drawing::Point(145, 534);
 			this->SelectOneRing->Name = L"SelectOneRing";
@@ -298,7 +298,6 @@ namespace OpenMesh_EX
 			// 
 			// MultiSelect
 			// 
-			this->MultiSelect->Anchor = System::Windows::Forms::AnchorStyles::Bottom;
 			this->MultiSelect->AutoSize = true;
 			this->MultiSelect->Location = System::Drawing::Point(229, 533);
 			this->MultiSelect->Name = L"MultiSelect";
@@ -308,43 +307,16 @@ namespace OpenMesh_EX
 			this->MultiSelect->UseVisualStyleBackColor = true;
 			this->MultiSelect->Click += gcnew System::EventHandler(this, &MyForm::MultiSelect_Click);
 			// 
-			// dateTimePicker2
+			// openImgFileDialog
 			// 
-			this->dateTimePicker2->Location = System::Drawing::Point(790, 416);
-			this->dateTimePicker2->Name = L"dateTimePicker2";
-			this->dateTimePicker2->Size = System::Drawing::Size(200, 22);
-			this->dateTimePicker2->TabIndex = 10;
-			// 
-			// texture
-			// 
-			this->texture->Anchor = System::Windows::Forms::AnchorStyles::None;
-			hkcoglPanelCameraSetting3->Far = 1000;
-			hkcoglPanelCameraSetting3->Fov = 45;
-			hkcoglPanelCameraSetting3->Near = -1000;
-			hkcoglPanelCameraSetting3->Type = HKOGLPanel::HKCOGLPanelCameraSetting::CAMERATYPE::ORTHOGRAPHIC;
-			this->texture->Camera_Setting = hkcoglPanelCameraSetting3;
-			this->texture->Location = System::Drawing::Point(522, 277);
-			this->texture->Name = L"texture";
-			hkcoglPanelPixelFormat3->Accumu_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
-			hkcoglPanelPixelFormat3->Alpha_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
-			hkcoglPanelPixelFormat3->Stencil_Buffer_Bits = HKOGLPanel::HKCOGLPanelPixelFormat::PIXELBITS::BITS_0;
-			this->texture->Pixel_Format = hkcoglPanelPixelFormat3;
-			this->texture->Size = System::Drawing::Size(250, 250);
-			this->texture->TabIndex = 4;
-			this->texture->Load += gcnew System::EventHandler(this, &MyForm::texture_Load);
-			this->texture->Paint += gcnew System::Windows::Forms::PaintEventHandler(this, &MyForm::texture_Paint);
-			// 
-			// openImageFileDialog
-			// 
-			this->openImageFileDialog->FileName = L"openFileDialog1";
-			this->openImageFileDialog->FileOk += gcnew System::ComponentModel::CancelEventHandler(this, &MyForm::openImageFileDialog_FileOk);
+			this->openImgFileDialog->FileName = L"openFileDialog1";
+			this->openImgFileDialog->FileOk += gcnew System::ComponentModel::CancelEventHandler(this, &MyForm::openImgFileDialog_FileOk);
 			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 12);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->ClientSize = System::Drawing::Size(784, 561);
-			this->Controls->Add(this->dateTimePicker2);
 			this->Controls->Add(this->MultiSelect);
 			this->Controls->Add(this->SelectOneRing);
 			this->Controls->Add(this->SelectFaces);
@@ -383,11 +355,6 @@ namespace OpenMesh_EX
 				glm::vec3(0, 1, 0)  // Head is up (set to 0,1,0 to look upside-down)
 			);
 		}
-		//Load texture
-		void LoadTexture()
-		{
-			
-		}
 		private: System::Void hkoglPanelControl1_Load(System::Object^  sender, System::EventArgs^  e)
 		{
 			//glewªì©l
@@ -416,16 +383,6 @@ namespace OpenMesh_EX
 			model_point.setShader("vs.glsl", "fs.glsl");	
 			model_face.initialize();
 			model_face.setShader("vs.glsl", "fs.glsl");
-			texture_obj.initialize();
-			texture_obj.setShader("vs.glsl", "fs.glsl");
-		}
-		private: System::Void uv_Load(System::Object^  sender, System::EventArgs^  e)
-		{
-
-		}
-		private: System::Void texture_Load(System::Object^  sender, System::EventArgs^  e)
-		{	
-
 		}
 		void Update()
 		{
@@ -455,7 +412,7 @@ namespace OpenMesh_EX
 			hkoglPanelControl1->Invalidate();
 		}
 		private: System::Void hkoglPanelControl1_Paint(System::Object^  sender, System::Windows::Forms::PaintEventArgs^  e)
-		{			
+		{
 			glClearColor(1, 1, 1, 1);						
 			glEnable(GL_DEPTH_TEST);
 			glDepthMask(GL_TRUE);
@@ -468,25 +425,15 @@ namespace OpenMesh_EX
 			center[1] = 0.0;
 			center[2] = 0.0;
 			camera.setupGL(xf * center, 1.0);
+
 			if (mesh != NULL)
 			{
 				Update();
-			}						
-			//UpdateViewMatrix();
+			}
+													
+			UpdateViewMatrix();
 		}		
-		private: System::Void uv_Paint(System::Object^  sender, System::Windows::Forms::PaintEventArgs^  e) 
-		{			
-										
-		}
-		private: System::Void texture_Paint(System::Object^  sender, System::Windows::Forms::PaintEventArgs^  e) 
-		{
-			glClearColor(0, 0, 0, 1);
-			glEnable(GL_DEPTH_TEST);
-			glDepthMask(GL_TRUE);
-			glDepthFunc(GL_LEQUAL);
-			glDepthRange(0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		}
+		
 		private: System::Void hkoglPanelControl1_MouseMove(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e)
 		{
 			if (e->Button == System::Windows::Forms::MouseButtons::Left)
@@ -561,8 +508,9 @@ namespace OpenMesh_EX
 					center[0] = 0.0;
 					center[1] = 0.0;
 					center[2] = 0.0;
-					//Screen to Obj
-					glm::vec3 rainbow[7] = { glm::vec3(1, 0, 0),glm::vec3(1, 0.49f,0.15f),glm::vec3(1, 1, 0),glm::vec3(0, 1, 0),glm::vec3(0, 0, 1),glm::vec3(0.24f, 0.28f, 0.8f),glm::vec3(0.63f, 0.28f,0.64f) };
+					//Screen to Obj 
+					glm::vec3 drawColor = glm::vec3(0, 0, 1);
+
 					for (size_t i = 0; i < 4; i++)
 					{
 						for (size_t j = 0; j < 4; j++)
@@ -572,7 +520,8 @@ namespace OpenMesh_EX
 					}
 
 					GLfloat  windowZ = 0;
-					double objX = 0.f, objY = 0.f, objZ = 0.f;					
+					double objX = 0.f, objY = 0.f, objZ = 0.f;
+					GLdouble mvm[16];
 					glEnable(GL_DEPTH_TEST);
 					glReadPixels(xOrigin, viewport[3] - yOrigin, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &windowZ);
 					gluUnProject(xOrigin, viewport[3] - yOrigin, windowZ, xf, pm, viewport, &objX, &objY, &objZ);
@@ -580,7 +529,7 @@ namespace OpenMesh_EX
 					camera.mouse(xOrigin, yOrigin, Mouse_State, xf * center, 1.0, xf);
 					glm::vec3 clickObjCoord = glm::vec3(objX, objY, objZ);
 					//
-					//printf("OBJ:(%f,%f,%f)\n", objX, objY, objZ);
+					printf("OBJ:(%f,%f,%f)\n", objX, objY, objZ);
 					/*if (e->Button == System::Windows::Forms::MouseButtons::Left)
 					{
 						model_point.clear();
@@ -604,37 +553,24 @@ namespace OpenMesh_EX
 							std::vector<glm::vec3> nvs = mesh->nearest_point(clickObjCoord);
 							for (size_t i = 0; i < nvs.size(); i++)
 							{
-								model_point.setPoint(nvs[i]);								
+								model_point.setPoint(nvs[i]);
 							}
-							for (size_t i = 0; i < model_point.getPointSize(); i++)
-							{
-								model_point.setColor(rainbow[((i) % 7)]);
-							}
+							model_point.setColor(drawColor);
 						}
 						else if (selectMode == 1)
 						{
-							fs = mesh->nearest_face(clickObjCoord);							
-							for (size_t i = 0; i < fs.size(); i++)
-							{
-								model_face.setPoint(fs[i]);								
-							}
-							for (size_t i = 0; i < model_face.getPointSize(); i++)
-							{
-								model_face.setColor(rainbow[(i / 3) % 7]);
-							}
+							fs = mesh->nearest_face(clickObjCoord);
+							model_face.setColor(glm::vec3(0, 0, 0));
 						}
 						else if (selectMode == 2)
 						{
 							fs = mesh->nearest_onering(clickObjCoord);
-							for (size_t i = 0; i < fs.size(); i++)
-							{
-								model_face.setPoint(fs[i]);								
-							}
-							for (size_t i = 0; i < model_face.getPointSize(); i++)
-							{
-								model_face.setColor(rainbow[(i / 3) % 7]);
-							}
-						}																		
+						}						
+						for (size_t i = 0; i < fs.size(); i++)
+						{
+							model_face.setPoint(fs[i]);
+							model_face.setColor(glm::vec3(0, 0, 0));
+						}						
 					}
 				}				
 			}
@@ -712,7 +648,7 @@ namespace OpenMesh_EX
 		private: System::Void saveModelToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
 		{
 			saveModelDialog->Filter = "Model(*.obj)|*obj";
-			saveModelDialog->ShowDialog();		
+			saveModelDialog->ShowDialog();
 		}
 		private: System::Void saveModelDialog_FileOk(System::Object^  sender, System::ComponentModel::CancelEventArgs^  e)
 		{
@@ -722,70 +658,7 @@ namespace OpenMesh_EX
 			if (SaveFile(filename, mesh))
 				std::cout << filename << std::endl;
 		}
-		private: System::Void loadTextureToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
-		{
-			openModelDialog->Filter = "Image(*.png)|*png|Image(*.jpg)|*jpg";
-			openModelDialog->Multiselect = false;
-			openModelDialog->ShowDialog();
-		}
-		
-		stbi_uc *stbi_load(char const *filename, int *x, int *y, int *comp, int req_comp)
-		{
-			FILE *f = fopen(filename, "rb");
-			unsigned char *result;
-			if (!f) printf("can't fopen", "Unable to open file\n");
-			result = stbi_load_from_file(f, x, y, comp, req_comp);
-			fclose(f);
-			return result;
-		}
-		TextureData Load_png(const char* path)
-		{
-			TextureData texture;
-			int n;
-			stbi_uc *data = stbi_load(path, &texture.width, &texture.height, &n, 4);
-			if (data != NULL)
-			{
-				texture.data = new unsigned char[texture.width * texture.height * 4 * sizeof(unsigned char)];
-				memcpy(texture.data, data, texture.width * texture.height * 4 * sizeof(unsigned char));
-				// vertical-mirror image data
-				for (int i = 0; i < texture.width; i++)
-				{
-					for (int j = 0; j < texture.height / 2; j++)
-					{
-						for (size_t k = 0; k < 4; k++) {
-							std::swap(texture.data[(j * texture.width + i) * 4 + k], texture.data[((texture.height - j - 1) * texture.width + i) * 4 + k]);
-						}
-					}
-				}
-				free(data);
-			}
-			return texture;
-		}
-		GLuint generateTexture(const char *image, GLuint id)
-		{			
-			TextureData *image_data = &(Load_png(image));
-			if (!image_data->data)
-			{
-				printf("Read image fail!\n");
-				system("pause");
-				return 0;
-			}
-			glGenTextures(1, &id);
-			glBindTexture(GL_TEXTURE_2D, id);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, image_data->width, image_data->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data->data);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			return id;
-		}
-		private: System::Void openImageFileDialog_FileOk(System::Object^  sender, System::ComponentModel::CancelEventArgs^  e) 
-		{
-			std::string filename;
-			MarshalString(openImageFileDialog->FileName, filename);
-			
-		}
-		private: System::Void timer_Tick(System::Object^  sender, System::EventArgs^  e) 
+		private: System::Void timer1_Tick(System::Object^  sender, System::EventArgs^  e) 
 		{
 			if (countTime > 80.0f)
 				reTime = true;
@@ -796,9 +669,7 @@ namespace OpenMesh_EX
 			else
 				countTime += 1.0f;
 			hkoglPanelControl1->Invalidate();
-			uv->Invalidate();
-			texture->Invalidate();
-		}	
+		}
 		private: System::Void MyForm_Resize(System::Object^  sender, System::EventArgs^  e) 
 		{			
 		}	
@@ -856,6 +727,26 @@ namespace OpenMesh_EX
 				multiSelected = true;
 			else
 				multiSelected = false;
-		}	
-	};
+		}
+		char *stringToChar(string str)
+		{
+			char *c = new char[str.length() + 1];
+			return strcpy(c, str.c_str());
+		}
+		private: System::Void loadTextureToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e) 
+		{
+			openImgFileDialog->Filter = "Image(*.png)|*png|Image(*.jpg)|*jpg";
+			openImgFileDialog->Multiselect = false;
+			openImgFileDialog->ShowDialog();
+		}
+		private: System::Void openImgFileDialog_FileOk(System::Object^  sender, System::ComponentModel::CancelEventArgs^  e)
+		{
+			std::string filename;
+			MarshalString(openImgFileDialog->FileName, filename);
+			TextureData td = Load_png(stringToChar(filename));
+			free(td.data);
+		}
+		private: System::Void texture_Load(System::Object^  sender, System::EventArgs^  e) {
+		}		
+};
 }

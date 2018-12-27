@@ -1,6 +1,5 @@
 #version 430
 uniform float time;
-uniform sampler2D tex;
 in vec3 VertexColor;
 out vec4 fragColor;
 vec2 img_size = vec2(800., 340.);

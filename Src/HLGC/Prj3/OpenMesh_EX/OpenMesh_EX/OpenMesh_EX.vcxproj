@@ -96,6 +96,7 @@
     <ClCompile Include="object.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Common.h" />
     <ClInclude Include="DotNetUtilities.h" />
     <ClInclude Include="LoadShaders.h" />
     <ClInclude Include="Mesh\GUA_OM.h" />
@@ -105,7 +106,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="object.h" />
-    <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="MyForm.resx">

@@ -25,7 +25,6 @@ public:
 	mat4 setScale(float x, float y, float z); //ÁY©ñ
 	//T[]*R[]*S[]*M[]
 	void render(GLenum type,mat4 projectionMatrix, mat4 modelMatrix, mat4 viewMatrix);
-	size_t getPointSize();
 private:
 	std::vector<glm::vec3> Points;
 	std::vector<glm::vec3> PColors;
