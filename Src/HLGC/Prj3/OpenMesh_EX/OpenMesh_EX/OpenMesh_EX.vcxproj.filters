@@ -50,6 +50,9 @@
     <ClInclude Include="object.h">
       <Filter>標頭檔</Filter>
     </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="MyForm.resx">

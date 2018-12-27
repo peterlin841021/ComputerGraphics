@@ -619,7 +619,7 @@ double Tri_Mesh::seaDragon(Point trangleVertex1, Point trangleVertex2, Point tra
 }
 std::vector<glm::vec3> Tri_Mesh::nearest_onering(glm::vec3 screen)
 {
-	float min_dis = 100.f;
+	float min_dis = 9999;
 	std::vector<glm::vec3> points;
 	VHandle vh;
 	double triArea[4];
@@ -636,7 +636,7 @@ std::vector<glm::vec3> Tri_Mesh::nearest_onering(glm::vec3 screen)
 			vh = v_it.handle();
 		}
 	}
-	if (min_dis != 100.f)
+	if (min_dis <= 9999)
 	{
 		std::vector<OMT::Point> ring_points;		
 		for (OMT::VFIter vf_it = vf_iter(vh); vf_it ; vf_it++)
@@ -655,7 +655,7 @@ std::vector<glm::vec3> Tri_Mesh::nearest_onering(glm::vec3 screen)
 }
 std::vector<glm::vec3> Tri_Mesh::nearest_face(glm::vec3 screen)
 {
-	float min_dis = 100.f;
+	float min_dis = 9999;
 	std::vector<glm::vec3> points;
 	VHandle vh;
 	double triArea[4];
@@ -671,38 +671,49 @@ std::vector<glm::vec3> Tri_Mesh::nearest_face(glm::vec3 screen)
 			min_dis = dis;		
 			vh = v_it.handle();
 		}
-	}	
-	if (min_dis != 100.f)
-	{		
-		std::vector<OMT::Point> fp;		
-		for (OMT::FIter f_it = faces_begin(); f_it != faces_end(); f_it++)
+	}
+	if (min_dis < 9999)
+	{
+		std::vector<OMT::Point> fp;	
+		float minDis = 9999;
+		for (OMT::VFIter vf_it = vf_iter(vh); vf_it; vf_it++)
 		{
 			std::vector<OMT::Point> fv_it_point;
-			for (OMT::FVIter fv_it = fv_iter(f_it.handle()); fv_it; fv_it++)
+			for (OMT::FVIter fv_it = fv_iter(vf_it.handle()); fv_it; fv_it++)
 			{
-				fv_it_point.push_back(point(fv_it.handle()));	
+				fv_it_point.push_back(point(fv_it.handle()));
+			}		
+			OMT::Point ps = OMT::Point(screen.x, screen.y, screen.z);			
+			/*float dis = 0;
+			for (size_t i = 0; i < fv_it_point.size(); i++)
+			{				
+				dis += sqrt(pow(screen.x - fv_it_point[i][0], 2) + pow(screen.y - fv_it_point[i][1], 2) + pow(screen.z - fv_it_point[i][2], 2));				
 			}
-			OMT::Point ps = OMT::Point(screen.x, screen.y, screen.z);
+			if (dis < minDis)
+			{
+				fp = fv_it_point;
+				minDis = dis;
+			}*/
 			triArea[0] = seaDragon(fv_it_point.at(0), fv_it_point.at(1), fv_it_point.at(2));
-			triArea[1] = seaDragon(ps, fv_it_point.at(0), fv_it_point.at(1));
-			triArea[2] = seaDragon(ps, fv_it_point.at(1), fv_it_point.at(2));
-			triArea[3] = seaDragon(ps, fv_it_point.at(2), fv_it_point.at(0));
+			triArea[1] = seaDragon(fv_it_point.at(0),ps, fv_it_point.at(1));
+			triArea[2] = seaDragon(fv_it_point.at(1),ps, fv_it_point.at(2));
+			triArea[3] = seaDragon(fv_it_point.at(0),ps, fv_it_point.at(2));
 			mostSuitableTriangle = (triArea[1] + triArea[2] + triArea[3]);
 			if ((-minimumValue < (triArea[0] - mostSuitableTriangle)) && ((triArea[0] - mostSuitableTriangle) < minimumValue))
 			{
 				fp = fv_it_point;
 			}
-		}
+		}		
 		for (size_t i = 0; i < fp.size(); i++)
 		{
 			points.push_back(glm::vec3(fp[i][0], fp[i][1], fp[i][2]));
-		}
+		}		
 	}	
 	return points;
 }
 std::vector<glm::vec3> Tri_Mesh::nearest_point(glm::vec3 screen)
 {
-	float min_dis = 100.f;
+	float min_dis = 9999;
 	std::vector<glm::vec3> points;
 	VHandle vh;	
 	glm::vec3 n;
@@ -717,7 +728,7 @@ std::vector<glm::vec3> Tri_Mesh::nearest_point(glm::vec3 screen)
 			vh = v_it.handle();
 		}
 	}
-	if (min_dis != 100.f)
+	if (min_dis < 9999)
 	{		
 		points.push_back(n);
 	}
