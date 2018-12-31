@@ -530,16 +530,15 @@ namespace OpenMesh_EX
 					glm::vec3 clickObjCoord = glm::vec3(objX, objY, objZ);
 					//
 					printf("OBJ:(%f,%f,%f)\n", objX, objY, objZ);
-					/*if (e->Button == System::Windows::Forms::MouseButtons::Left)
-					{
-						model_point.clear();
-						std::vector<glm::vec3> nvs = mesh->nearest_point(clickObjCoord);
-						for (size_t i = 0; i < nvs.size(); i++)
-						{
-							model_point.setPoint(nvs[i]);
-						}
-						model_point.setColor(drawColor);
-					}*/
+					glm::vec3 rainbowColor[7] = {
+						glm::vec3(1,0,0),
+						glm::vec3(1,0.49f,0.15f),
+						glm::vec3(1,1,0),
+						glm::vec3(0,1,0),
+						glm::vec3(0,0,1),
+						glm::vec3(0.24f,0.28f,0.8f),
+						glm::vec3(0.63f,0.28f,0.63f)
+					};
 					if (e->Button == System::Windows::Forms::MouseButtons::Right)
 					{
 						if (!multiSelected)
@@ -555,22 +554,26 @@ namespace OpenMesh_EX
 							{
 								model_point.setPoint(nvs[i]);
 							}
-							model_point.setColor(drawColor);
+							model_point.setColor(rainbowColor[1]);
 						}
 						else if (selectMode == 1)
 						{
 							fs = mesh->nearest_face(clickObjCoord);
-							model_face.setColor(glm::vec3(0, 0, 0));
+							for (size_t i = 0; i < fs.size(); i++)
+							{
+								model_face.setPoint(fs[i]);
+								model_face.setColor(rainbowColor[(i/3)%7]);
+							}							
 						}
 						else if (selectMode == 2)
 						{
 							fs = mesh->nearest_onering(clickObjCoord);
-						}						
-						for (size_t i = 0; i < fs.size(); i++)
-						{
-							model_face.setPoint(fs[i]);
-							model_face.setColor(glm::vec3(0, 0, 0));
-						}						
+							for (size_t i = 0; i < fs.size(); i++)
+							{
+								model_face.setPoint(fs[i]);								
+								model_face.setColor(rainbowColor[(i / 3) % 7]);
+							}
+						}																	
 					}
 				}				
 			}
