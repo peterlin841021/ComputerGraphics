@@ -5,24 +5,19 @@
 #define VT_WATER false
 #define SLEEPER false
 
-//bool trackupdate = true;
-//int train_speed = 5;
+
 int uv_size = 0;
-//float t_temp = 0;
-//float uv[12] = { 0.f , 0.f, 1.f , 0.f, 1.f , 1.f, 1.f , 1.f, 0.f , 1.f, 0.f , 0.f };
 int pos_size = 0;
 int normal_size = 0;
-//float rightarmangle = 0;
-//float model_rotate = 0;
-//float offset = 5.f;
-//float wt = 0;
-//float shake = 0.5f;
+
 GLuint highmap_textureid = 0;
 GLuint normalmap_textureid = 0;
 GLuint terrain_textureid = 0;
 //FBO
 QOpenGLFramebufferObject *fbo;
 QOpenGLTexture *fbo_texture;
+GLfloat *lightview;
+GLfloat lightprojection[16]{ 0 };
 void TrainView::changeEffect(size_t effectNum)
 {
 	this->effectNum = effectNum;	
@@ -199,9 +194,13 @@ void TrainView::initializeGL()
 		models.push_back(mikuRC);
 		models.push_back(scallion);
 		models.push_back(tunnel);		
-	}
-	fbo = new QOpenGLFramebufferObject(width(), height(), QOpenGLFramebufferObject::Depth);	
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/miku_transparent.png")));//FBO
+	}	
+	fbo = new QOpenGLFramebufferObject(width(), height());
+	fbo->setAttachment(QOpenGLFramebufferObject::Depth);
+	fbo->bind();
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	fbo->bindDefault();
 }
 char *stringToChar(string str)
 {
@@ -383,7 +382,18 @@ void TrainView::paint()
 	glEnable(GL_DEPTH);
 	if (useFBO)
 	{
-		fbo->bind();
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glViewport(0, 0, 1000, 1000);
+		fbo->bind();		
+		glMatrixMode(GL_PROJECTION);
+		glOrtho(-15.f,15.f,-15.f,15.f,0.1f,50.f);		
+		gluLookAt(30.f, 50.f, 560.f,0,0,0,0,1,0);
+		//glGetFloatv(GL_MODELVIEW_MATRIX, lightview);
+		QMatrix4x4 m;
+		m.lookAt(QVector3D(30.f, 50.f, 560.f), QVector3D(0, 0, 0), QVector3D(0, 1, 0));
+		lightview = m.data();
+		glGetFloatv(GL_PROJECTION_MATRIX, lightprojection);
 	}
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 	
@@ -850,55 +860,54 @@ void TrainView::paint()
 	{
 		fbo->release();
 		fbo_texture = new QOpenGLTexture(fbo->toImage());
-		QVector<GLfloat> fbo_vts;
-		std::vector<int>buffer_size;
-		float frame_size = 200.f;		
-		fbo_texture->bind(0);
-		glPushMatrix();
-			glTranslatef(0, 0, 0);
-			glScalef(1, 1, 1);
-			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			miku->Begin();
-				glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-				fbo_vts.clear();
-				fbo_vts
-					<< -frame_size << -frame_size << 300
-					<< frame_size << -frame_size << 300
-					<< frame_size << frame_size << 300
-					<< frame_size << frame_size << 300
-					<< -frame_size << frame_size << 300
-					<< -frame_size << -frame_size << 300;
-				buffer_size.clear();
-				buffer_size.push_back(18);
-				fbo_vts
-					<< 0 << 1
-					<< 1 << 1
-					<< 1 << 0
-					<< 1 << 0
-					<< 0 << 0
-					<< 0 << 1;
-				buffer_size.push_back(12);
-				miku->shaderProgram->setUniformValue("tex", 0);
-				miku->Render(GL_TRIANGLES,false,0,ProjectionMatrex, ModelViewMatrex, fbo_vts, buffer_size, 1, effect_clock, effectNum);
-			miku->End();
-		glPopMatrix();		
+
 	}
-	glDisable(GL_BLEND);
-	glDisable(GL_ALPHA_TEST);
+	glDisable(GL_BLEND);	
 }
 void TrainView::paintGL()
-{
-	glViewport(0, 0, width(), height());
+{	
 	glClearColor(0, 0, 0, 0);
 	glClearStencil(0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);	
+	//useFBO = true;
+	//paint();
+	glViewport(0, 0, width(), height());
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	setProjection();
-	/*useFBO = true;
-	paint();*/
+	//Draw shadows
+	/*QVector<GLfloat> fbo_vts;
+	std::vector<int>buffer_size;
+	float frame_size = 200.f;
+	fbo_texture->bind(0);
+	glPushMatrix();
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		miku->Begin();
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		fbo_vts.clear();
+		fbo_vts
+			<< -frame_size << -frame_size << 300
+			<< frame_size << -frame_size << 300
+			<< frame_size << frame_size << 300
+			<< frame_size << frame_size << 300
+			<< -frame_size << frame_size << 300
+			<< -frame_size << -frame_size << 300;
+		buffer_size.clear();
+		buffer_size.push_back(18);
+		fbo_vts
+			<< 0 << 1
+			<< 1 << 1
+			<< 1 << 0
+			<< 1 << 0
+			<< 0 << 0
+			<< 0 << 1;
+		buffer_size.push_back(12);
+		miku->shaderProgram->setUniformValue("tex", 0);
+		miku->Render(GL_TRIANGLES, false, 0, lightprojection, lightview, fbo_vts, buffer_size, 1, effect_clock, effectNum);
+		
+		miku->End();
+	glPopMatrix();*/
 	useFBO = false;
 	paint();
 }
