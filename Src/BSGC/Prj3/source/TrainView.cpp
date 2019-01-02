@@ -518,7 +518,7 @@ void TrainView::paint()
 
 	//Draw track and train
 	glPushMatrix();
-	drawStuff();
+	drawStuff(false);
 	glPopMatrix();
 
 	//Draw land
@@ -543,326 +543,91 @@ void TrainView::paint()
 
 	//Draw water
 	glPushMatrix();
-	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-	float wave_t = 0;
-	int water_size = 70;
-	float min = -boxsize;
-	float amplitude = 2.5f;
-	float speed = 0.0001f;
-	float step = boxsize / water_size * 2;
-	float old_wave_height = 0;
-	float wy = 0.f;
-	float wave_height = 0.f;
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		float wave_t = 0;
+		int water_size = 70;
+		float min = -boxsize;
+		float amplitude = 2.5f;
+		float speed = 0.0001f;
+		float step = boxsize / water_size * 2;
+		float old_wave_height = 0;
+		float wy = 0.f;
+		float wave_height = 0.f;
 
-	setupFloor();
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	water->Begin();
-	water->shaderProgram->setUniformValue("tex", water->textureId);
-	water->shaderProgram->setUniformValue("heightmap", highmap_textureid);	
-	water->shaderProgram->setUniformValue("texcube", skybox->textureId);
-	water->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx, arcball.posy, arcball.posz));
+		setupFloor();
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		water->Begin();
+		water->shaderProgram->setUniformValue("tex", water->textureId);
+		water->shaderProgram->setUniformValue("heightmap", highmap_textureid);	
+		water->shaderProgram->setUniformValue("texcube", skybox->textureId);
+		water->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx, arcball.posy, arcball.posz));
 
-	float ratio = 25;
-	float xfrom = 0;
-	float zfrom = 0;
-	float xto = 0;
-	float zto = 0;
-	float padding = 0;
+		float ratio = 25;
+		float xfrom = 0;
+		float zfrom = 0;
+		float xto = 0;
+		float zto = 0;
+		float padding = 0;
 
-	QVector<GLfloat> water_vertices;
-	water_vertices.clear();
-	buffer_size.clear();
-	water_vertices
-		<< min << wy << min
-		<< -min << wy << min
-		<< -min << wy << -min
-		<< min << wy << -min;
-	buffer_size.push_back(12);
-	buffer_size.push_back(0);
-	water->Render(GL_PATCHES,true,2,ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7, effect_clock*0.001f, effectNum);
-	water->End();
-	water_vertices.clear();
-	buffer_size.clear();
+		QVector<GLfloat> water_vertices;
+		water_vertices.clear();
+		buffer_size.clear();
+		water_vertices
+			<< min << wy << min
+			<< -min << wy << min
+			<< -min << wy << -min
+			<< min << wy << -min;
+		buffer_size.push_back(12);
+		buffer_size.push_back(0);
+		water->Render(GL_PATCHES,true,2,ProjectionMatrex, ModelViewMatrex, water_vertices, buffer_size, 0.7, effect_clock*0.001f, effectNum);
+		water->End();
+		water_vertices.clear();
+		buffer_size.clear();
 	glPopMatrix();
-
+	glDisable(GL_BLEND);
 	//Draw shadows
 	glPushMatrix();
-	if (this->camera != 1)
-	{
-		glTranslatef(0, shadowShake, 0);
-		setupShadows();
-		drawStuff(true);
-		unsetupShadows();		
-	}
+		if (this->camera != 1)
+		{
+			glTranslatef(0, shadowShake, 0);
+			setupShadows();
+			drawStuff(true);
+			unsetupShadows();		
+		}
 	glPopMatrix();
-	//Draw mountains
-	float mountain_h = -125.f;
-	glPushMatrix();
-	QMatrix4x4 m;
-	m.setToIdentity();
-	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-	mountain->Begin();
-	mountain->shaderProgram->setUniformValue("tex", mountain->textureId);
-	mountain->shaderProgram->setUniformValue("heightmap", terrain_textureid);
-	mountain->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx, arcball.posy, arcball.posz));
-	QVector<GLfloat> mountain_vts;
-	mountain_vts
-		<< -200.f << mountain_h << -200.f
-		<< 200.f << mountain_h << -200.f
-		<< 200.f << mountain_h << 200.f
-		<< -200.f << mountain_h << 200.f;
-	buffer_size.clear();
-	buffer_size.push_back(12);
-	buffer_size.push_back(0);
-	mountain->Render(GL_PATCHES,true,0,ProjectionMatrex,ModelViewMatrex, mountain_vts, buffer_size, 1.f, effect_clock, effectNum);
-	mountain->End();
 	glPopMatrix();
-	float right_position[15][3]
-	{
-		{0, 2.3f, 0},
-		{0, 2.5f, 0},
-
-		{0, 0, 0},
-		{0, -0.1f, 0},
-
-		{0.5f, 1.8f, 0},
-		{1.4f, -0.7f, 0},
-		{1.4f, -0.7f, 0},
-
-		{-0.5f, 1.8f, 0},
-		{-1.4f, -0.7f, 0},
-		{-1.4f, -0.7f, 0},
-
-		{0.5f, -0.3f, 0},
-		{-0.05f, -2.2f, 0},
-
-		{-0.5f, -0.3f, 0},
-		{0.05f, -2.2f, 0},
-
-		{0, 0, 0}
-	};
-	float sr = 20;
-	for (size_t i = 0; i < models.size() - 1; i++)
-	{
-		right_position[i][0] *= sr;
-		right_position[i][1] *= sr;
-		right_position[i][2] *= sr;
-	}
-	//Draw 3d models reflect environment map
-	{
+		//Draw mountains
+		float mountain_h = -125.f;
 		glPushMatrix();
 		QMatrix4x4 m;
 		m.setToIdentity();
-		glTranslatef(0, 130, 0);
-		glRotatef(wholeRotateAngle, 0, 1, 0);
-		glScalef(1, 1, 1);
-		m.translate(QVector3D(0, 130, 0));
-		m.rotate(wholeRotateAngle,QVector3D(0, 1, 0));
 		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		miku3d->Begin();
-		for (size_t i = 0; i < models.size() - 1; i++)
-		{
-			glPushMatrix();
-			switch (i)
-			{
-			case 0://hair
-				glTranslatef(right_position[0][0], right_position[0][1], right_position[0][2]);
-				m.translate(QVector3D(right_position[0][0], right_position[0][1], right_position[0][2]));
-				break;
-			case 1:
-				glTranslatef(right_position[1][0], right_position[1][1], right_position[1][2]);
-				m.translate(QVector3D(right_position[1][0], right_position[1][1], right_position[1][2]));
-			case 3://Skirt
-				glTranslatef(right_position[3][0], right_position[3][1], right_position[3][2]);
-				m.translate(QVector3D(right_position[3][0], right_position[3][1], right_position[3][2]));
-				break;
-			case 4:
-				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
-				m.translate(QVector3D(right_position[4][0], right_position[4][1], right_position[4][2]));
-				break;
-			case 5:
-				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
-				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
-				m.translate(QVector3D(right_position[4][0], right_position[4][1], right_position[4][2]));
-				m.translate(QVector3D(right_position[5][0], right_position[5][1], right_position[5][2]));
-				break;
-			case 6:
-				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
-				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
-				glTranslatef(right_position[6][0], right_position[6][1], right_position[6][2]);
-				m.translate(QVector3D(right_position[4][0], right_position[4][1], right_position[4][2]));
-				m.translate(QVector3D(right_position[5][0], right_position[5][1], right_position[5][2]));
-				m.translate(QVector3D(right_position[6][0], right_position[6][1], right_position[6][2]));
-				break;
-			case 7:
-				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
-				m.translate(QVector3D(right_position[7][0], right_position[7][1], right_position[7][2]));
-				break;
-			case 8:
-				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
-				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
-				m.translate(QVector3D(right_position[7][0], right_position[7][1], right_position[7][2]));
-				m.translate(QVector3D(right_position[8][0], right_position[8][1], right_position[8][2]));				
-				break;
-			case 9:
-				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
-				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
-				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
-				m.translate(QVector3D(right_position[7][0], right_position[7][1], right_position[7][2]));				
-				m.translate(QVector3D(right_position[8][0], right_position[8][1], right_position[8][2]));
-				m.translate(QVector3D(right_position[9][0], right_position[9][1], right_position[9][2]));
-				break;
-			case 10://Thigh
-				glTranslatef(right_position[10][0], right_position[10][1], right_position[10][2]);
-				m.translate(QVector3D(right_position[10][0], right_position[10][1], right_position[10][2]));
-				break;
-			case 11:
-				glTranslatef(right_position[10][0], right_position[10][1], right_position[10][2]);
-				glTranslatef(right_position[11][0], right_position[11][1], right_position[11][2]);
-				m.translate(QVector3D(right_position[10][0], right_position[10][1], right_position[10][2]));
-				m.translate(QVector3D(right_position[11][0], right_position[11][1], right_position[11][2]));
-				break;
-			case 12:
-				glTranslatef(right_position[12][0], right_position[12][1], right_position[12][2]);
-				m.translate(QVector3D(right_position[12][0], right_position[12][1], right_position[12][2]));
-				break;
-			case 13:
-				glTranslatef(right_position[12][0], right_position[12][1], right_position[12][2]);
-				glTranslatef(right_position[13][0], right_position[13][1], right_position[13][2]);
-				m.translate(QVector3D(right_position[12][0], right_position[12][1], right_position[12][2]));
-				m.translate(QVector3D(right_position[13][0], right_position[13][1], right_position[13][2]));
-				break;
-			case 14:
-				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
-				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
-				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
-				m.translate(QVector3D(right_position[7][0], right_position[7][1], right_position[7][2]));
-				m.translate(QVector3D(right_position[8][0], right_position[8][1], right_position[8][2]));
-				m.translate(QVector3D(right_position[9][0], right_position[9][1], right_position[9][2]));
-				break;
-			}
-			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
-			miku3d->shaderProgram->setUniformValue("texcube", skybox->textureId);
-			if (i != 14)
-				miku3d->Render(GL_TRIANGLES,false,3,ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 0.6f,effect_clock, effectNum);
-			glPopMatrix();
-		}
-		miku3d->End();
-		glPopMatrix();
-	}
-
-	//Draw 3d models
-	{
-		glPushMatrix();
-		glTranslatef(-140, 130, 0);
-		glRotatef(90.f, 0, 1, 0);
-		glScalef(1, 1, 1);
-		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-		miku3d->Begin();
-		for (size_t i = 0; i < models.size() - 1; i++)
-		{
-			glPushMatrix();
-			switch (i)
-			{
-			case 0://hair
-				glTranslatef(right_position[0][0], right_position[0][1], right_position[0][2]);
-				break;
-			case 1:
-				glTranslatef(right_position[1][0], right_position[1][1], right_position[1][2]);
-			case 3://Skirt
-				glTranslatef(right_position[3][0], right_position[3][1], right_position[3][2]);
-				break;
-			case 4://LFA
-				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
-				glRotatef(-30.f, 0, 0, 1);
-				break;
-			case 5:
-				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
-				glRotatef(-30.f, 0, 0, 1);
-				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
-				break;
-			case 6:
-				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
-				glRotatef(-30.f, 0, 0, 1);
-				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
-				glTranslatef(right_position[6][0], right_position[6][1], right_position[6][2]);
-				break;
-			case 7://RFA
-				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
-				glRotatef(30.f, 0, 0, 1);
-				glRotatef(rightArmAngle, 1, 0, 0);
-				break;
-			case 8:
-				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
-				glRotatef(30.f, 0, 0, 1);
-				glRotatef(rightArmAngle, 1, 0, 0);
-				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
-				break;
-			case 9:
-				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
-				glRotatef(30.f, 0, 0, 1);
-				glRotatef(rightArmAngle, 1, 0, 0);
-				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
-				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
-				break;
-			case 10://Thigh
-				glTranslatef(right_position[10][0], right_position[10][1], right_position[10][2]);
-				break;
-			case 11:
-				glTranslatef(right_position[10][0], right_position[10][1], right_position[10][2]);
-				glTranslatef(right_position[11][0], right_position[11][1], right_position[11][2]);
-				break;
-			case 12:
-				glTranslatef(right_position[12][0], right_position[12][1], right_position[12][2]);
-				break;
-			case 13:
-				glTranslatef(right_position[12][0], right_position[12][1], right_position[12][2]);
-				glTranslatef(right_position[13][0], right_position[13][1], right_position[13][2]);
-				break;
-			case 14:
-				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
-				glRotatef(30.f, 0, 0, 1);
-				glRotatef(rightArmAngle, 1, 0, 0);
-				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
-				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
-				break;
-			}
-			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
-			miku3d->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1.f, effect_clock, effectNum);
-			glPopMatrix();
-		}
-		miku3d->End();
-		glPopMatrix();
-	}
+		mountain->Begin();
+		mountain->shaderProgram->setUniformValue("tex", mountain->textureId);
+		mountain->shaderProgram->setUniformValue("heightmap", terrain_textureid);
+		mountain->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx, arcball.posy, arcball.posz));
+		QVector<GLfloat> mountain_vts;
+		mountain_vts
+			<< -200.f << mountain_h << -200.f
+			<< 200.f << mountain_h << -200.f
+			<< 200.f << mountain_h << 200.f
+			<< -200.f << mountain_h << 200.f;
+		buffer_size.clear();
+		buffer_size.push_back(12);
+		buffer_size.push_back(0);
+		mountain->Render(GL_PATCHES,true,0,ProjectionMatrex,ModelViewMatrex, mountain_vts, buffer_size, 1.f, effect_clock, effectNum);
+		mountain->End();
+	glPopMatrix();
 	
-	//3D tunnel
-	{
-		glPushMatrix();
-		glTranslatef(95, 95, 0);
-		glScalef(0.2f, 0.2f, 0.2f);
-		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		miku3d->Begin();
-		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-		miku3d->shaderProgram->setUniformValue("tex", models[models.size() - 1]->getTextureid());
-		miku3d->Render(GL_TRIANGLES, false, 0,ProjectionMatrex, ModelViewMatrex, models[models.size() - 1]->getValues(), models[models.size() - 1]->getBufferOffset(),1.f, effect_clock, effectNum);
-		miku3d->End();
-		glPopMatrix();
-	}
-	fbo->bindDefault();
+	/*fbo->bindDefault();
+	
 	if (useFBO)
 	{
 		fbo->release();
 		fbo_texture = new QOpenGLTexture(fbo->toImage());
 
-	}
-	glDisable(GL_BLEND);	
+	}*/	
 }
 void TrainView::paintGL()
 {	
@@ -1325,38 +1090,304 @@ void TrainView::drawTrack(bool doingShadows)
 	}
 }
 void TrainView::drawStuff(bool doingShadows)
-{	
-	glTranslatef(0,10,0);
-	if (this->camera != 2) 
-	{
-		for (size_t i = 0; i < this->m_pTrack->points.size(); ++i) 
+{
+	draw3DObj(doingShadows);
+	//glPushMatrix();		
+		glTranslatef(0,10,0);
+		if (this->camera != 2) 
 		{
-			if (!doingShadows) 
-		{
-				if (((int)i) != selectedCube)
-					glColor3ub(240, 60, 60);
-				else{
-					glColor3ub(240, 240, 30);					
+			for (size_t i = 0; i < this->m_pTrack->points.size(); ++i) 
+			{
+				if (!doingShadows) 
+			{
+					if (((int)i) != selectedCube)
+						glColor3ub(240, 60, 60);
+					else{
+						glColor3ub(240, 240, 30);					
+					}
 				}
+				this->m_pTrack->points[i].draw();
 			}
-			this->m_pTrack->points[i].draw();
+			update();
 		}
-		update();
-	}
-	drawTrack(doingShadows);
+		drawTrack(doingShadows);
 #ifdef EXAMPLE_SOLUTION
 	//drawTrack(this, doingShadows);
 	
 #endif		
-	if (path.size() > 0) 
-	{
-		drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients,doingShadows);
-	}
+		if (path.size() > 0) 
+		{
+			drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients,doingShadows);
+		}
+	//glPopMatrix();	
 #ifdef EXAMPLE_SOLUTION
 	// don't draw the train if you're looking out the front window
 	if (!tw->trainCam->value())
 		drawTrain(this, doingShadows);
 #endif	
+}
+void TrainView::draw3DObj(bool doingShadows)
+{
+	//**********************OTHERS***************************//	
+	float right_position[15][3]
+	{
+		{0, 2.3f, 0},
+		{0, 2.5f, 0},
+
+		{0, 0, 0},
+		{0, -0.1f, 0},
+
+		{0.5f, 1.8f, 0},
+		{1.4f, -0.7f, 0},
+		{1.4f, -0.7f, 0},
+
+		{-0.5f, 1.8f, 0},
+		{-1.4f, -0.7f, 0},
+		{-1.4f, -0.7f, 0},
+
+		{0.5f, -0.3f, 0},
+		{-0.05f, -2.2f, 0},
+
+		{-0.5f, -0.3f, 0},
+		{0.05f, -2.2f, 0},
+
+		{0, 0, 0}
+	};
+	float sr = 20;	
+	for (size_t i = 0; i < models.size() - 1; i++)
+	{
+		right_position[i][0] *= sr;
+		right_position[i][1] *= sr;
+		right_position[i][2] *= sr;
+	}
+	//Draw 3d models reflect environment map
+	{
+		glPushMatrix();
+		QMatrix4x4 m;
+		m.setToIdentity();
+		glTranslatef(0, 130, 0);
+		glRotatef(wholeRotateAngle, 0, 1, 0);
+		if(doingShadows)
+			glScalef(1, 1, -1);
+		else
+			glScalef(1, 1, 1);
+		
+		m.translate(QVector3D(0, 130, 0));
+		m.rotate(wholeRotateAngle, QVector3D(0, 1, 0));
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		miku3d->Begin();
+		for (size_t i = 0; i < models.size() - 1; i++)
+		{
+			glPushMatrix();
+			switch (i)
+			{
+			case 0://hair
+				glTranslatef(right_position[0][0], right_position[0][1], right_position[0][2]);
+				m.translate(QVector3D(right_position[0][0], right_position[0][1], right_position[0][2]));
+				break;
+			case 1:
+				glTranslatef(right_position[1][0], right_position[1][1], right_position[1][2]);
+				m.translate(QVector3D(right_position[1][0], right_position[1][1], right_position[1][2]));
+			case 3://Skirt
+				glTranslatef(right_position[3][0], right_position[3][1], right_position[3][2]);
+				m.translate(QVector3D(right_position[3][0], right_position[3][1], right_position[3][2]));
+				break;
+			case 4:
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
+				m.translate(QVector3D(right_position[4][0], right_position[4][1], right_position[4][2]));
+				break;
+			case 5:
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
+				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
+				m.translate(QVector3D(right_position[4][0], right_position[4][1], right_position[4][2]));
+				m.translate(QVector3D(right_position[5][0], right_position[5][1], right_position[5][2]));
+				break;
+			case 6:
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
+				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
+				glTranslatef(right_position[6][0], right_position[6][1], right_position[6][2]);
+				m.translate(QVector3D(right_position[4][0], right_position[4][1], right_position[4][2]));
+				m.translate(QVector3D(right_position[5][0], right_position[5][1], right_position[5][2]));
+				m.translate(QVector3D(right_position[6][0], right_position[6][1], right_position[6][2]));
+				break;
+			case 7:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				m.translate(QVector3D(right_position[7][0], right_position[7][1], right_position[7][2]));
+				break;
+			case 8:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
+				m.translate(QVector3D(right_position[7][0], right_position[7][1], right_position[7][2]));
+				m.translate(QVector3D(right_position[8][0], right_position[8][1], right_position[8][2]));
+				break;
+			case 9:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
+				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
+				m.translate(QVector3D(right_position[7][0], right_position[7][1], right_position[7][2]));
+				m.translate(QVector3D(right_position[8][0], right_position[8][1], right_position[8][2]));
+				m.translate(QVector3D(right_position[9][0], right_position[9][1], right_position[9][2]));
+				break;
+			case 10://Thigh
+				glTranslatef(right_position[10][0], right_position[10][1], right_position[10][2]);
+				m.translate(QVector3D(right_position[10][0], right_position[10][1], right_position[10][2]));
+				break;
+			case 11:
+				glTranslatef(right_position[10][0], right_position[10][1], right_position[10][2]);
+				glTranslatef(right_position[11][0], right_position[11][1], right_position[11][2]);
+				m.translate(QVector3D(right_position[10][0], right_position[10][1], right_position[10][2]));
+				m.translate(QVector3D(right_position[11][0], right_position[11][1], right_position[11][2]));
+				break;
+			case 12:
+				glTranslatef(right_position[12][0], right_position[12][1], right_position[12][2]);
+				m.translate(QVector3D(right_position[12][0], right_position[12][1], right_position[12][2]));
+				break;
+			case 13:
+				glTranslatef(right_position[12][0], right_position[12][1], right_position[12][2]);
+				glTranslatef(right_position[13][0], right_position[13][1], right_position[13][2]);
+				m.translate(QVector3D(right_position[12][0], right_position[12][1], right_position[12][2]));
+				m.translate(QVector3D(right_position[13][0], right_position[13][1], right_position[13][2]));
+				break;
+			case 14:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
+				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
+				m.translate(QVector3D(right_position[7][0], right_position[7][1], right_position[7][2]));
+				m.translate(QVector3D(right_position[8][0], right_position[8][1], right_position[8][2]));
+				m.translate(QVector3D(right_position[9][0], right_position[9][1], right_position[9][2]));
+				break;
+			}
+			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
+			miku3d->shaderProgram->setUniformValue("texcube", skybox->textureId);
+			if (i != 14)
+			{
+				if (doingShadows)
+					miku3d->Render(GL_TRIANGLES, false, 3, ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 0.6f, effect_clock, effectNum);
+				else
+					miku3d->Render(GL_TRIANGLES, false, 3, ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 0.3f, effect_clock, effectNum);
+			}				
+			glPopMatrix();
+		}
+		miku3d->End();
+		glPopMatrix();
+	}
+	//Draw 3d models
+	{
+		glPushMatrix();
+		glTranslatef(-140, 130, 0);
+				
+		glRotatef(90.f, 0, 1, 0);
+		if(doingShadows)
+			glScalef(1, -1, 1);
+		else
+			glScalef(1, 1, 1);
+			
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		miku3d->Begin();
+		for (size_t i = 0; i < models.size() - 1; i++)
+		{
+			glPushMatrix();
+			switch (i)
+			{
+			case 0://hair
+				glTranslatef(right_position[0][0], right_position[0][1], right_position[0][2]);
+				break;
+			case 1:
+				glTranslatef(right_position[1][0], right_position[1][1], right_position[1][2]);
+			case 3://Skirt
+				glTranslatef(right_position[3][0], right_position[3][1], right_position[3][2]);
+				break;
+			case 4://LFA
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
+				glRotatef(-30.f, 0, 0, 1);
+				break;
+			case 5:
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
+				glRotatef(-30.f, 0, 0, 1);
+				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
+				break;
+			case 6:
+				glTranslatef(right_position[4][0], right_position[4][1], right_position[4][2]);
+				glRotatef(-30.f, 0, 0, 1);
+				glTranslatef(right_position[5][0], right_position[5][1], right_position[5][2]);
+				glTranslatef(right_position[6][0], right_position[6][1], right_position[6][2]);
+				break;
+			case 7://RFA
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glRotatef(30.f, 0, 0, 1);
+				glRotatef(rightArmAngle, 1, 0, 0);
+				break;
+			case 8:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glRotatef(30.f, 0, 0, 1);
+				glRotatef(rightArmAngle, 1, 0, 0);
+				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
+				break;
+			case 9:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glRotatef(30.f, 0, 0, 1);
+				glRotatef(rightArmAngle, 1, 0, 0);
+				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
+				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
+				break;
+			case 10://Thigh
+				glTranslatef(right_position[10][0], right_position[10][1], right_position[10][2]);
+				break;
+			case 11:
+				glTranslatef(right_position[10][0], right_position[10][1], right_position[10][2]);
+				glTranslatef(right_position[11][0], right_position[11][1], right_position[11][2]);
+				break;
+			case 12:
+				glTranslatef(right_position[12][0], right_position[12][1], right_position[12][2]);
+				break;
+			case 13:
+				glTranslatef(right_position[12][0], right_position[12][1], right_position[12][2]);
+				glTranslatef(right_position[13][0], right_position[13][1], right_position[13][2]);
+				break;
+			case 14:
+				glTranslatef(right_position[7][0], right_position[7][1], right_position[7][2]);
+				glRotatef(30.f, 0, 0, 1);
+				glRotatef(rightArmAngle, 1, 0, 0);
+				glTranslatef(right_position[8][0], right_position[8][1], right_position[8][2]);
+				glTranslatef(right_position[9][0], right_position[9][1], right_position[9][2]);
+				break;
+			}
+			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+			miku3d->shaderProgram->setUniformValue("tex", models[i]->getTextureid());
+			if (!doingShadows)
+				miku3d->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 1.f, effect_clock, effectNum);
+			else
+				miku3d->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, models[i]->getValues(), models[i]->getBufferOffset(), 0.3f, effect_clock, effectNum);
+			glPopMatrix();
+		}
+		miku3d->End();
+		glPopMatrix();
+	}
+	//3D tunnel
+	{
+		glPushMatrix();
+		glTranslatef(95, 95, 0);
+		if (doingShadows)
+			glScalef(0.2f, 0.2f, -0.2f);
+		else
+			glScalef(0.2f, 0.2f, 0.2f);		
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		miku3d->Begin();
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		miku3d->shaderProgram->setUniformValue("tex", models[models.size() - 1]->getTextureid());
+		if (!doingShadows)
+			miku3d->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, models[models.size() - 1]->getValues(), models[models.size() - 1]->getBufferOffset(), 1.f, effect_clock, effectNum);
+		else
+			miku3d->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, models[models.size() - 1]->getValues(), models[models.size() - 1]->getBufferOffset(), 0.3f, effect_clock, effectNum);
+		miku3d->End();
+		glPopMatrix();
+	}	
+	//**********************OTHERS***************************//
 }
 void TrainView::doPick(int mx, int my)
 {
@@ -1403,7 +1434,7 @@ void TrainView::doPick(int mx, int my)
 	} else // nothing hit, nothing selected
 		selectedCube = -1;
 }
-void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow)
+void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool doingShadows)
 {
 	int height = 2;
 	int width = 5;
@@ -1424,7 +1455,7 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	glRotatef(-angle, 0, 0, orient.z);
 	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 	float w = 10 / 2, h = 10 / 2;
-	if (shadow) 
+	if (doingShadows)
 	{
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_FRONT);
@@ -1523,13 +1554,13 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool shadow
 	buffersize.push_back(p);
 	trackobj->Begin();
 	trackobj->shaderProgram->setUniformValue("tex", trackobj->textureId);
-	if (!shadow)
+	if (!doingShadows)
 		trackobj->Render(GL_TRIANGLES,false,0,ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 1.f,effect_clock, (effectNum==0)? train_effect: effectNum);
 	else
 		trackobj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 0.3f, effect_clock, (effectNum == 0) ? train_effect : effectNum);
 	trackobj->End();
 
-	if (shadow) 
+	if (doingShadows)
 	{
 		glDisable(GL_CULL_FACE);
 	}

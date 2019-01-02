@@ -42,7 +42,8 @@ public:
 	// all of the actual drawing happens in this routine
 	// it has to be encapsulated, since we draw differently if
 	// we're drawing shadows (no colors, for example)
-	void drawStuff(bool doingShadows=false);	
+	void drawStuff(bool doingShadows=false);
+	void draw3DObj(bool doingShadows = false);
 	// setup the projection - assuming that the projection stack has been
 	// cleared for you
 	void setProjection();
