@@ -1,3 +1,0 @@
-﻿  MyForm.cpp
-d:\program\gitprj\computergraphics\openmesh_ex\openmesh_ex\myform.h(363): warning C4244: '引數': 將 'GLdouble' 轉換為 'int'，由於類型不同，可能導致資料遺失
-  OpenMesh_EX.vcxproj -> D:\Program\GitPrj\ComputerGraphics\OpenMesh_EX\Release\OpenMesh_EX.exe
