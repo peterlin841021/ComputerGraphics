@@ -738,12 +738,12 @@ void TrainView::setProjection()
 			Pnt3f dec = trainEnd - trainStart;
 			dec.normalize();
 			
-			float angle = -radiansToDegrees(atan2(path[(path_index)].orients.z, path[(path_index)].orients.x));			
+		/*	float angle = -radiansToDegrees(atan2(path[(path_index)].orients.z, path[(path_index)].orients.x));			
 			if (angle > 0)
 				angle = -radiansToDegrees(acos(path[(path_index)].orients.y));
 			else
 				angle = radiansToDegrees(acos(path[(path_index)].orients.y));
-			glRotatef(-angle, 0, 0, dec.z);
+			glRotatef(-angle, 0, 0, dec.z);*/
 			gluLookAt
 			(
 				p1.x, p1.y + 25, p1.z ,//camera coordinates
