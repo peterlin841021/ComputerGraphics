@@ -48,13 +48,13 @@ public:
 	//********************EFFECT************************//
 	QAction *normal;
 	QAction *gray;
-	QAction *nebula;
+	//QAction *nebula;
 	QAction *phosgene;
 	QAction *purplehalo;
 	QAction *dancefloor;
 	QAction *threshold;
 	QAction *textspeak;
-	QAction *voronoi;
+	//QAction *voronoi;
 	QAction *gold;
 	QAction *abstraction;
 	//********************EFFECT************************//
@@ -137,11 +137,11 @@ public:
 		gray->setCheckable(true);
 		gray->setChecked(false);
 
-		nebula = new QAction(AppMainClass);
+		/*nebula = new QAction(AppMainClass);
 		nebula->setObjectName(QStringLiteral("Nebula"));
 		nebula->setData(3);
 		nebula->setCheckable(true);
-		nebula->setChecked(false);
+		nebula->setChecked(false);*/
 		
 		phosgene = new QAction(AppMainClass);
 		phosgene->setObjectName(QStringLiteral("Phosgene"));
@@ -173,11 +173,11 @@ public:
 		textspeak->setCheckable(true);
 		textspeak->setChecked(false);
 		
-		voronoi = new QAction(AppMainClass);
+		/*voronoi = new QAction(AppMainClass);
 		voronoi->setObjectName(QStringLiteral("Voronoi"));
 		voronoi->setData(9);
 		voronoi->setCheckable(true);
-		voronoi->setChecked(false);
+		voronoi->setChecked(false);*/
 
 		gold = new QAction(AppMainClass);
 		gold->setObjectName(QStringLiteral("Gold"));
@@ -653,13 +653,13 @@ public:
         menuBar->addAction(menuEffect->menuAction());
 		menuEffect->addAction(normal);
 		menuEffect->addAction(gray);
-		menuEffect->addAction(nebula);
+		//menuEffect->addAction(nebula);
 		menuEffect->addAction(phosgene);
 		menuEffect->addAction(purplehalo);
 		menuEffect->addAction(dancefloor);
 		menuEffect->addAction(threshold);
 		menuEffect->addAction(textspeak);
-		menuEffect->addAction(voronoi);
+		//menuEffect->addAction(voronoi);
 		menuEffect->addAction(gold);
 		menuEffect->addAction(abstraction);
 		//********************EFFECT************************//
@@ -695,13 +695,13 @@ public:
 		//********************EFFECT************************//
 		normal->setText(QApplication::translate("AppMainClass", "Normal", Q_NULLPTR));
 		gray->setText(QApplication::translate("AppMainClass", "Gray", Q_NULLPTR));
-		nebula->setText(QApplication::translate("AppMainClass", "Nebula", Q_NULLPTR));
+		//nebula->setText(QApplication::translate("AppMainClass", "Nebula", Q_NULLPTR));
 		phosgene->setText(QApplication::translate("AppMainClass", "Phosgene", Q_NULLPTR));
 		purplehalo->setText(QApplication::translate("AppMainClass", "Purplehalo", Q_NULLPTR));
 		dancefloor->setText(QApplication::translate("AppMainClass", "Dancefloor", Q_NULLPTR));
 		threshold->setText(QApplication::translate("AppMainClass", "Threshold", Q_NULLPTR));
 		textspeak->setText(QApplication::translate("AppMainClass", "Textspeak", Q_NULLPTR));
-		voronoi->setText(QApplication::translate("AppMainClass", "Voronoi", Q_NULLPTR));
+		//voronoi->setText(QApplication::translate("AppMainClass", "Voronoi", Q_NULLPTR));
 		gold->setText(QApplication::translate("AppMainClass", "Gold", Q_NULLPTR));
 		abstraction->setText(QApplication::translate("AppMainClass", "Abstraction", Q_NULLPTR));
 		//********************EFFECT************************//

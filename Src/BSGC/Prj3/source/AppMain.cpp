@@ -56,13 +56,13 @@ AppMain::AppMain(QWidget *parent): QMainWindow(parent)
 	//********************EFFECT************************//	
 	connect(ui.normal, SIGNAL(triggered()), this, SLOT(changeEffect()));
 	connect(ui.gray, SIGNAL(triggered()), this, SLOT(changeEffect()));
-	connect(ui.nebula, SIGNAL(triggered()), this, SLOT(changeEffect()));
+	//connect(ui.nebula, SIGNAL(triggered()), this, SLOT(changeEffect()));
 	connect(ui.phosgene, SIGNAL(triggered()), this, SLOT(changeEffect()));
 	connect(ui.purplehalo, SIGNAL(triggered()), this, SLOT(changeEffect()));
 	connect(ui.dancefloor, SIGNAL(triggered()), this, SLOT(changeEffect()));
 	connect(ui.threshold, SIGNAL(triggered()), this, SLOT(changeEffect()));
 	connect(ui.textspeak, SIGNAL(triggered()), this, SLOT(changeEffect()));
-	connect(ui.voronoi, SIGNAL(triggered()), this, SLOT(changeEffect()));
+	//connect(ui.voronoi, SIGNAL(triggered()), this, SLOT(changeEffect()));
 	connect(ui.gold, SIGNAL(triggered()), this, SLOT(changeEffect()));
 	connect(ui.abstraction, SIGNAL(triggered()), this, SLOT(changeEffect()));
 	//********************EFFECT************************//

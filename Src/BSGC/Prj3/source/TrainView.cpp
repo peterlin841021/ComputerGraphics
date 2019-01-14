@@ -19,7 +19,6 @@ QOpenGLFramebufferObject *fbo;
 QOpenGLTexture *fbo_texture;
 GLfloat *lightview;
 GLfloat lightprojection[16]{ 0 };
-//
 
 void TrainView::changeEffect(size_t effectNum)
 {
@@ -101,7 +100,8 @@ void TrainView::myTimer()
 	if ((currentTime - model_clock) > model_interval)
 	{
 		model_clock = currentTime;
-		wholeRotateAngle = (wholeRotateAngle < 360.f) ? wholeRotateAngle+=changeAngle:0.f;
+		wholeRotateAngle = (wholeRotateAngle < 360.f) ? wholeRotateAngle += changeAngle : 0.f;
+		airshipAngle = (airshipAngle < 360.f) ? airshipAngle += 0.01f : 0.f;		
 		if (rightArmAngle < -100.f)
 			angleTemp = changeAngle;
 		else if (rightArmAngle > 0.f)
@@ -141,6 +141,7 @@ void TrainView::initializeGL()
 	tireObj->Init(2);
 	flyingshipObj = new Obj();
 	flyingshipObj->Init(2);
+	
 	initializeTexture();
 	Model *mikuhair, *mikuface,
 		*mikubody,*mikuskirt,
@@ -169,7 +170,7 @@ void TrainView::initializeGL()
 		//
 		tunnel = new Model();
 		tire = new Model();
-		airship = new Model();
+		airship = new Model();		
 	}
 	{//Load models
 		loadmodel("./src/BSGC/prj3/3dmodel/mikuhair.obj", "./src/BSGC/prj3/3dmodel/mikuhair.png", mikuhair,&Textures);
@@ -191,7 +192,8 @@ void TrainView::initializeGL()
 		loadmodel("./src/BSGC/prj3/3dmodel/tunnel.obj", "./src/BSGC/prj3/3dmodel/tunnel_diffusemap.jpg", tunnel, &Textures);
 		//Car tire
 		loadmodel("./src/BSGC/prj3/3dmodel/tire.obj", "./src/BSGC/prj3/3dmodel/tire.png", tire, &Textures);
-		loadmodel("./src/BSGC/prj3/3dmodel/airship.obj", "./src/BSGC/prj3/3dmodel/scallion.png", airship, &Textures);
+		//Air ship
+		loadmodel("./src/BSGC/prj3/3dmodel/airship.obj", "./src/BSGC/prj3/3dmodel/scallion.png", airship, &Textures);				
 	}
 	{//Model vector
 		models.push_back(mikuhair);
@@ -364,7 +366,14 @@ void TrainView::initializeTexture()
 	mountain->textureId = Textures.size();
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/mountain.jpg")));
 	trackobj->textureId = Textures.size();
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/train.png")));
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/train1.png")));
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/train2.png")));
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/train3.png")));
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/train4.png")));
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/train5.png")));
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/train6.png")));
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/train7.png")));
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/black.png")));
 }
 TrainView::TrainView(QWidget *parent) :  
 QGLWidget(parent)  
@@ -757,7 +766,7 @@ void TrainView::setProjection()
 			Pnt3f dec = trainEnd - trainStart;
 			dec.normalize();
 			
-		/*	float angle = -radiansToDegrees(atan2(path[(path_index)].orients.z, path[(path_index)].orients.x));			
+			/*float angle = -radiansToDegrees(atan2(path[(path_index)].orients.z, path[(path_index)].orients.x));			
 			if (angle > 0)
 				angle = -radiansToDegrees(acos(path[(path_index)].orients.y));
 			else
@@ -765,10 +774,10 @@ void TrainView::setProjection()
 			glRotatef(-angle, 0, 0, dec.z);*/
 			gluLookAt
 			(
-				p1.x, p1.y + 25, p1.z ,//camera coordinates
+				p1.x, p1.y + 25, p1.z,//camera coordinates
 				p2.x, p2.y + 25, p2.z,//look for
 				-path[(path_index)].orients.x, path[(path_index)].orients.y, -path[(path_index)].orients.z
-			);		
+			);
 		glPopMatrix();
 		update();
 		}		
@@ -1136,7 +1145,58 @@ void TrainView::drawStuff(bool doingShadows)
 #endif		
 		if (path.size() > 0) 
 		{
-			drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients,doingShadows);
+			int distance = 20;
+			//RED
+			glPushMatrix();
+				drawTrain(path[path_index].points, path[path_index].orients_cross, path[path_index].orients,doingShadows, false, trackobj->textureId);
+			glPopMatrix();
+			//ORANGE
+			glPushMatrix();			
+				if(path_index < distance)
+					drawTrain(path[path.size() - (distance -path_index)].points, path[path.size() - (distance - path_index)].orients_cross, path[path.size() - (distance - path_index)].orients, doingShadows,true,trackobj->textureId+1);
+				else
+					drawTrain(path[path_index- distance].points, path[path_index- distance].orients_cross, path[path_index- distance].orients, doingShadows, true, trackobj->textureId+1);	
+			glPopMatrix();
+			distance += 20;
+			//YELLOW
+			glPushMatrix();
+			if (path_index < distance)
+				drawTrain(path[path.size() - (distance - path_index)].points, path[path.size() - (distance - path_index)].orients_cross, path[path.size() - (distance - path_index)].orients, doingShadows, true, trackobj->textureId + 2);
+			else
+				drawTrain(path[path_index - distance].points, path[path_index - distance].orients_cross, path[path_index - distance].orients, doingShadows, true, trackobj->textureId + 2);
+			glPopMatrix();
+			distance += 20;
+			//GREEN
+			glPushMatrix();
+			if (path_index < distance)
+				drawTrain(path[path.size() - (distance - path_index)].points, path[path.size() - (distance - path_index)].orients_cross, path[path.size() - (distance - path_index)].orients, doingShadows, true, trackobj->textureId + 3);
+			else
+				drawTrain(path[path_index - distance].points, path[path_index - distance].orients_cross, path[path_index - distance].orients, doingShadows, true, trackobj->textureId + 3);
+			glPopMatrix();
+			//BLUE
+			distance += 20;
+			glPushMatrix();
+			if (path_index < distance)
+				drawTrain(path[path.size() - (distance - path_index)].points, path[path.size() - (distance - path_index)].orients_cross, path[path.size() - (distance - path_index)].orients, doingShadows, true, trackobj->textureId + 4);
+			else
+				drawTrain(path[path_index - distance].points, path[path_index - distance].orients_cross, path[path_index - distance].orients, doingShadows, true, trackobj->textureId + 4);
+			glPopMatrix();
+			//INDIGO
+			distance += 20;
+			glPushMatrix();
+			if (path_index < distance)
+				drawTrain(path[path.size() - (distance - path_index)].points, path[path.size() - (distance - path_index)].orients_cross, path[path.size() - (distance - path_index)].orients, doingShadows, true, trackobj->textureId + 5);
+			else
+				drawTrain(path[path_index - distance].points, path[path_index - distance].orients_cross, path[path_index - distance].orients, doingShadows, true, trackobj->textureId + 5);
+			glPopMatrix();
+			//PURPLE
+			distance += 20;
+			glPushMatrix();
+			if (path_index < distance)
+				drawTrain(path[path.size() - (distance - path_index)].points, path[path.size() - (distance - path_index)].orients_cross, path[path.size() - (distance - path_index)].orients, doingShadows, true, trackobj->textureId + 6);
+			else
+				drawTrain(path[path_index - distance].points, path[path_index - distance].orients_cross, path[path_index - distance].orients, doingShadows, true, trackobj->textureId + 6);
+			glPopMatrix();						
 		}
 	//glPopMatrix();	
 #ifdef EXAMPLE_SOLUTION
@@ -1388,8 +1448,9 @@ void TrainView::draw3DObj(bool doingShadows)
 	//3D tunnel
 	{
 		glPushMatrix();
-		glTranslatef(250.f, 35.f, 50.f);
+		glTranslatef(270.f, 45.f, 40.f);
 		glRotatef(130.f,0,1,0);
+		glRotatef(-10.f, 1, 0, 0);
 		if (doingShadows)
 			glScalef(0.2f, 0.2f, 0.2f);
 		else
@@ -1406,16 +1467,21 @@ void TrainView::draw3DObj(bool doingShadows)
 			tunnelObj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, models[TUNNEL]->getValues(), models[TUNNEL]->getBufferOffset(), 0.3f, effect_clock, effectNum);
 		tunnelObj->End();
 		glPopMatrix();
-	}	
+	}
 	//**********************OTHERS***************************//
-	//Flying ship
+	//Air ship
 	{
 		glPushMatrix();
-		glTranslatef(0, 10.f, 0);
+		float r = 200.f;
+
+		glTranslatef(r*cos(airshipAngle), 200.f, r*sin(airshipAngle));
+
+		glRotatef(cos(airshipAngle) * 90, 0, 1, 0);		
+
 		if (doingShadows)
-			glScalef(1, 1, 1);
+			glScalef(0.5, 0.5, 0.5);
 		else
-			glScalef(1, 1, 1);
+			glScalef(0.5, 0.5, 0.5);
 		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1428,7 +1494,7 @@ void TrainView::draw3DObj(bool doingShadows)
 			flyingshipObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, airship->getValues(), airship->getBufferOffset(), 0.3f, effect_clock, effectNum);
 		flyingshipObj->End();
 		glPopMatrix();
-	}
+	}	
 }
 void TrainView::doPick(int mx, int my)
 {
@@ -1475,7 +1541,7 @@ void TrainView::doPick(int mx, int my)
 	} else // nothing hit, nothing selected
 		selectedCube = -1;
 }
-void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool doingShadows)
+void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool doingShadows,bool empty,GLuint tid)
 {
 	int height = 2;
 	int width = 5;
@@ -1594,63 +1660,68 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool doingS
 	buffersize.push_back(108);
 	buffersize.push_back(p);
 	trackobj->Begin();
-	trackobj->shaderProgram->setUniformValue("tex", trackobj->textureId);
+	trackobj->shaderProgram->setUniformValue("tex", tid);
 	if (!doingShadows)
 		trackobj->Render(GL_TRIANGLES,false,0,ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 1.f,effect_clock, (effectNum==0)? train_effect: effectNum);
 	else
 		trackobj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, train_vts, buffersize, 0.3f, effect_clock, (effectNum == 0) ? train_effect : effectNum);
+	trackobj->shaderProgram->setUniformValue("tex", trackobj->textureId+7);
 	trackobj->End();
-
+	
 	if (doingShadows)
 	{
 		glDisable(GL_CULL_FACE);
 	}
 	glTranslatef(0,7.f,0);
 	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-	//Draw nenoroid
-	h = 10.f;
-	w = 9.f;	
-	QVector<GLfloat> nendoroid_vts;
-	nendoroid_vts
-		<< -w << h << 2
-		<< w << h << 2
-		<< w << -h << 2
-		<< w << -h << 2
-		<< -w << -h << 2
-		<< -w << h << 2;
-	nendoroid_vts
-		<< 0.f << 0.f
-		<< 1.f << 0.f
-		<< 1.f << 1.f
-		<< 1.f << 1.f
-		<< 0.f << 1.f
-		<< 0.f << 0.f;	
-	for (size_t i = 0; i < 18; i++)
+	if (!empty)
 	{
-		nendoroid_vts << normal[i % 3];
-	}
-	buffersize.clear();
-	buffersize.push_back(18);
-	buffersize.push_back(12);
-	buffersize.push_back(18);
+		//Draw nenoroid
+		h = 10.f;
+		w = 9.f;
+		QVector<GLfloat> nendoroid_vts;
+		nendoroid_vts
+			<< -w << h << 2
+			<< w << h << 2
+			<< w << -h << 2
+			<< w << -h << 2
+			<< -w << -h << 2
+			<< -w << h << 2;
+		nendoroid_vts
+			<< 0.f << 0.f
+			<< 1.f << 0.f
+			<< 1.f << 1.f
+			<< 1.f << 1.f
+			<< 0.f << 1.f
+			<< 0.f << 0.f;
+		for (size_t i = 0; i < 18; i++)
+		{
+			nendoroid_vts << normal[i % 3];
+		}
+		buffersize.clear();
+		buffersize.push_back(18);
+		buffersize.push_back(12);
+		buffersize.push_back(18);
 
-	glEnable(GL_BLEND);
-	glEnable(GL_CULL_FACE);	
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);		
-	glCullFace(GL_FRONT);
-	glFrontFace(GL_CW);		
-	nendoroid->Begin();
-	nendoroid->shaderProgram->setUniformValue("tex", nendoroid->textureId);
-	nendoroid->Render(GL_TRIANGLES, false, 0,ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize,1.f,effect_clock, effectNum);
-	nendoroid->End();
-	glCullFace(GL_BACK);
-	glFrontFace(GL_CW);		
-	nendoroid->Begin();
-	nendoroid->shaderProgram->setUniformValue("tex", nendoroid->textureId + 1);
-	nendoroid->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize, 1.f, effect_clock, effectNum);
-	nendoroid->End();	
-	glDisable(GL_BLEND);
-	glDisable(GL_CULL_FACE);
+		glEnable(GL_BLEND);
+		glEnable(GL_CULL_FACE);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glCullFace(GL_FRONT);
+		glFrontFace(GL_CW);
+		nendoroid->Begin();
+		nendoroid->shaderProgram->setUniformValue("tex", nendoroid->textureId);
+		nendoroid->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize, 1.f, effect_clock, effectNum);
+		nendoroid->End();
+		glCullFace(GL_BACK);
+		glFrontFace(GL_CW);
+		nendoroid->Begin();
+		nendoroid->shaderProgram->setUniformValue("tex", nendoroid->textureId + 1);
+		nendoroid->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize, 1.f, effect_clock, effectNum);
+		nendoroid->End();
+		glDisable(GL_BLEND);
+		glDisable(GL_CULL_FACE);
+	}
+	
 	//Tire
 	{
 		glPushMatrix();

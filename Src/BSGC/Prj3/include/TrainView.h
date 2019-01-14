@@ -53,7 +53,7 @@ public:
 
 	// pick a point (for when the mouse goes down)
 	void doPick(int mx, int my);
-	void drawTrain(Pnt3f pos, Pnt3f orient,Pnt3f orient_cross ,bool shadow);
+	void drawTrain(Pnt3f pos, Pnt3f orient,Pnt3f orient_cross ,bool shadow,bool empty,GLuint tid);
 	void TrainView::changeSpeed(int speed);
 	void drawTrack(bool shadow);
 	void initializeGL();
@@ -109,6 +109,7 @@ public:
 	Obj *miku;
 	float rightArmAngle = 0.f;
 	float wholeRotateAngle = 0.f;
+	float airshipAngle = 0.f;
 	float changeAngle = 5.f;	
 	float changeAngleOpposite = -5.f;
 	float angleTemp = changeAngleOpposite;
@@ -120,7 +121,7 @@ public:
 	Obj *mountain;
 	Obj *tunnelObj;
 	Obj *tireObj;
-	Obj *flyingshipObj;
+	Obj *flyingshipObj;	
 	vector<TrackTrail> path;
 	//Timer clock
 	clock_t effect_clock;
