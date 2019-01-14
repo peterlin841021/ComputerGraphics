@@ -203,7 +203,7 @@ void AppMain::ToggleStatusBar()
 }
 void AppMain::LoadTrackPath_Default()
 {	
-	QString fileName = "./src/BSGC/prj3/miku_track.txt";
+	QString fileName = "./src/BSGC/prj3/track.txt";
 	QByteArray byteArray = fileName.toLocal8Bit();
 	const char* fname = byteArray.data();
 	if ( !fileName.isEmpty() )

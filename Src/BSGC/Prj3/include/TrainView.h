@@ -117,7 +117,10 @@ public:
 	Obj *land;
 	Obj *nendoroid;
 	Obj *miku3d;
-	Obj *mountain;	
+	Obj *mountain;
+	Obj *tunnelObj;
+	Obj *tireObj;
+	Obj *flyingshipObj;
 	vector<TrackTrail> path;
 	//Timer clock
 	clock_t effect_clock;

@@ -4,7 +4,8 @@
 
 #define VT_WATER false
 #define SLEEPER false
-
+#define MIKUPARTS 15
+#define TUNNEL 15
 
 int uv_size = 0;
 int pos_size = 0;
@@ -18,6 +19,8 @@ QOpenGLFramebufferObject *fbo;
 QOpenGLTexture *fbo_texture;
 GLfloat *lightview;
 GLfloat lightprojection[16]{ 0 };
+//
+
 void TrainView::changeEffect(size_t effectNum)
 {
 	this->effectNum = effectNum;	
@@ -58,6 +61,7 @@ public:
 		return bufferoffset;
 	}
 };
+Model *tire,*airship;
 std::vector<Model*> models;
 void loadmodel(string modelname, string texturename, Model *model, QVector<QOpenGLTexture*> *textures);
 char *stringToChar(string str);
@@ -130,6 +134,13 @@ void TrainView::initializeGL()
 	nendoroid->Init(2);		
 	miku3d = new Obj();
 	miku3d->Init(2);
+	//
+	tunnelObj = new Obj();
+	tunnelObj->Init(2);
+	tireObj = new Obj();
+	tireObj->Init(2);
+	flyingshipObj = new Obj();
+	flyingshipObj->Init(2);
 	initializeTexture();
 	Model *mikuhair, *mikuface,
 		*mikubody,*mikuskirt,
@@ -137,7 +148,8 @@ void TrainView::initializeGL()
 		*mikuRFM,*mikuRHM,*mikuRH,
 		*mikuLT,*mikuLC,*mikuRT,*mikuRC,
 		*scallion,
-		*tunnel;
+		*tunnel
+		;
 	{//Model init
 		mikuhair = new Model();
 		mikuface = new Model();
@@ -156,7 +168,8 @@ void TrainView::initializeGL()
 		scallion = new Model();
 		//
 		tunnel = new Model();
-
+		tire = new Model();
+		airship = new Model();
 	}
 	{//Load models
 		loadmodel("./src/BSGC/prj3/3dmodel/mikuhair.obj", "./src/BSGC/prj3/3dmodel/mikuhair.png", mikuhair,&Textures);
@@ -174,8 +187,11 @@ void TrainView::initializeGL()
 		loadmodel("./src/BSGC/prj3/3dmodel/MikuRightThigh.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuRT, &Textures);
 		loadmodel("./src/BSGC/prj3/3dmodel/MikuRightCalf.obj", "./src/BSGC/prj3/3dmodel/mikubody.png", mikuRC, &Textures);
 		loadmodel("./src/BSGC/prj3/3dmodel/scallion.obj", "./src/BSGC/prj3/3dmodel/scallion.png", scallion, &Textures);
-		//
+		//Tunnel
 		loadmodel("./src/BSGC/prj3/3dmodel/tunnel.obj", "./src/BSGC/prj3/3dmodel/tunnel_diffusemap.jpg", tunnel, &Textures);
+		//Car tire
+		loadmodel("./src/BSGC/prj3/3dmodel/tire.obj", "./src/BSGC/prj3/3dmodel/tire.png", tire, &Textures);
+		loadmodel("./src/BSGC/prj3/3dmodel/airship.obj", "./src/BSGC/prj3/3dmodel/scallion.png", airship, &Textures);
 	}
 	{//Model vector
 		models.push_back(mikuhair);
@@ -193,7 +209,8 @@ void TrainView::initializeGL()
 		models.push_back(mikuRT);
 		models.push_back(mikuRC);
 		models.push_back(scallion);
-		models.push_back(tunnel);		
+		models.push_back(tunnel);
+		//models.push_back(tire);
 	}	
 	fbo = new QOpenGLFramebufferObject(width(), height());
 	fbo->setAttachment(QOpenGLFramebufferObject::Depth);
@@ -598,7 +615,9 @@ void TrainView::paint()
 	glPopMatrix();
 	glPopMatrix();
 		//Draw mountains
-		float mountain_h = -125.f;
+		float mountain_h = -140.f;
+		float minx = -160.f;
+		float mixz = -100.f;
 		glPushMatrix();
 		QMatrix4x4 m;
 		m.setToIdentity();
@@ -609,10 +628,10 @@ void TrainView::paint()
 		mountain->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx, arcball.posy, arcball.posz));
 		QVector<GLfloat> mountain_vts;
 		mountain_vts
-			<< -200.f << mountain_h << -200.f
-			<< 200.f << mountain_h << -200.f
-			<< 200.f << mountain_h << 200.f
-			<< -200.f << mountain_h << 200.f;
+			<< minx << mountain_h << mixz
+			<< minx + 400 << mountain_h << mixz
+			<< minx + 400 << mountain_h << mixz + 400
+			<< minx << mountain_h << mixz + 400;
 		buffer_size.clear();
 		buffer_size.push_back(12);
 		buffer_size.push_back(0);
@@ -1178,7 +1197,7 @@ void TrainView::draw3DObj(bool doingShadows)
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		miku3d->Begin();
-		for (size_t i = 0; i < models.size() - 1; i++)
+		for (size_t i = 0; i < MIKUPARTS; i++)
 		{
 			glPushMatrix();
 			switch (i)
@@ -1287,7 +1306,7 @@ void TrainView::draw3DObj(bool doingShadows)
 			
 		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		miku3d->Begin();
-		for (size_t i = 0; i < models.size() - 1; i++)
+		for (size_t i = 0; i < MIKUPARTS; i++)
 		{
 			glPushMatrix();
 			switch (i)
@@ -1369,25 +1388,47 @@ void TrainView::draw3DObj(bool doingShadows)
 	//3D tunnel
 	{
 		glPushMatrix();
-		glTranslatef(95, 95, 0);
+		glTranslatef(250.f, 35.f, 50.f);
+		glRotatef(130.f,0,1,0);
 		if (doingShadows)
-			glScalef(0.2f, 0.2f, -0.2f);
+			glScalef(0.2f, 0.2f, 0.2f);
 		else
-			glScalef(0.2f, 0.2f, 0.2f);		
+			glScalef(0.2f, 0.2f, 0.4f);		
 		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		miku3d->Begin();
+		tunnelObj->Begin();
 		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
-		miku3d->shaderProgram->setUniformValue("tex", models[models.size() - 1]->getTextureid());
+		tunnelObj->shaderProgram->setUniformValue("tex", models[TUNNEL]->getTextureid());
 		if (!doingShadows)
-			miku3d->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, models[models.size() - 1]->getValues(), models[models.size() - 1]->getBufferOffset(), 1.f, effect_clock, effectNum);
+			tunnelObj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, models[TUNNEL]->getValues(), models[TUNNEL]->getBufferOffset(), 1.f, effect_clock, effectNum);
 		else
-			miku3d->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, models[models.size() - 1]->getValues(), models[models.size() - 1]->getBufferOffset(), 0.3f, effect_clock, effectNum);
-		miku3d->End();
+			tunnelObj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, models[TUNNEL]->getValues(), models[TUNNEL]->getBufferOffset(), 0.3f, effect_clock, effectNum);
+		tunnelObj->End();
 		glPopMatrix();
 	}	
 	//**********************OTHERS***************************//
+	//Flying ship
+	{
+		glPushMatrix();
+		glTranslatef(0, 10.f, 0);
+		if (doingShadows)
+			glScalef(1, 1, 1);
+		else
+			glScalef(1, 1, 1);
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		flyingshipObj->Begin();
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		flyingshipObj->shaderProgram->setUniformValue("tex", airship->getTextureid());
+		if (!doingShadows)
+			flyingshipObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, airship->getValues(), airship->getBufferOffset(), 1.f, effect_clock, effectNum);
+		else
+			flyingshipObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, airship->getValues(), airship->getBufferOffset(), 0.3f, effect_clock, effectNum);
+		flyingshipObj->End();
+		glPopMatrix();
+	}
 }
 void TrainView::doPick(int mx, int my)
 {
@@ -1532,7 +1573,7 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool doingS
 			<< -width << -height << -width
 			<< width << -height << -width
 			<< width << height << -width;
-	}
+	}	
 	int p = train_vts.size();
 	buffersize.push_back(p);
 	float blackUv[] = {0,1,1,1,1,0.5,1,0.5,0,0.5,0,1};
@@ -1609,6 +1650,65 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool doingS
 	nendoroid->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, nendoroid_vts, buffersize, 1.f, effect_clock, effectNum);
 	nendoroid->End();	
 	glDisable(GL_BLEND);
-	glDisable(GL_CULL_FACE);	
+	glDisable(GL_CULL_FACE);
+	//Tire
+	{
+		glPushMatrix();
+			glScalef(2, 2, 2);
+			glTranslatef(3,-5, -2);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			tireObj->Begin();
+			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+			tireObj->shaderProgram->setUniformValue("tex", tire->getTextureid());
+			if (!doingShadows)
+				tireObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, tire->getValues(), tire->getBufferOffset(), 1.f, effect_clock, effectNum);
+			else
+				tireObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, tire->getValues(), tire->getBufferOffset(), 0.3f, effect_clock, effectNum);
+			tireObj->End();
+		glPopMatrix();
+		glPushMatrix();
+			glScalef(2, 2, 2);
+			glTranslatef(-3, -5, -2);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			tireObj->Begin();
+			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+			tireObj->shaderProgram->setUniformValue("tex", tire->getTextureid());
+			if (!doingShadows)
+				tireObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, tire->getValues(), tire->getBufferOffset(), 1.f, effect_clock, effectNum);
+			else
+				tireObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, tire->getValues(), tire->getBufferOffset(), 0.3f, effect_clock, effectNum);
+			tireObj->End();
+		glPopMatrix();
+		glPushMatrix();
+		glScalef(2, 2, 2);
+		glTranslatef(-3, -5, 2);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		tireObj->Begin();
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		tireObj->shaderProgram->setUniformValue("tex", tire->getTextureid());
+		if (!doingShadows)
+			tireObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, tire->getValues(), tire->getBufferOffset(), 1.f, effect_clock, effectNum);
+		else
+			tireObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, tire->getValues(), tire->getBufferOffset(), 0.3f, effect_clock, effectNum);
+		tireObj->End();
+		glPopMatrix();
+		glPushMatrix();
+		glScalef(2, 2, 2);
+		glTranslatef(3, -5, 2);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		tireObj->Begin();
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		tireObj->shaderProgram->setUniformValue("tex", tire->getTextureid());
+		if (!doingShadows)
+			tireObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, tire->getValues(), tire->getBufferOffset(), 1.f, effect_clock, effectNum);
+		else
+			tireObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, tire->getValues(), tire->getBufferOffset(), 0.3f, effect_clock, effectNum);
+		tireObj->End();
+		glPopMatrix();
+	}
 }
 
