@@ -89,9 +89,13 @@ bool AppMain::eventFilter(QObject *watched, QEvent *e)
 		// Get the mouse position
 		float x, y;
 		trainview->arcball.getMouseNDC((float)event->localPos().x(), (float)event->localPos().y(), x,y);
-
+		trainview->mouseXpos = (float)event->localPos().x();
+		trainview->mouseYpos = (float)event->localPos().y();
+		//printf("X/Y:%f/%f\n", (float)event->localPos().x(), (float)event->localPos().y());
 		// Compute the mouse position
+		
 		trainview->arcball.down(x, y);
+		
 		if(event->button()==Qt::LeftButton){
 			trainview->doPick(event->localPos().x(), event->localPos().y());
 			this->isHover = true;

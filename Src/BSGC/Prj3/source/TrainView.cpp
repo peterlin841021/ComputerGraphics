@@ -10,7 +10,8 @@
 int uv_size = 0;
 int pos_size = 0;
 int normal_size = 0;
-
+int dolphinDir = 1;
+bool dirChange = false;
 GLuint highmap_textureid = 0;
 GLuint normalmap_textureid = 0;
 GLuint terrain_textureid = 0;
@@ -23,6 +24,59 @@ GLfloat lightprojection[16]{ 0 };
 void TrainView::changeEffect(size_t effectNum)
 {
 	this->effectNum = effectNum;	
+}
+QVector<float> TrainView::unprojectClick()
+{
+	QVector<float> pos;
+	QMatrix4x4 viewMatrix;
+	viewMatrix.setToIdentity();
+	viewMatrix.lookAt(QVector3D(0, 0, 5), QVector3D(0, 0, 0), QVector3D(0, 1, 0));
+
+	QMatrix4x4 projection;
+	projection.setToIdentity();
+	projection.perspective(40.0, width() / height(), 0.1, 2000);
+	
+	QMatrix4x4 viewportMatrix;
+	float w2 = width() ;
+	float h2 = height();
+
+	viewportMatrix.setToIdentity();
+	viewportMatrix.setColumn(0, QVector4D(w2, 0.0f, 0.0f, 0.0f));
+	viewportMatrix.setColumn(1, QVector4D(0.0f, h2, 0.0f, 0.0f));
+	viewportMatrix.setColumn(2, QVector4D(0.0f, 0.0f, 1.0f, 0.0f));
+	viewportMatrix.setColumn(3, QVector4D(w2, h2, 0.0f, 1.0f));
+
+	QMatrix4x4 modelMatrix;
+	modelMatrix.setToIdentity();
+
+	QMatrix4x4 modelViewMatrix = viewMatrix * modelMatrix;
+	glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+	for (size_t i = 0; i < 4; i++)
+	{
+		for (size_t j = 0; j < 4; j++)
+		{
+			modelViewMatrix.data()[i*4+j] = ModelViewMatrex[i * 4 + j];
+		}
+	}
+	modelViewMatrix = modelViewMatrix.transposed();
+	QMatrix4x4 modelViewProject = projection * modelViewMatrix;
+	QMatrix4x4 inverted = viewportMatrix * modelViewProject;
+
+	inverted = inverted.inverted();
+
+	float posZ;
+	float posY = height() - this->mouseYpos - 1.0f;
+	
+	glReadPixels((int)this->mouseXpos, (int)posY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &posZ);
+	QVector3D p(this->mouseXpos, posY, posZ);
+	p = p.unproject(modelViewMatrix, projection, QRect(0, 0, width(), height()));
+	//qDebug() << 2.0f * posZ - 1.0f;
+	//QVector4D clickedPointOnScreen(this->mouseXpos, posY, 0.961635, 1.0f);
+	//QVector4D clickedPointIn3DOrgn = inverted * clickedPointOnScreen;
+	//clickedPointIn3DOrgn /= clickedPointIn3DOrgn.w();
+	//pos << clickedPointIn3DOrgn.x() << clickedPointIn3DOrgn.y() << clickedPointIn3DOrgn.z();
+	//printf("Click x/y/z:%f,%f,%f\n",p[0], p[1], p[2]);
+	return  pos;
 }
 struct Model
 {
@@ -60,7 +114,7 @@ public:
 		return bufferoffset;
 	}
 };
-Model *tire,*airship;
+Model *tire,*airship,*dolphin,*coffeecup;
 std::vector<Model*> models;
 void loadmodel(string modelname, string texturename, Model *model, QVector<QOpenGLTexture*> *textures);
 char *stringToChar(string str);
@@ -109,6 +163,11 @@ void TrainView::myTimer()
 
 		rightArmAngle += angleTemp;		
 		shadowShake = (shadowShake < 10.f) ? shadowShake += 1.f : (shadowShake > -10.f) ? shadowShake -= 1.f : shadowShake += 1.f;
+		dolphinMove += 1.f*dolphinDir;
+		if (dolphinMove > 50)
+			dolphinDir = -1;
+		else if (dolphinMove < -50)
+			dolphinDir = 1;
 	}
 }
 void TrainView::initializeGL()
@@ -141,7 +200,10 @@ void TrainView::initializeGL()
 	tireObj->Init(2);
 	flyingshipObj = new Obj();
 	flyingshipObj->Init(2);
-	
+	ferriswheelObj = new Obj();
+	ferriswheelObj->Init(2);
+	coffeecuplObj = new Obj();
+	coffeecuplObj->Init(2);
 	initializeTexture();
 	Model *mikuhair, *mikuface,
 		*mikubody,*mikuskirt,
@@ -170,7 +232,9 @@ void TrainView::initializeGL()
 		//
 		tunnel = new Model();
 		tire = new Model();
-		airship = new Model();		
+		airship = new Model();
+		dolphin = new Model();
+		coffeecup = new Model();
 	}
 	{//Load models
 		loadmodel("./src/BSGC/prj3/3dmodel/mikuhair.obj", "./src/BSGC/prj3/3dmodel/mikuhair.png", mikuhair,&Textures);
@@ -194,6 +258,10 @@ void TrainView::initializeGL()
 		loadmodel("./src/BSGC/prj3/3dmodel/tire.obj", "./src/BSGC/prj3/3dmodel/tire.png", tire, &Textures);
 		//Air ship
 		loadmodel("./src/BSGC/prj3/3dmodel/airship.obj", "./src/BSGC/prj3/3dmodel/scallion.png", airship, &Textures);				
+		//Dolphin
+		loadmodel("./src/BSGC/prj3/3dmodel/dolphin.obj", "./src/BSGC/prj3/3dmodel/dolphin.png", dolphin, &Textures);
+		//Coffee cup
+		loadmodel("./src/BSGC/prj3/3dmodel/coffeecup.obj", "./src/BSGC/prj3/3dmodel/coffeecup.png", coffeecup, &Textures);
 	}
 	{//Model vector
 		models.push_back(mikuhair);
@@ -373,7 +441,9 @@ void TrainView::initializeTexture()
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/train5.png")));
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/train6.png")));
 	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/train7.png")));
-	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/black.png")));
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/black.png")));	
+	ferriswheelObj->textureId = Textures.size();
+	Textures.push_back(new QOpenGLTexture(QImage("./src/BSGC/prj3/Textures/ferriswheel.png")));	
 }
 TrainView::TrainView(QWidget *parent) :  
 QGLWidget(parent)  
@@ -622,14 +692,11 @@ void TrainView::paint()
 			unsetupShadows();		
 		}
 	glPopMatrix();
-	glPopMatrix();
+	glPushMatrix();
 		//Draw mountains
 		float mountain_h = -140.f;
 		float minx = -160.f;
-		float mixz = -100.f;
-		glPushMatrix();
-		QMatrix4x4 m;
-		m.setToIdentity();
+		float minz = -100.f;			
 		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 		mountain->Begin();
 		mountain->shaderProgram->setUniformValue("tex", mountain->textureId);
@@ -637,17 +704,157 @@ void TrainView::paint()
 		mountain->shaderProgram->setUniformValue("camerapos", QVector3D(arcball.posx, arcball.posy, arcball.posz));
 		QVector<GLfloat> mountain_vts;
 		mountain_vts
-			<< minx << mountain_h << mixz
-			<< minx + 400 << mountain_h << mixz
-			<< minx + 400 << mountain_h << mixz + 400
-			<< minx << mountain_h << mixz + 400;
+			<< minx << mountain_h << minz
+			<< minx + 400 << mountain_h << minz
+			<< minx + 400 << mountain_h << minz + 400
+			<< minx << mountain_h << minz + 400;
 		buffer_size.clear();
 		buffer_size.push_back(12);
 		buffer_size.push_back(0);
 		mountain->Render(GL_PATCHES,true,0,ProjectionMatrex,ModelViewMatrex, mountain_vts, buffer_size, 1.f, effect_clock, effectNum);
 		mountain->End();
 	glPopMatrix();
-	
+		glLineWidth(5);
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		ferriswheelObj->Begin();
+		ferriswheelObj->shaderProgram->setUniformValue("tex", ferriswheelObj->textureId);
+		minx = 50.f;
+		minz = 100.f;
+		float ferriswheelHeight = 100.f;
+		float ferriswheelGround = 30.f;
+		float wheelR = 60.f;
+		float width = 50.f;
+		QVector<GLfloat> ferriswheel_vts;
+		ferriswheel_vts
+			<< 0 << ferriswheelHeight << minz
+			<< minx << ferriswheelGround << minz
+			<< -minx << ferriswheelGround << minz
+			<< 0 << ferriswheelHeight << minz + width
+			<< minx << ferriswheelGround << minz + width
+			<< -minx << ferriswheelGround << minz + width;
+		ferriswheel_vts
+			<< 0 << 0.25
+			<< 1 << 0.25
+			<< 1 << 0
+			<< 1 << 0
+			<< 0 << 0
+			<< 0 << 0.25;
+		buffer_size.clear();
+		buffer_size.push_back(18);
+		buffer_size.push_back(12);
+		ferriswheelObj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, ferriswheel_vts, buffer_size, 1.f, effect_clock, effectNum);
+		//Front
+		ferriswheel_vts.clear();
+		ferriswheel_vts
+			<< 0 << ferriswheelHeight << minz+width
+			<< minx << ferriswheelGround << minz+width
+			<< minx << ferriswheelGround << minz+width
+			<< -minx << ferriswheelGround << minz+width
+			<< -minx << ferriswheelGround << minz+width
+			<< 0 << ferriswheelHeight << minz+width
+			//Connect
+			<< 0 << ferriswheelHeight << minz+width
+			<< 0 << ferriswheelHeight << minz
+			<< minx << ferriswheelGround << minz+width
+			<< minx << ferriswheelGround << minz
+			<< -minx << ferriswheelGround << minz+width
+			<< -minx << ferriswheelGround << minz;
+		ferriswheel_vts
+			<< 0 << 0.25
+			<< 1 << 0.25
+			<< 1 << 0
+			<< 1 << 0
+			<< 0 << 0
+			<< 0 << 0.25
+			<< 0 << 0
+			<< 0 << 0.25
+			<< 0 << 0
+			<< 0 << 0.25
+			<< 0 << 0
+			<< 0 << 0.25;
+		buffer_size.clear();
+		buffer_size.push_back(24);
+		buffer_size.push_back(18);
+		ferriswheelObj->Render(GL_LINES, false, 0, ProjectionMatrex, ModelViewMatrex, ferriswheel_vts, buffer_size, 1.f, effect_clock, effectNum);		
+		ferriswheel_vts.clear();
+		//Wheel
+		ferriswheel_vts.clear();
+		buffer_size.clear();
+		//ROTATE		
+		glTranslatef(0,ferriswheelHeight,0);
+		glRotatef(airshipAngle*100,0,0,1);		
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		float centerX = 0;
+		float centerY = 0;
+		float degree = 45.f;
+		Pnt3f last = Pnt3f(centerX + wheelR * sin(0), centerY + wheelR * cos(0),minz);
+		for (int i = 0; i < (360/(int)degree); i++)
+		{
+			ferriswheel_vts
+				<< centerX << centerY << minz
+				<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) << minz
+				<< centerX << centerY << minz + width + 5
+				<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) << minz + width+5
+				<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) << minz
+				<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) << minz +width + 5
+				<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) << minz
+				<< last.x << last.y << last.z
+				<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) << minz + width + 5
+				<< last.x << last.y << last.z + width + 5;
+			last = Pnt3f(centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)), centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)), minz);
+		}
+		ferriswheel_vts
+			<< last.x << last.y << last.z
+			<< centerX + wheelR * sin(0) << centerY + wheelR * cos(0) << minz
+			<< last.x << last.y << last.z + width + 5
+			<< centerX + wheelR * sin(0) << centerY + wheelR * cos(0) << minz + width + 5;
+		for (int i = 0; i < (360 / (int)degree)*10; i++)
+		{
+			ferriswheel_vts
+				<< 0 << 0.5
+				<< 1 << 0.5;
+		}
+		ferriswheel_vts
+			<< 0 << 0.5
+			<< 1 << 0.5
+			<< 0 << 0.5
+			<< 1 << 0.5;
+		buffer_size.push_back(3* ((360 / (int)degree)*10+4));
+		buffer_size.push_back(2* ((360 / (int)degree)*10+4));
+		ferriswheelObj->Render(GL_LINES, false, 0, ProjectionMatrex, ModelViewMatrex, ferriswheel_vts, buffer_size, 1.f, effect_clock, effectNum);
+		////Box
+		//ferriswheel_vts.clear();
+		//buffer_size.clear();		
+		//glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		//float carW = 20.f;
+		//for (int i = 0; i < (360 / (int)degree); i++)
+		//{
+		//	ferriswheel_vts
+		//		<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) << minz
+		//		<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) + carW << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) << minz				
+		//		<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) + carW << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) - carW << minz
+		//		<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) - carW << minz
+		//		<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) << minz + width
+		//		<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) + carW << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) << minz + width
+		//		<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) + carW << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) - carW << minz + width
+		//		<< centerX + wheelR * sin(2 * 3.14f*i / (360 / (int)degree)) << centerY + wheelR * cos(2 * 3.14f*i / (360 / (int)degree)) - carW << minz + width;
+		//}
+		//for (int i = 0; i < (360 / (int)degree)*2; i++)
+		//{
+		//	ferriswheel_vts
+		//		<< 0 << 0.25
+		//		<< 1 << 0.25
+		//		<< 1 << 0
+		//		<< 0 << 0;
+		//}
+		//buffer_size.push_back(3 * ((360 / (int)degree) * 8));
+		//buffer_size.push_back(2 * ((360 / (int)degree) * 8));
+		//ferriswheelObj->Render(GL_QUADS, false, 0, ProjectionMatrex, ModelViewMatrex, ferriswheel_vts, buffer_size, 1.f, effect_clock, effectNum);
+		ferriswheelObj->End();
+	glPushMatrix();
+	//Draw ferris wheel
+		
+	glPopMatrix();
 	/*fbo->bindDefault();
 	
 	if (useFBO)
@@ -668,6 +875,7 @@ void TrainView::paintGL()
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	setProjection();
+	//unprojectClick();
 	//Draw shadows
 	/*QVector<GLfloat> fbo_vts;
 	std::vector<int>buffer_size;
@@ -756,30 +964,18 @@ void TrainView::setProjection()
 	{		
 		if (path.size() > 0) 
 		{		
-		glPushMatrix();
-			glMatrixMode(GL_PROJECTION);				
-			gluPerspective(120, 1, 1, 200);
+			glMatrixMode(GL_PROJECTION);
+			gluPerspective(120, 1, 1, 4000);
 			glMatrixMode(GL_MODELVIEW);
-			glLoadIdentity();		
-			Pnt3f p1 = path[path_index].points;
-			Pnt3f p2 = path[(path_index + 1) % path.size()].points;
+			glLoadIdentity();
 			Pnt3f dec = trainEnd - trainStart;
 			dec.normalize();
-			
-			/*float angle = -radiansToDegrees(atan2(path[(path_index)].orients.z, path[(path_index)].orients.x));			
-			if (angle > 0)
-				angle = -radiansToDegrees(acos(path[(path_index)].orients.y));
-			else
-				angle = radiansToDegrees(acos(path[(path_index)].orients.y));
-			glRotatef(-angle, 0, 0, dec.z);*/
-			gluLookAt
-			(
-				p1.x, p1.y + 25, p1.z,//camera coordinates
-				p2.x, p2.y + 25, p2.z,//look for
-				-path[(path_index)].orients.x, path[(path_index)].orients.y, -path[(path_index)].orients.z
-			);
-		glPopMatrix();
-		update();
+			Pnt3f pos = path[path_index].points;
+			Pnt3f orient_tt = path[path_index].orients;
+			gluLookAt(pos.x, pos.y + 35.0, pos.z,
+				pos.x + dec.x, pos.y +35.0, pos.z + dec.z,
+				orient_tt.x, orient_tt.y, orient_tt.z);
+			update();
 		}		
 		
 #ifdef EXAMPLE_SOLUTION
@@ -1473,9 +1669,7 @@ void TrainView::draw3DObj(bool doingShadows)
 	{
 		glPushMatrix();
 		float r = 200.f;
-
-		glTranslatef(r*cos(airshipAngle), 200.f, r*sin(airshipAngle));
-
+		glTranslatef(r*cos(airshipAngle), 250.f, r*sin(airshipAngle));
 		glRotatef(cos(airshipAngle) * 90, 0, 1, 0);		
 
 		if (doingShadows)
@@ -1494,7 +1688,60 @@ void TrainView::draw3DObj(bool doingShadows)
 			flyingshipObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, airship->getValues(), airship->getBufferOffset(), 0.3f, effect_clock, effectNum);
 		flyingshipObj->End();
 		glPopMatrix();
-	}	
+	}
+	//Dolphin
+	{
+		glPushMatrix();		
+		float r = 300.f;
+		glTranslatef(r*cos(airshipAngle), -60.f, r*sin(airshipAngle));
+		glRotatef(cos(airshipAngle)*500, 0, 1, 0);
+		if (doingShadows)
+			glScalef(5, 5, 5);
+		else
+			glScalef(5, 5, 5);
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		flyingshipObj->Begin();
+		glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+		flyingshipObj->shaderProgram->setUniformValue("tex", dolphin->getTextureid());
+		if (!doingShadows)
+			flyingshipObj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, dolphin->getValues(), dolphin->getBufferOffset(), 1.f, effect_clock, effectNum);
+		else
+			flyingshipObj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, dolphin->getValues(), dolphin->getBufferOffset(), 0.3f, effect_clock, effectNum);
+		flyingshipObj->End();
+		glPopMatrix();
+	}
+	//Coffee cups
+	{
+		float centerX = 100.f;
+		float centerZ = 200.f;
+		float R = 50.f;
+		float degree = 72.f;
+		//srand(time(NULL));
+		//int random =  0;		
+		for (int i = 0; i < (360 / (int)degree); i++)
+		{
+			glPushMatrix();				
+				glTranslatef(centerX+R * sin(2 * 3.14f*i / (360 / (int)degree)), 30.f, centerZ + R * cos(2 * 3.14f*i / (360 / (int)degree)));
+				glRotatef(cos(airshipAngle) * 300, 0, 1, 0);
+				glScalef(2, 2, 2);
+				glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				coffeecuplObj->Begin();
+				glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
+				//random = (rand() % 7) + 1;
+				coffeecuplObj->shaderProgram->setUniformValue("tex", coffeecup->getTextureid());
+				//coffeecuplObj->shaderProgram->setUniformValue("tex", trackobj->textureId+ random);
+				if (!doingShadows)
+					coffeecuplObj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, coffeecup->getValues(), coffeecup->getBufferOffset(), 1.f, effect_clock, effectNum);
+				else
+					coffeecuplObj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, coffeecup->getValues(), coffeecup->getBufferOffset(), 0.3f, effect_clock, effectNum);
+				coffeecuplObj->End();
+			glPopMatrix();			
+		}		
+	}
 }
 void TrainView::doPick(int mx, int my)
 {
@@ -1747,9 +1994,9 @@ void TrainView::drawTrain(Pnt3f pos, Pnt3f orient_cross,Pnt3f orient,bool doingS
 			glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrex);
 			tireObj->shaderProgram->setUniformValue("tex", tire->getTextureid());
 			if (!doingShadows)
-				tireObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, tire->getValues(), tire->getBufferOffset(), 1.f, effect_clock, effectNum);
+				tireObj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, tire->getValues(), tire->getBufferOffset(), 1.f, effect_clock, effectNum);
 			else
-				tireObj->Render(GL_TRIANGLE_STRIP, false, 0, ProjectionMatrex, ModelViewMatrex, tire->getValues(), tire->getBufferOffset(), 0.3f, effect_clock, effectNum);
+				tireObj->Render(GL_TRIANGLES, false, 0, ProjectionMatrex, ModelViewMatrex, tire->getValues(), tire->getBufferOffset(), 0.3f, effect_clock, effectNum);
 			tireObj->End();
 		glPopMatrix();
 		glPushMatrix();

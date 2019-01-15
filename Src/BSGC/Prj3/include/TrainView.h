@@ -52,6 +52,7 @@ public:
 	void resetArcball();
 
 	// pick a point (for when the mouse goes down)
+	QVector<float> unprojectClick();
 	void doPick(int mx, int my);
 	void drawTrain(Pnt3f pos, Pnt3f orient,Pnt3f orient_cross ,bool shadow,bool empty,GLuint tid);
 	void TrainView::changeSpeed(int speed);
@@ -122,6 +123,8 @@ public:
 	Obj *tunnelObj;
 	Obj *tireObj;
 	Obj *flyingshipObj;	
+	Obj *ferriswheelObj;
+	Obj *coffeecuplObj;
 	vector<TrackTrail> path;
 	//Timer clock
 	clock_t effect_clock;
@@ -129,8 +132,13 @@ public:
 	clock_t model_clock;
 	float train_interval = 0.f;
 	float shadowShake = 0.f;
+	float dolphinMove = 0.f;
+	
 	size_t effectNum  = 0;
 	size_t train_speed = 5;
 	size_t train_effect = 0;
+	//
+	float mouseXpos;
+	float mouseYpos;
 };  
 #endif // TRAINVIEW_H  
