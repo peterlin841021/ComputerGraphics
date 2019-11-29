@@ -1,5 +1,5 @@
 ### Ntust Computer graphics project
-# BSGC Yao
+# HLGC Yao
 1. Robot: Load one model,then calculate transform matrix to present motion.<br/>
 <img src="Yaop1.png" alt="vanilla" width="350"><br/>
 
@@ -9,7 +9,7 @@
 3. Texture parameterization.<br/>
 <img src="Yaop3.png" alt="vanilla" width="350"><br/>
 
-# HLGC Lai
+# BSGC Lai
 1. Photoshop: Image processing.<br/>
 <img src="Laip1.png" alt="vanilla" width="350"><br/>
 
