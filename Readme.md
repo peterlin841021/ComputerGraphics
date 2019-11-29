@@ -1,4 +1,4 @@
-### Ntust Computer graphics project
+### NTUST Computer graphics project
 # HLGC Yao
 1. Robot: Load one model,then calculate transform matrix to present motion.<br/>
 <img src="Yaop1.png" alt="vanilla" width="350"><br/>
