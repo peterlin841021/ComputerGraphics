@@ -418,7 +418,7 @@ void TrainView::initializeTexture()
 	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_left.jpg"));
 	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_right.jpg"));
 	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_top.jpg"));
-	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/hangingstone_bottom.jpg"));
+	skybox_imgs.push_back(QImage("./src/BSGC/prj3/Textures/nendoroid_front.png"));
 	generateTextureCube(skybox_imgs,&Textures);
 	skybox->textureId = Textures.size()-1;	
 	nendoroid->textureId = Textures.size();

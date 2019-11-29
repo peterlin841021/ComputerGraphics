@@ -418,7 +418,7 @@ void main(void)
 			vec4 water_color = texture2D(tex,uv);//Water
 			fragmentcolor = water_color;
 			fragmentcolor = mix(fragmentcolor,RefractColor,0.4);
-			fragmentcolor = mix(fragmentcolor,ReflectColor,0.4);
+			//fragmentcolor = mix(fragmentcolor,ReflectColor,0.4);
 			fragmentcolor += vec4(0,0,0.1,0);
 			if(effect == 11)
 				Abstraction();

@@ -49,11 +49,11 @@ Qt_Opengl_Framework::Qt_Opengl_Framework(QWidget *parent)
 	connect(ui.actionEdge, SIGNAL(triggered()), this, SLOT(OnFilter_Edge()));
 	connect(ui.actionEnhance, SIGNAL(triggered()), this, SLOT(OnFilter_Enhance()));
 	//New
-	connect(ui.actionMean, SIGNAL(triggered()), this, SLOT(kernel_mean()));
+	/*connect(ui.actionMean, SIGNAL(triggered()), this, SLOT(kernel_mean()));
 	connect(ui.actionMedian_Quick, SIGNAL(triggered()), this, SLOT(kernel_median_quick()));
 	connect(ui.actionMedian_Bubble, SIGNAL(triggered()), this, SLOT(kernel_median_bubble()));
 	connect(ui.actionWindyga, SIGNAL(triggered()), this, SLOT(kernel_windyga()));
-	connect(ui.actionCentralWeightedMedian, SIGNAL(triggered()), this, SLOT(kernel_center()));
+	connect(ui.actionCentralWeightedMedian, SIGNAL(triggered()), this, SLOT(kernel_center()));*/
 	// Size
 	connect(ui.actionHalf, SIGNAL(triggered()), this, SLOT(OnHalf_Size()));
 	connect(ui.actionDouble, SIGNAL(triggered()), this, SLOT(OnDouble_Size()));
